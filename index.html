@@ -330,31 +330,33 @@ const app = {
                             // Espólio do Bolsonaro
                             // GO (52): Caiado forte
                             if(uf === '52') {
-                                cityVotes['caiado'] = (cityVotes['caiado']||0) + (v * 0.6);
-                                cityVotes['flavio'] = (cityVotes['flavio']||0) + (v * 0.4);
+                                cityVotes['caiado'] = (cityVotes['caiado']||0) + (v * 0.4);
+                                cityVotes['flavio'] = (cityVotes['flavio']||0) + (v * 0.6);
                             } 
                             // PR (41): Ratinho forte
                             else if (uf === '41') {
-                                cityVotes['ratinho'] = (cityVotes['ratinho']||0) + (v * 0.5);
-                                cityVotes['flavio']  = (cityVotes['flavio']||0) + (v * 0.5);
+                                cityVotes['ratinho'] = (cityVotes['ratinho']||0) + (v * 0.4);
+                                cityVotes['flavio']  = (cityVotes['flavio']||0) + (v * 0.6);
                             }
                             // Geral
                             else {
-                                cityVotes['flavio']  = (cityVotes['flavio']||0) + (v * 0.75);
-                                cityVotes['caiado']  = (cityVotes['caiado']||0) + (v * 0.15);
-                                cityVotes['ratinho'] = (cityVotes['ratinho']||0) + (v * 0.10);
+                                cityVotes['flavio']  = (cityVotes['flavio']||0) + (v * 0.85);
+                                cityVotes['caiado']  = (cityVotes['caiado']||0) + (v * 0.10);
+                                cityVotes['ratinho'] = (cityVotes['ratinho']||0) + (v * 0.05);
+                                cityVotes['renan'] = (cityVotes['renan']||0) + (v * 0.05);
                             }
                         }
                         else if (keyUpper.includes('CIRO')) {
                             // Ciro -> Renan (SP) ou Ciro (CE) ou Lula
-                            if(uf === '23') cityVotes['ciro'] = (cityVotes['ciro']||0) + (v * 0.6);
+                            if(uf === '23') cityVotes['ciro'] = (cityVotes['ciro']||0) + (v * 0.15);
                             else cityVotes['renan'] = (cityVotes['renan']||0) + (v * 0.5);
                             
                             cityVotes['lula'] = (cityVotes['lula']||0) + (v * 0.3); // Parte vai pro lula
                         }
                         else if (keyUpper.includes('TEBET') || keyUpper.includes('SIMONE')) {
-                            cityVotes['aldo'] = (cityVotes['aldo']||0) + (v * 0.6);
+                            cityVotes['aldo'] = (cityVotes['aldo']||0) + (v * 0.1);
                             cityVotes['renan'] = (cityVotes['renan']||0) + (v * 0.4);
+                            cityVotes['lula'] = (cityVotes['lula']||0) + (v * 0.5);
                         }
                     }
                     
