@@ -165,6 +165,7 @@
         }
         .map-btn:hover { background: #222; color: white; }
 
+        /* TOOLTIP */
         .custom-tooltip {
             background: #0a0c10; border: 1px solid #333; color: white;
             border-radius: 8px; font-family: 'Inter', sans-serif; padding: 0;
@@ -214,7 +215,7 @@
             </div>
         </div>
         
-        <!-- HISTÓRICO -->
+        <!-- CONTROLES HISTÓRICO -->
         <div class="controls" id="historyControls">
             <div class="control-group">
                 <label>ANO</label>
@@ -235,7 +236,7 @@
             <button class="btn-primary" onclick="app.loadData()">CARREGAR MAPA</button>
         </div>
 
-        <!-- SIMULAÇÃO -->
+        <!-- CONTROLES SIMULAÇÃO -->
         <div class="controls" id="simControls" style="display: none;">
             <div style="font-size: 0.75rem; color: #888; text-align: center; margin-bottom: 20px;">
                 Os votos são redistribuídos com base na geografia de 2022 e normalizados pelo total fixo abaixo.
@@ -251,6 +252,13 @@
             <button id="btnSimulate" class="btn-primary" onclick="app.runSimulation()" style="margin-top: 20px;">
                 <i class="fas fa-magic"></i> GERAR SIMULAÇÃO
             </button>
+            
+            <!-- Input Total Votos -->
+            <div class="control-group" style="margin-top:15px; border-top:1px solid #333; padding-top:15px;">
+                <label>Projeção de Votos Válidos</label>
+                <input type="number" id="simTotalInput" value="121274352" 
+                       style="width:100%; padding:10px; background:#050505; border:1px solid #333; color:#4ade80; border-radius:6px; font-family:inherit; font-weight:700;">
+            </div>
         </div>
     </aside>
 
@@ -292,12 +300,7 @@
 
 <script>
 // =============================================================================
-// VALOR FIXO DO TOTAL DE VOTOS (ALTERE AQUI)
-// =============================================================================
-const CONST_TOTAL_VOTOS = 123000000; // Ex: 123 milhões
-
-// =============================================================================
-// CONFIGURAÇÃO DE PESOS (INTOCADO CONFORME PEDIDO)
+// CONFIGURAÇÃO DE PESOS
 // =============================================================================
 const CONFIG_PESOS = {
     rules: [
@@ -380,6 +383,8 @@ const app = {
         document.getElementById('tabSim').className = `mode-tab ${mode==='simulation'?'active':''}`;
         document.getElementById('historyControls').style.display = mode==='history'?'block':'none';
         document.getElementById('simControls').style.display = mode==='simulation'?'block':'none';
+        
+        // Recarregar se voltar pro histórico
         if(mode === 'history') app.loadData();
     },
 
@@ -420,8 +425,52 @@ const app = {
     },
 
     // =========================================================================
-    // LÓGICA DE SIMULAÇÃO (COM CORREÇÃO DO MAPA MUNICIPAL)
+    // LÓGICA DE DADOS (INCLUINDO A CORREÇÃO app.loadData)
     // =========================================================================
+    
+    // Função loadData adicionada aqui para corrigir o TypeError
+    loadData: async () => {
+        const loader = document.getElementById('loader');
+        loader.classList.remove('hidden');
+        app.state.ignored.clear();
+        
+        const year = document.getElementById('yearSelect').value;
+        const role = document.getElementById('roleSelect').value;
+        const turn = document.getElementById('turnSelect').value;
+        app.state.view = document.getElementById('viewModeSelect').value;
+
+        try {
+            // Pré-carrega 2022 se necessário para simulação
+            if (!app.data.full || !app.data.full['1']) {
+                const res22 = await fetch('data/2022_president.json');
+                if(res22.ok) {
+                    app.data.full = await res22.json();
+                    app.data.names = app.data.full['1'].meta_nomes || {};
+                }
+            }
+
+            if (app.state.mode === 'history') {
+                const res = await fetch(`data/${year}_${role}.json`);
+                if(!res.ok) throw new Error("Dados não encontrados.");
+                const json = await res.json();
+                
+                app.data.current = json[turn];
+                if(json[turn].meta_nomes) app.data.names = json[turn].meta_nomes;
+                
+                if (app.state.view === 'all_cities') await app.loadAllMunicipalities();
+                else app.resetMapToStates();
+                
+                app.refreshUI();
+            }
+
+        } catch(e) {
+            console.error(e);
+            if(app.state.mode === 'history') alert("Erro: " + e.message);
+        } finally {
+            loader.classList.add('hidden');
+        }
+    },
+
     runSimulation: async () => {
         const loader = document.getElementById('loader');
         const btn = document.getElementById('btnSimulate');
@@ -441,10 +490,8 @@ const app = {
                     app.data.names = app.data.full['1'].meta_nomes || {};
                 }
 
-                // 2. GARANTE O MAPA CORRETO (Fix do Bug)
-                // Se for All Cities, força o load. Se for States, limpa.
+                // 2. GARANTE O MAPA CORRETO
                 if(app.state.view === 'all_cities') {
-                    // Importante: await para garantir que a camada esteja pronta antes de pintar
                     await app.loadAllMunicipalities(); 
                 } else {
                     app.resetMapToStates();
@@ -486,7 +533,8 @@ const app = {
                     multipliers[c.id] = pct > 0 ? (c.val / pct) : 0;
                 });
 
-                // Passo C: Aplicação & NORMALIZAÇÃO PELO CONST_TOTAL_VOTOS
+                // Passo C: Aplicação & NORMALIZAÇÃO POR TARGET INPUT
+                const userTargetTotal = parseInt(document.getElementById('simTotalInput').value) || 123000000;
                 const finalMuns = {};
                 const finalStates = {};
                 let simGrandTotal = 0;
@@ -505,8 +553,8 @@ const app = {
                     simGrandTotal += Object.values(temp).reduce((a,b)=>a+b, 0);
                 }
 
-                // C2: Normaliza para CONST_TOTAL_VOTOS
-                const normFactor = simGrandTotal > 0 ? (CONST_TOTAL_VOTOS / simGrandTotal) : 1;
+                // C2: Normaliza para o INPUT
+                const normFactor = simGrandTotal > 0 ? (userTargetTotal / simGrandTotal) : 1;
 
                 for (let ibge in rawSim) {
                     const temp = rawSim[ibge];
@@ -523,7 +571,7 @@ const app = {
                         }
                     });
 
-                    if (!hasVotes) finalVotes['OUTROS (OUTROS)'] = 100; // Evita buraco
+                    if (!hasVotes) finalVotes['OUTROS (OUTROS)'] = 100; 
 
                     finalMuns[ibge] = finalVotes;
 
@@ -567,7 +615,6 @@ const app = {
         loader.classList.remove('hidden');
 
         try {
-            // Limpa antes de adicionar para evitar sobreposição ou erro de referência
             if (app.layers.cities) app.map.removeLayer(app.layers.cities);
             if (app.layers.brazil) app.map.removeLayer(app.layers.brazil);
 
@@ -588,14 +635,12 @@ const app = {
             }).addTo(app.map);
             
             app.state.view = 'all_cities';
-            // Só dá zoom fit se não estivermos já no nível de município vindo de um estado
             if (!app.state.selectedId || app.state.selectedId.length === 2) {
                 app.map.fitBounds(app.layers.cities.getBounds());
             }
         } catch(e) { console.log(e); } 
         finally { 
             loader.classList.add('hidden'); 
-            // Atualiza sidebar se necessário
             if(app.data.current) app.updateSidebarRight(); 
         }
     },
@@ -702,13 +747,8 @@ const app = {
         app.state.selectedId = null;
         app.state.selectedName = "Brasil";
         document.getElementById('btnBack').style.display = 'none';
-        
-        if(app.state.view === 'states' && app.layers.cities) {
-            app.map.removeLayer(app.layers.cities);
-            app.layers.brazil.addTo(app.map);
-            app.map.setView([-15, -50], 4);
-        }
-        app.refreshUI();
+        if(app.state.view === 'states') app.map.setView([-15, -50], 4);
+        app.updateSidebarRight();
     },
 
     refreshUI: () => {
@@ -728,10 +768,12 @@ const app = {
         subEl.innerText = app.state.selectedId ? (app.state.selectedId.length === 2 ? "Estado" : "Município") : "Nacional";
 
         let rawVotes = {};
-        
         if (!app.data.current) return;
 
-        if (!app.state.selectedId) {
+        if (app.state.sel) {
+            const scope = app.state.view === 'states' ? 'estados' : 'municipios';
+            rawVotes = app.data.current[scope][app.state.sel.id] || {};
+        } else if (!app.state.selectedId) {
              if(app.data.current.estados) {
                  Object.values(app.data.current.estados).forEach(st => {
                      Object.entries(st).forEach(([c, v]) => rawVotes[c] = (rawVotes[c]||0)+v);
