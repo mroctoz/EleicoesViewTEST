@@ -177,7 +177,7 @@
 
 <div id="loader">
     <div class="spinner"></div>
-    <h3>Carregando Dados...</h3>
+    <h3>Processando Dados...</h3>
 </div>
 
 <div id="app">
@@ -240,17 +240,13 @@
         <!-- CONTROLES SIMULAÇÃO -->
         <div class="controls" id="simControls" style="display: none;">
             <div style="font-size: 0.75rem; color: #888; text-align: center; margin-bottom: 20px;">
-                Crie um cenário alternativo baseado na geografia de 2022.<br>
-                <b>Clique em GERAR para processar.</b>
+                Crie um cenário alternativo baseado na herança política de 2022.
             </div>
-
             <div id="slidersContainer"></div>
-            
             <div style="margin-top:10px; padding:10px; background:#1a1a1a; border-radius:8px; text-align:center;">
                 <label style="font-size:0.6rem; color:#666;">SOMA TOTAL</label>
                 <div id="totalSimVal" style="font-size:1.4rem; font-weight:800; color:#4ade80;">100%</div>
             </div>
-
             <button class="btn-primary" onclick="app.runSimulation()" style="margin-top: 20px;">
                 <i class="fas fa-bolt"></i> GERAR SIMULAÇÃO
             </button>
@@ -293,10 +289,10 @@
 
 <script>
 // =========================================================
-// CONFIGURAÇÃO
+// CONFIGURAÇÃO GERAL
 // =========================================================
 const CONFIG = {
-    colors: {
+    colors: { // Cores mapeadas para Partidos/Candidatos
         'PT': '#E12525', 'PL': '#5756d6', 'PSB': '#E12525', 'PDT': '#F58220', 
         'UNIÃO': '#009EE3', 'PSDB': '#003399', 'MDB': '#008000', 'PSD': '#FAA21B',
         'PP': '#0066CC', 'NOVO': '#F58220', 'REPUBLICANOS': '#0066CC',
@@ -306,6 +302,7 @@ const CONFIG = {
         'PRONA': '#006400', 'PFL': '#0056A8', 'PMDB': '#008000', 'PSOL': '#FFCC00',
         'OUTROS': '#666666', 'DEFAULT': '#555555'
     },
+    // Dados dos Candidatos na Simulação (Nome Exibido, Partido, % Inicial)
     simCandidates: [
         { name: 'LULA', party: 'PT', val: 45 },
         { name: 'FLÁVIO BOLSONARO', party: 'PL', val: 30 },
@@ -315,16 +312,17 @@ const CONFIG = {
         { name: 'CIRO GOMES', party: 'PSDB', val: 3 },
         { name: 'ALDO REBELO', party: 'DC', val: 1 }
     ],
-    // Dicionário de Migração (Herança de Votos 2022 -> 2026)
-    // Usa correspondência parcial (ex: "LULA" dá match em "LULA (PT)")
+    // Regras de Herança (Como votos de 2022 se distribuem em 2026)
+    // As chaves (src) DEVEM CORRESPONDER AOS NOMES NO ARQUIVO 2022_president.json
+    // As chaves (dest) DEVEM CORRESPONDER AOS NOMES EM CONFIG.simCandidates
     inheritance: [
-        { dest: 'LULA', party: 'PT', source: 'LULA', weight: 1.0, regionBonus: {} },
-        { dest: 'FLÁVIO BOLSONARO', party: 'PL', source: 'JAIR BOLSONARO', weight: 0.65, regionBonus: {} },
-        { dest: 'RONALDO CAIADO', party: 'UNIÃO', source: 'JAIR BOLSONARO', weight: 0.15, regionBonus: {'52': 5.0} }, // Goiás
-        { dest: 'RATINHO JR', party: 'PSD', source: 'JAIR BOLSONARO', weight: 0.10, regionBonus: {'41': 5.0} }, // Paraná
-        { dest: 'RENAN SANTOS', party: 'MISSÃO', source: 'CIRO GOMES', weight: 2.0, regionBonus: {'35': 1.5} }, // SP
-        { dest: 'CIRO GOMES', party: 'PSDB', source: 'CIRO GOMES', weight: 0.5, regionBonus: {'23': 2.0} }, // Ceará
-        { dest: 'ALDO REBELO', party: 'DC', source: 'SIMONE TEBET', weight: 0.5, regionBonus: {} }
+        { dest: 'LULA', party: 'PT', src: 'LULA (PT)', weight: 1.0, regionBonus: {} },
+        { dest: 'FLÁVIO BOLSONARO', party: 'PL', src: 'JAIR BOLSONARO (PL)', weight: 0.65, regionBonus: {} },
+        { dest: 'RONALDO CAIADO', party: 'UNIÃO', src: 'JAIR BOLSONARO (PL)', weight: 0.15, regionBonus: {'52': 5.0} }, // Goiás
+        { dest: 'RATINHO JR', party: 'PSD', src: 'JAIR BOLSONARO (PL)', weight: 0.10, regionBonus: {'41': 5.0} }, // Paraná
+        { dest: 'RENAN SANTOS', party: 'MISSÃO', src: 'CIRO GOMES (PDT)', weight: 2.0, regionBonus: {'35': 1.5} }, // SP
+        { dest: 'CIRO GOMES', party: 'PSDB', src: 'CIRO GOMES (PDT)', weight: 0.5, regionBonus: {'23': 2.0} }, // Ceará
+        { dest: 'ALDO REBELO', party: 'DC', src: 'SIMONE TEBET (MDB)', weight: 0.5, regionBonus: {} }
     ]
 };
 
@@ -344,7 +342,7 @@ const GRADIENT_SCHEME = [
 const app = {
     map: null,
     layers: { brazil: null, cities: null },
-    data: { full: null, current: null, names: {}, geoJsonCache: null },
+    data: { full: null, current: null, simBase: null, names: {}, geoJsonCache: null },
     state: {
         mode: 'history', // 'history' | 'simulation'
         view: 'states', 
@@ -361,7 +359,7 @@ const app = {
         
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { opacity: 0.4 }).addTo(app.map);
 
-        // Renderiza legenda
+        // Legenda
         const legendDiv = document.getElementById('legendColors');
         [20, 30, 40, 50, 60, 70, 80, 90, 100].forEach(pct => {
             const el = document.createElement('div');
@@ -372,32 +370,30 @@ const app = {
 
         app.renderSliders();
         app.loadBrazilLayer();
-        app.loadData();
+        app.loadData(); // Carrega histórico padrão (2022)
     },
 
     setMode: (mode) => {
         app.state.mode = mode;
         
-        // Toggle de Classes CSS (Correção do bug do botão)
         const btnHist = document.getElementById('btnModeHist');
         const btnSim = document.getElementById('btnModeSim');
         
-        if(mode === 'history') {
-            btnHist.classList.add('active');
-            btnSim.classList.remove('active');
-            document.getElementById('historyControls').style.display = 'block';
-            document.getElementById('simControls').style.display = 'none';
-            app.loadData();
-        } else {
-            btnHist.classList.remove('active');
-            btnSim.classList.add('active');
-            document.getElementById('historyControls').style.display = 'none';
-            document.getElementById('simControls').style.display = 'block';
+        btnHist.classList.toggle('active', mode === 'history');
+        btnSim.classList.toggle('active', mode === 'simulation');
+
+        document.getElementById('historyControls').style.display = mode === 'history' ? 'block' : 'none';
+        document.getElementById('simControls').style.display = mode === 'simulation' ? 'block' : 'none';
+
+        if(mode === 'history') app.loadData();
+        // Se entrar em simulação e já tiver base, atualiza visualização
+        if(mode === 'simulation' && app.data.simBase) {
+             app.updateSimulation();
         }
     },
 
     // ============================================
-    // SIMULAÇÃO - LÓGICA DE HERANÇA
+    // SIMULAÇÃO - LÓGICA DE HERANÇA E SLIDERS
     // ============================================
     renderSliders: () => {
         const c = document.getElementById('slidersContainer');
@@ -436,38 +432,36 @@ const app = {
         app.state.view = document.getElementById('viewModeSelect').value;
 
         try {
-            // 1. OBRIGATÓRIO: Carregar 2022_president.json (Fonte da Herança)
+            // 1. Garante que temos dados de 2022
             if (!app.data.full || !app.data.full['1']) {
                 const res = await fetch('data/2022_president.json');
-                if(!res.ok) throw new Error("Arquivo 'data/2022_president.json' não encontrado. Necessário para a base.");
+                if(!res.ok) throw new Error("Arquivo 'data/2022_president.json' não encontrado.");
                 app.data.full = await res.json();
                 app.data.names = app.data.full['1'].meta_nomes || {};
             }
 
-            // 2. Garante a visualização correta
+            // 2. Garante a malha correta
             if(app.state.view === 'all_cities' && !app.layers.cities) {
                 await app.loadAllMunicipalities();
             } else if (app.state.view === 'states') {
                 app.resetMapToStates();
             }
 
-            // 3. Processamento Pesado: Criar Cenário Base
+            // 3. GERA A BASE DA SIMULAÇÃO NA MEMÓRIA (sem depender de arquivo externo)
             const sourceMuns = app.data.full['1'].municipios;
             const simResult = { municipios: {}, estados: {} };
+            const nationalTotals = {}; // Para normalizar os sliders
 
-            // Totais para cálculo do multiplicador
-            const nationalTotals = {};
-
-            // Passo A: Aplicar Herança (Bolsonaro -> Caiado, etc)
+            // A: Aplica regras de herança sobre os dados de 2022
             for (let ibge in sourceMuns) {
                 const srcVotes = sourceMuns[ibge];
                 const uf = ibge.substring(0, 2);
                 const newVotes = {};
-                let totalVotesInCity = 0;
+                let totalCityVotes = 0; // Soma dos votos calculados para esta cidade
 
                 CONFIG.inheritance.forEach(rule => {
-                    // Procura chave correspondente (Ex: "JAIR BOLSONARO (PL)" contém "JAIR BOLSONARO")
-                    const srcKey = Object.keys(srcVotes).find(k => k.includes(rule.source));
+                    // Encontra a chave correta no JSON de 2022 (case-insensitive)
+                    const srcKey = Object.keys(srcVotes).find(k => k.toUpperCase().includes(rule.src.toUpperCase()));
                     const baseVal = srcKey ? srcVotes[srcKey] : 0;
                     
                     const factor = rule.weight * (rule.regionBonus[uf] || 1.0);
@@ -477,41 +471,60 @@ const app = {
                         const destKey = `${rule.dest} (${rule.party})`;
                         newVotes[destKey] = (newVotes[destKey] || 0) + calculated;
                         nationalTotals[destKey] = (nationalTotals[destKey] || 0) + calculated;
-                        totalVotesInCity += calculated;
+                        totalCityVotes += calculated;
                     }
                 });
 
-                // Evitar cidade fantasma: se zerou, preenche com Outros
-                if (totalVotesInCity === 0 && Object.values(srcVotes).reduce((a,b)=>a+b,0) > 0) {
-                    newVotes['OUTROS (OUTROS)'] = 100;
+                // Segurança: Se o cálculo zerou, mas havia votos, coloca em "Outros"
+                if (totalCityVotes === 0 && Object.values(srcVotes).reduce((a,b)=>a+b,0) > 0) {
+                    newVotes['OUTROS (OUTROS)'] = 100; // Valor placeholder, será recalculado
                 }
-
                 simResult.municipios[ibge] = newVotes;
             }
 
-            // Passo B: Calcular Multiplicadores dos Sliders
+            // B: Calcula Multiplicadores baseado nos sliders E nos totais nacionais da simulação
             const grandTotal = Object.values(nationalTotals).reduce((a,b)=>a+b, 0);
             const multipliers = {};
             
             CONFIG.simCandidates.forEach(cand => {
                 const key = `${cand.name} (${cand.party})`;
-                const currentVal = nationalTotals[key] || 0;
-                const currentPct = grandTotal > 0 ? (currentVal / grandTotal) * 100 : 0;
+                const baseVal = nationalTotals[key] || 0;
+                const currentPct = grandTotal > 0 ? (baseVal / grandTotal) * 100 : 0;
                 
-                multipliers[key] = currentPct > 0 ? (cand.val / currentPct) : 0;
+                // Se a % base for 0, mas o slider > 0, o multiplicador será infinito (tratado como 0)
+                multipliers[key] = currentPct > 0 ? (cand.val / currentPct) : (cand.val > 0 ? 0 : 1);
             });
 
-            // Passo C: Aplicar Multiplicadores e Agregar Estados
+            // C: Aplica Multiplicadores e Agrega Estados
             const finalData = { municipios: {}, estados: {} };
 
             for (let ibge in simResult.municipios) {
                 const votes = simResult.municipios[ibge];
                 const finalVotes = {};
+                let currentCityTotal = 0;
+
+                for (let candKey in votes) {
+                    const name = candKey.split(' (')[0]; // Pega só o nome do candidato
+                    let mult = 1; // Default é 1 (mantém o voto original)
+
+                    // Pega o multiplicador do slider, ou 0 se não foi definido
+                    const sliderValue = CONFIG.simCandidates.find(sc => sc.name === name);
+                    if (sliderValue) {
+                        mult = multipliers[candKey] !== undefined ? multipliers[candKey] : 0;
+                    } else if (!candKey.includes('OUTROS')) {
+                        mult = 0; // Se não está nos sliders e não é "Outros", zera
+                    }
+                    
+                    const finalVal = Math.floor(votes[candKey] * mult);
+                    if(finalVal > 0) {
+                        finalVotes[candKey] = finalVal;
+                        currentCityTotal += finalVal;
+                    }
+                }
                 
-                for (let key in votes) {
-                    const mult = multipliers[key] !== undefined ? multipliers[key] : 1; // 1 para Outros
-                    const val = Math.floor(votes[key] * mult);
-                    if(val > 0) finalVotes[key] = val;
+                // Segurança final: Se tudo zerou, coloca 100% em "OUTROS"
+                if (currentCityTotal === 0 && Object.values(simResult.municipios[ibge]).reduce((a,b)=>a+b,0) > 0) {
+                   finalVotes['OUTROS (OUTROS)'] = 100; 
                 }
                 
                 finalData.municipios[ibge] = finalVotes;
@@ -524,7 +537,6 @@ const app = {
                 }
             }
 
-            // INJETA DADOS E ATUALIZA
             app.data.current = finalData;
             app.refreshUI();
 
@@ -537,7 +549,7 @@ const app = {
     },
 
     // ============================================
-    // CORE (MANTIDO)
+    // CORE DO APP (MANTIDO)
     // ============================================
     getGradientConfig: (pct) => {
         let config = GRADIENT_SCHEME[0];
@@ -746,7 +758,6 @@ const app = {
         }
 
         if (!app.state.selectedId) {
-             // Agrega Brasil
              Object.values(app.data.current.estados).forEach(st => {
                  Object.entries(st).forEach(([c, v]) => rawVotes[c] = (rawVotes[c]||0)+v);
              });
@@ -830,6 +841,7 @@ const app = {
         const stats = app.recalcStats(raw || {});
 
         if (!stats || !stats.winner) {
+            // Se não tem vencedor ou dados, usa cor padrão cinza
             return { fillColor: '#222', weight: 0.2, color: '#ffffff', fillOpacity: 1 };
         }
 
@@ -872,8 +884,14 @@ const app = {
     },
 
     parseCandKey: (k) => {
+        // Pega o nome e o partido do formato "NOME (PARTIDO)"
         const m = k.match(/(.*?)\s*\((.*?)\)/);
-        return m ? { name: m[1], party: m[2] } : { name: k, party: 'DEFAULT' };
+        if (m) {
+            return { name: m[1].trim(), party: m[2].trim() };
+        } else {
+            // Se não encontrar o padrão, tenta tratar como nome simples
+            return { name: k.trim(), party: 'DEFAULT' };
+        }
     },
 
     getCandColor: (p) => app.state.customColors[p] || CONFIG.colors[p] || CONFIG.colors['DEFAULT'],
