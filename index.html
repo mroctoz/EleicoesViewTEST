@@ -212,6 +212,17 @@
             </div>
         </div>
         
+        <!-- CONTROLE COMUM: VISUALIZAÇÃO -->
+        <div style="padding: 10px 20px 0 20px;">
+            <div class="control-group">
+                <label>VISUALIZAÇÃO</label>
+                <select id="viewModeSelect">
+                    <option value="states">Por Estados (Brasil)</option>
+                    <option value="all_cities">Brasil Municipal</option>
+                </select>
+            </div>
+        </div>
+        
         <!-- CONTROLES HISTÓRICO -->
         <div class="controls" id="historyControls">
             <div class="control-group">
@@ -245,21 +256,13 @@
                 </select>
             </div>
 
-            <div class="control-group">
-                <label>VISUALIZAÇÃO</label>
-                <select id="viewModeSelect">
-                    <option value="states">Por Estados (Brasil)</option>
-                    <option value="all_cities">Brasil Municipal</option>
-                </select>
-            </div>
-
             <button class="btn-primary" onclick="app.loadData()">CARREGAR MAPA</button>
         </div>
 
         <!-- CONTROLES SIMULAÇÃO -->
         <div class="controls" id="simControls" style="display: none;">
             <div style="font-size: 0.75rem; color: #888; text-align: center; margin-bottom: 20px;">
-                Ajuste os percentuais. Clique em "GERAR SIMULAÇÃO" para processar o mapa.
+                Ajuste os percentuais e clique em GERAR SIMULAÇÃO. Funciona para Estados e Municípios.
             </div>
 
             <div id="slidersContainer"></div>
@@ -269,7 +272,7 @@
                 <div id="totalSimVal" style="font-size:1.4rem; font-weight:800; color:#4ade80;">100%</div>
             </div>
 
-            <!-- BOTÃO ADICIONADO CONFORME PEDIDO -->
+            <!-- BOTÃO ADICIONADO -->
             <button class="btn-primary" onclick="app.loadSimulationBase()" style="margin-top: 20px;">
                 <i class="fas fa-magic"></i> GERAR SIMULAÇÃO
             </button>
@@ -323,7 +326,7 @@ const CONFIG = {
         'PT': '#E12525', 'PL': '#5756d6', 'PSB': '#E12525', 'PDT': '#F58220', 
         'UNIÃO': '#009EE3', 'PSDB': '#003399', 'MDB': '#008000', 'PSD': '#FAA21B',
         'PP': '#0066CC', 'NOVO': '#F58220', 'REPUBLICANOS': '#0066CC',
-        'MISSÃO': '#D4AF37', 'DC': '#006400', // Novas
+        'MISSÃO': '#D4AF37', 'DC': '#006400', 
         'SOLIDARIEDADE': '#F58220', 'PATRIOTA': '#FFD700', 'PCdoB': '#FF0000',
         'PV': '#00FF00', 'CIDADANIA': '#FFA500', 'AVANTE': '#800080',
         'PRONA': '#006400', 'PFL': '#0056A8', 'PMDB': '#008000', 'PSOL': '#FFCC00',
@@ -385,21 +388,18 @@ const app = {
 
         app.renderSliders();
         app.loadBrazilLayer();
-        app.loadData(); // Inicia com Histórico
+        app.loadData(); 
     },
 
     setMode: (mode) => {
         app.state.mode = mode;
         
         // UI Updates
-        document.getElementById('btnModeHist').className = mode === 'history' ? 'mode-btn active' : 'mode-btn';
-        document.getElementById('btnModeSim').className = mode === 'simulation' ? 'mode-btn active' : 'mode-btn';
+        document.getElementById('btnModeHist').className = mode === 'mode-btn ' + (mode === 'history' ? 'active' : '');
+        document.getElementById('btnModeSim').className = mode === 'mode-btn ' + (mode === 'simulation' ? 'active' : '');
         document.getElementById('historyControls').style.display = mode === 'history' ? 'block' : 'none';
         document.getElementById('simControls').style.display = mode === 'simulation' ? 'block' : 'none';
 
-        // Quando muda para simulação, não carrega automaticamente.
-        // O usuário deve clicar em GERAR SIMULAÇÃO.
-        // Mas se já tiver dados, mostra eles.
         if(mode === 'simulation' && app.data.simBase) {
             app.updateSimulation();
         } else if (mode === 'history') {
@@ -439,27 +439,47 @@ const app = {
         const totEl = document.getElementById('totalSimVal');
         totEl.innerText = total + "%";
         totEl.style.color = total === 100 ? '#4ade80' : '#facc15';
-        
-        // Removido o update automático. Agora é só pelo botão.
     },
 
     loadSimulationBase: async () => {
         const loader = document.getElementById('loader');
         loader.classList.remove('hidden');
+        
+        // Sincroniza view mode
+        app.state.view = document.getElementById('viewModeSelect').value;
+
         try {
-            // Só carrega o JSON base se ainda não tiver carregado
+            // 1. Carrega dados da simulação (JSON) se necessário
             if(!app.data.simBase) {
-                const res = await fetch('data/2026_base.json');
-                if(!res.ok) throw new Error("Arquivo 'dados_processados/2026_base.json' não encontrado. Gere o arquivo Python primeiro.");
-                const json = await res.json();
-                app.data.simBase = json['1']; // Formato padrão
-                app.data.names = json['1'].meta_nomes || {};
+                // Tenta carregar do caminho gerado pelo script Python
+                const res = await fetch('dados_processados/2026_base.json');
+                if(!res.ok) {
+                    // Fallback para pasta data normal se o usuário moveu
+                    const res2 = await fetch('data/2026_base.json');
+                    if(!res2.ok) throw new Error("Arquivo 'dados_processados/2026_base.json' não encontrado.");
+                    const json2 = await res2.json();
+                    app.data.simBase = json2['1'];
+                    app.data.names = json2['1'].meta_nomes || {};
+                } else {
+                    const json = await res.json();
+                    app.data.simBase = json['1'];
+                    app.data.names = json['1'].meta_nomes || {};
+                }
             }
-            // Depois de garantir que tem a base, calcula e renderiza
+
+            // 2. Carrega Malha Municipal se necessário
+            if(app.state.view === 'all_cities' && !app.layers.cities) {
+                await app.loadAllMunicipalities();
+            } else if (app.state.view === 'states') {
+                app.resetMapToStates();
+            }
+
+            // 3. Calcula e Renderiza
             app.updateSimulation();
+
         } catch(e) { 
             console.error(e); 
-            alert("Erro: " + e.message); 
+            alert("Erro: " + e.message + "\nCertifique-se de ter rodado o script Python."); 
         } finally { loader.classList.add('hidden'); }
     },
 
@@ -470,10 +490,10 @@ const app = {
         const baseTotals = {};
         const stateData = app.data.simBase.estados;
         
-        // Agregar nacionalmente a base
         for(let uf in stateData) {
             for(let key in stateData[uf]) {
-                const name = key.split(' (')[0];
+                // Normaliza chave (remove espaços extras e partido) para matching
+                const name = key.split(' (')[0].trim();
                 baseTotals[name] = (baseTotals[name] || 0) + stateData[uf][key];
             }
         }
@@ -483,9 +503,15 @@ const app = {
         // 2. Define Multiplicadores
         const multipliers = {};
         CONFIG.simCandidates.forEach(c => {
-            const currentPct = (baseTotals[c.name] / grandTotal) * 100;
-            // Se o candidato não existir na base, multiplicador é 0 (ou precisa de fallback)
-            multipliers[c.name] = currentPct > 0 ? (c.val / currentPct) : 0;
+            const baseVal = baseTotals[c.name.trim()] || 0;
+            const currentPct = (baseVal / grandTotal) * 100;
+            
+            // Se o candidato existe na base, aplica fator. Se não, é 0.
+            if(currentPct > 0) {
+                multipliers[c.name] = c.val / currentPct;
+            } else {
+                multipliers[c.name] = 0; 
+            }
         });
 
         // 3. Aplica nos dados
@@ -497,10 +523,13 @@ const app = {
                 const votos = source[k];
                 const novos = {};
                 for(let candKey in votos) {
-                    const name = candKey.split(' (')[0];
-                    const mult = multipliers[name] !== undefined ? multipliers[name] : 0; // Default 0 se não encontrar slider
-                    
-                    // Se o multiplicador for 0 (ex: Outros), zera para limpar o mapa
+                    const name = candKey.split(' (')[0].trim();
+                    // Encontra multiplicador pelo nome do candidato
+                    // Usa Object.keys para achar a chave correta no CONFIG caso haja diferenças sutis
+                    let mult = 0;
+                    const configKey = Object.keys(multipliers).find(k => k === name);
+                    if(configKey) mult = multipliers[configKey];
+
                     const novosVotos = Math.floor(votos[candKey] * mult);
                     if (novosVotos > 0) novos[candKey] = novosVotos;
                 }
@@ -556,7 +585,7 @@ const app = {
         const year = document.getElementById('yearSelect').value;
         const role = document.getElementById('roleSelect').value;
         const turn = document.getElementById('turnSelect').value;
-        const viewMode = document.getElementById('viewModeSelect').value;
+        app.state.view = document.getElementById('viewModeSelect').value;
 
         try {
             const res = await fetch(`data/${year}_${role}.json`);
@@ -571,7 +600,7 @@ const app = {
                 app.data.current = json[turn];
                 app.data.names = json[turn].meta_nomes || {};
                 
-                if (viewMode === 'all_cities') await app.loadAllMunicipalities();
+                if (app.state.view === 'all_cities') await app.loadAllMunicipalities();
                 else app.resetMapToStates();
                 
                 app.refreshUI();
