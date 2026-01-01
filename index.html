@@ -10,8 +10,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css" rel="stylesheet">
 
     <style>
         :root {
@@ -35,7 +35,6 @@
         .sim-panel { background: rgba(255, 0, 85, 0.05); border-bottom: 1px solid var(--sim-highlight); padding: 15px; overflow-y: auto; flex: 1; }
         .sim-header { font-size: 0.75rem; color: var(--sim-highlight); font-weight: 800; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
         .sim-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-        .sim-img { width: 24px; height: 24px; border-radius: 50%; background: #333; object-fit: cover; }
         .sim-label { flex: 1; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .sim-slider { flex: 1; height: 4px; accent-color: var(--sim-highlight); cursor: pointer; }
         .sim-val { width: 42px; font-family: monospace; font-size: 0.9rem; text-align: right; color: var(--sim-highlight); }
@@ -98,7 +97,7 @@
         <div id="simPanel" class="sim-panel">
             <div class="sim-header">
                 <span>INTENÇÃO DE VOTO (NACIONAL)</span>
-                <button onclick="app.normalizeSliders()" style="background:transparent; border:none; color:#aaa; cursor:pointer; font-size:0.7rem; text-decoration:underline;">Normalizar</button>
+                <button onclick="app.normalizeSliders()" style="background:transparent; border:none; color:#aaa; cursor:pointer; font-size:0.7rem; text-decoration:underline;">Normalizar (100%)</button>
             </div>
             
             <div id="slidersContainer"></div>
@@ -129,6 +128,11 @@
                     <option value="2022">2022</option>
                     <option value="2018">2018</option>
                     <option value="2014">2014</option>
+                    <option value="2010">2010</option>
+                    <option value="2006">2006</option>
+                    <option value="2002">2002</option>
+                    <option value="1998">1998</option>
+                    <option value="1994">1994</option>
                 </select>
             </div>
             <div class="control-group">
@@ -138,7 +142,7 @@
                     <option value="governor">Governador</option>
                 </select>
             </div>
-            <button class="btn-action" onclick="app.loadHistoricalData()">Carregar Mapa</button>
+            <button class="btn-action" onclick="app.loadHistoricalData()">Carregar Mapa Histórico</button>
         </div>
     </aside>
 
@@ -152,7 +156,7 @@
         </div>
         <div style="padding:15px; border-bottom:1px solid rgba(255,255,255,0.1);">
             <button id="btnBack" class="btn-action" style="display:none; margin-bottom:10px;" onclick="app.resetSelection()">Voltar ao Nacional</button>
-            <div style="font-size:0.7rem; color:#888; text-transform:uppercase;">Total de Votos (Est. 2022)</div>
+            <div style="font-size:0.7rem; color:#888; text-transform:uppercase;">Votos Totais (Est. 2022)</div>
             <div id="totalVotes" style="font-size:1.5rem; font-weight:800;">-</div>
         </div>
         <div id="resultsList" style="padding:15px; overflow-y:auto;"></div>
@@ -160,32 +164,34 @@
 
     <!-- LEGENDA -->
     <div class="legend">
-        <div style="font-size:0.75rem; font-weight:700; color:#fff; margin-bottom:5px;">Intensidade da Vitória</div>
+        <div style="font-size:0.75rem; font-weight:700; color:#fff; margin-bottom:5px;">Percentual do Vencedor</div>
         <div style="display:flex; height:10px; border-radius:4px; overflow:hidden;">
-            <div style="flex:1; background:#ddd;"></div>
-            <div style="flex:1; background:#bbb;"></div>
-            <div style="flex:1; background:#999;"></div>
-            <div style="flex:1; background:#666;"></div>
-            <div style="flex:1; background:#333;"></div>
-            <div style="flex:1; background:#111;"></div>
+            <div style="flex:1; background:#ffffff;"></div> <!-- 30% -->
+            <div style="flex:1; background:#cccccc;"></div>
+            <div style="flex:1; background:#999999;"></div>
+            <div style="flex:1; background:#666666;"></div>
+            <div style="flex:1; background:#333333;"></div>
+            <div style="flex:1; background:#111111;"></div> <!-- 70%+ -->
         </div>
         <div style="display:flex; justify-content:space-between; font-size:0.6rem; color:#aaa; margin-top:3px;">
-            <span>Disputado</span><span>Hegemônico</span>
+            <span>~30% (Claro)</span><span>+70% (Escuro)</span>
         </div>
     </div>
 </div>
 
 <script>
-// --- CONFIGURAÇÃO DE CANDIDATOS E PESOS ---
-// Weights: Home State Boost multiplier
+// ==========================================
+// CONFIGURAÇÃO DOS CANDIDATOS (CENÁRIO BASE)
+// ==========================================
+// homeBoost: Multiplicador de força no estado natal (ex: Ratinho x7 no PR)
 const CANDIDATES = [
-    { id: 'LULA', name: 'Lula da Silva', party: 'PT', color: '#E12525', default: 45.0, base: 'L', home: '26' }, // PE home simbólico, mas base forte NE
-    { id: 'FLAVIO', name: 'Flávio Bolsonaro', party: 'PL', color: '#0056A8', default: 30.0, base: 'R', home: '33' }, // RJ
-    { id: 'RATINHO', name: 'Ratinho Jr', party: 'PSD', color: '#FAA21B', default: 5.0, base: 'R', home: '41', homeBoost: 7.0 }, // PR (Boost Massivo)
-    { id: 'CAIADO', name: 'Ronaldo Caiado', party: 'UNIÃO', color: '#009EE3', default: 6.0, base: 'R', home: '52', homeBoost: 6.0 }, // GO (Boost Massivo)
-    { id: 'ZEMA', name: 'Romeu Zema', party: 'NOVO', color: '#F58220', default: 4.0, base: 'R', home: '31', homeBoost: 3.5 }, // MG
-    { id: 'RENAN', name: 'Renan Santos', party: 'MISSÃO', color: '#333333', default: 5.0, base: 'C', home: '35', homeBoost: 1.2 }, // SP
-    { id: 'CIRO', name: 'Ciro Gomes', party: 'PSDB', color: '#008000', default: 5.0, base: 'C', home: '23', homeBoost: 4.0 }  // CE
+    { id: 'LULA', name: 'Lula da Silva', party: 'PT', color: '#E12525', default: 45.0, base: 'L', home: '26' },
+    { id: 'FLAVIO', name: 'Flávio Bolsonaro', party: 'PL', color: '#0056A8', default: 30.0, base: 'R', home: '33' },
+    { id: 'RATINHO', name: 'Ratinho Jr', party: 'PSD', color: '#FAA21B', default: 6.0, base: 'R', home: '41', homeBoost: 7.0 }, 
+    { id: 'CAIADO', name: 'Ronaldo Caiado', party: 'UNIÃO', color: '#009EE3', default: 6.0, base: 'R', home: '52', homeBoost: 6.0 }, 
+    { id: 'ZEMA', name: 'Romeu Zema', party: 'NOVO', color: '#F58220', default: 4.0, base: 'R', home: '31', homeBoost: 3.5 }, 
+    { id: 'RENAN', name: 'Renan Santos', party: 'MISSÃO', color: '#333333', default: 5.0, base: 'C', home: '35', homeBoost: 1.5 }, 
+    { id: 'CIRO', name: 'Ciro Gomes', party: 'PSDB', color: '#008000', default: 4.0, base: 'C', home: '23', homeBoost: 4.0 }
 ];
 
 const app = {
@@ -193,44 +199,44 @@ const app = {
     layers: { mun: null, states: null },
     data: { 
         base2022: null, 
-        currentSim: null, // Resultado calculado da simulação
-        geoJson: null // Cache da malha
+        currentSim: null,
+        geoJson: null
     },
     state: {
         mode: 'sim2026',
         secondTurn: false,
-        selectedId: null, // ID Município ou Estado selecionado
+        selectedId: null,
         selectedName: "Brasil"
     },
 
     init: async () => {
-        // Mapa
         app.map = L.map('map', { center: [-15, -55], zoom: 4, zoomControl: false, preferCanvas: true, background: '#1a1a1a' });
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { opacity: 0.3 }).addTo(app.map);
         
         app.renderSliders();
         
-        // Carregar Dados Base
         try {
             document.getElementById('loadBar').style.width = "30%";
-            // GeoJSON Municípios
+            // Cache da malha municipal
             const geoRes = await fetch("https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json");
             app.data.geoJson = await geoRes.json();
             document.getElementById('loadBar').style.width = "60%";
 
-            // Dados Eleitorais Inteligentes
-            const baseRes = await fetch("2026_president.json"); // JSON gerado pelo Python
+            // Carrega a base gerada pelo Python (Na pasta data/)
+            const baseRes = await fetch("data/2026_president.json"); 
+            if(!baseRes.ok) throw new Error("Arquivo data/2026_president.json não encontrado");
+            
             const json = await baseRes.json();
             app.data.base2022 = json["1"].base_inteligencia;
             document.getElementById('loadBar').style.width = "100%";
             
             setTimeout(() => {
                 document.getElementById('loader').classList.add('hidden');
-                app.calcMap(); // Primeira simulação
+                app.calcMap(); 
             }, 500);
 
         } catch(e) {
-            alert("Erro ao carregar dados. Verifique se o Python gerou '2026_president.json'.");
+            document.getElementById('loader').innerHTML = `<h3 style='color:red; text-align:center;'>Erro ao carregar dados.<br>${e.message}</h3><p style='color:#ccc; text-align:center;'>Verifique se rodou o script Python e se está usando um Local Server.</p>`;
             console.error(e);
         }
     },
@@ -238,14 +244,11 @@ const app = {
     renderSliders: () => {
         const c = document.getElementById('slidersContainer');
         c.innerHTML = '';
-        
-        // Popular selects do 2º turno tb
         const s1 = document.getElementById('stCand1');
         const s2 = document.getElementById('stCand2');
         s1.innerHTML = ''; s2.innerHTML = '';
 
         CANDIDATES.forEach(cand => {
-            // HTML do Slider
             const div = document.createElement('div');
             div.className = 'sim-row';
             div.innerHTML = `
@@ -258,13 +261,10 @@ const app = {
             `;
             c.appendChild(div);
 
-            // Selects
-            const opt1 = new Option(cand.name, cand.id);
-            const opt2 = new Option(cand.name, cand.id);
-            s1.add(opt1); s2.add(opt2);
+            s1.add(new Option(cand.name, cand.id));
+            s2.add(new Option(cand.name, cand.id));
         });
         
-        // Defaults 2o turno
         s1.value = 'LULA'; s2.value = 'FLAVIO';
         app.checkTotal();
     },
@@ -272,7 +272,6 @@ const app = {
     updateSlider: (id, val) => {
         document.getElementById(`val_${id}`).textContent = parseFloat(val).toFixed(1) + '%';
         app.checkTotal();
-        // Debounce calculation
         if(app.calcTimeout) clearTimeout(app.calcTimeout);
         app.calcTimeout = setTimeout(app.calcMap, 100); 
     },
@@ -281,8 +280,7 @@ const app = {
         let sum = 0;
         CANDIDATES.forEach(c => sum += parseFloat(document.getElementById(`sl_${c.id}`).value));
         const el = document.getElementById('simTotalBox');
-        const valEl = document.getElementById('simTotalVal');
-        valEl.textContent = sum.toFixed(1) + '%';
+        document.getElementById('simTotalVal').textContent = sum.toFixed(1) + '%';
         
         el.className = 'sim-total';
         if(sum > 100.1) el.classList.add('error');
@@ -325,12 +323,12 @@ const app = {
         app.calcMap();
     },
 
-    // --- CORE DA SIMULAÇÃO (Matemática Realista) ---
+    // --- CÁLCULO ELEITORAL (LÓGICA REALISTA BASEADA NO PERFIL 2022) ---
     calcMap: () => {
-        const resultCache = {}; // { id_mun: { LULA: 100, FLAVIO: 50... } }
+        const resultCache = {}; 
         const munData = app.data.base2022;
         
-        // 1. Coletar "Metas Nacionais" dos sliders
+        // Targets Nacionais (Sliders)
         const targets = {};
         let sumTargets = 0;
         CANDIDATES.forEach(c => {
@@ -338,153 +336,116 @@ const app = {
             sumTargets += targets[c.id];
         });
         
-        // Normalização interna para cálculo (garantir que soma 100 na math)
-        if(sumTargets > 0) {
-             Object.keys(targets).forEach(k => targets[k] = (targets[k]/sumTargets));
-        }
+        // Normaliza targets para garantir matemática correta (base 100%)
+        if(sumTargets > 0) Object.keys(targets).forEach(k => targets[k] = (targets[k]/sumTargets));
 
-        // Agrupar targets por Coalizão (Esquerda, Direita, Centro)
-        // Isso define QUEM divide o bolo de cada espectro
+        // Define espectros e pesos nacionais (Quem divide qual bolo)
         const weights = { L: {}, R: {}, C: {} };
-        const spectrumTotals = { L: 0, R: 0, C: 0 };
+        const spectrumTotals = { L: 0, R: 0, C: 0 }; // Tamanho do bolo nacional desejado (ex: Direita = 50%)
 
         CANDIDATES.forEach(c => {
-            weights[c.base][c.id] = targets[c.id]; // Peso Bruto Nacional
+            weights[c.base][c.id] = targets[c.id]; 
             spectrumTotals[c.base] += targets[c.id];
         });
 
-        // 2. Processar cada município
+        // Loop nos Municípios
         for (const [id, prof] of Object.entries(munData)) {
             const cityVotes = {};
-            const state = prof.UF; // ex: '41' (PR)
+            const state = prof.UF;
+            const totalVoters = prof.TOT; // Peso total do município
 
-            // A. Calcular distribuição LOCAL da Direita (R)
-            // Se Ratinho tem target nacional 5%, mas é PR, ele suga mais % do bolo da Direita local
-            let localWeightsR = {}; 
-            let sumLocalWR = 0;
+            // === FASE 1: Distribuição Intra-Espectro (Racha da Direita/Esquerda Local) ===
+            // O perfil "R" (Bolso 22) local será dividido entre os candidatos R (Flávio, Caiado, etc)
+            // baseado na força nacional deles + força local (Home Boost).
             
-            // Loop nos candidatos de Direita
-            Object.keys(weights.R).forEach(candId => {
-                const cand = CANDIDATES.find(x => x.id === candId);
-                let w = weights.R[candId]; // Peso nacional base
-                
-                // HOME STATE BOOST
-                if(cand.home === state && cand.homeBoost) {
-                    w *= cand.homeBoost;
-                }
-                
-                localWeightsR[candId] = w;
-                sumLocalWR += w;
-            });
+            const calcLocalWeights = (baseType) => {
+                let localW = {}; 
+                let sumW = 0;
+                Object.keys(weights[baseType]).forEach(candId => {
+                    const cand = CANDIDATES.find(x => x.id === candId);
+                    let w = weights[baseType][candId]; // Peso Nacional
+                    
+                    if(cand.home === state && cand.homeBoost) w *= cand.homeBoost; // Boost Estadual
+                    
+                    localW[candId] = w;
+                    sumW += w;
+                });
+                // Normaliza
+                if(sumW > 0) Object.keys(localW).forEach(k => localW[k] /= sumW);
+                return localW;
+            };
 
-            // Normalizar a divisão da Direita local
-            if(sumLocalWR > 0) {
-                Object.keys(localWeightsR).forEach(k => localWeightsR[k] /= sumLocalWR);
+            const localWeightsL = calcLocalWeights('L');
+            const localWeightsR = calcLocalWeights('R');
+            const localWeightsC = calcLocalWeights('C');
+
+            // === FASE 2: Tamanho dos Bolos Locais (Swing) ===
+            // Se a Esquerda nacional caiu (Target L < Real 2022 L), o bolo L local encolhe
+            // e os votos vazam para o Centro (ou Direita).
+            
+            // Fator de Swing Nacional (Ex: Se Direita subiu de 43% pra 50%, fator = 1.16)
+            // Usamos constantes aprox de 2022: L=48%, R=43%, C=9%
+            const swingL = spectrumTotals.L / 0.48; 
+            const swingR = spectrumTotals.R / 0.43;
+            // Centro é "resíduo" elástico
+
+            // Tamanho original dos potes no município (votos absolutos)
+            let potL = prof.L * totalVoters;
+            let potR = prof.R * totalVoters;
+            let potC = prof.C * totalVoters;
+
+            // Aplica Swing (Ajusta tamanho dos potes)
+            let finalPotL = potL * swingL;
+            let finalPotR = potR * swingR;
+            
+            // O que sobrar/faltar ajusta o Centro (ou normaliza tudo se estourar)
+            // Se L+R > 100%, normaliza.
+            let sumPot = finalPotL + finalPotR;
+            if (sumPot > totalVoters) {
+                const fix = totalVoters / sumPot;
+                finalPotL *= fix;
+                finalPotR *= fix;
+                finalPotC = 0;
+            } else {
+                finalPotC = totalVoters - finalPotL - finalPotR;
             }
 
-            // B. O mesmo para Esquerda e Centro (embora Lula domine L, Ciro domine CE)
-            // (Simplificado: apenas aplica lógica similar se houver múltiplos cands na mesma base)
+            // === FASE 3: Atribuição Final ===
+            // Distribui os potes ajustados segundo os pesos locais calculados na Fase 1
             
-            // C. Atribuir Votos Finais
-            // Votos = (PerfilLocal_Esquerda * PesoNacionalEsqModificado) + (PerfilLocal_Direita * DivisaoDireitaLocal) ...
-            // Na verdade, a logica swingometer é: 
-            // VotosCand = (PerfilBaseCand * SwingNacional) * HomeBoost
+            // Distribui Pote L
+            Object.keys(localWeightsL).forEach(cid => cityVotes[cid] = (cityVotes[cid]||0) + (finalPotL * localWeightsL[cid]));
             
-            // Lógica Híbrida mais robusta:
-            // O Perfil "R" (Bolsonarista 2022) do município vai ser fatiado entre os candidatos R
-            // baseado nos pesos locais calculados acima.
+            // Distribui Pote R
+            Object.keys(localWeightsR).forEach(cid => cityVotes[cid] = (cityVotes[cid]||0) + (finalPotR * localWeightsR[cid]));
             
-            // ESQUERDA (Base L)
-            const baseL = prof.L * prof.TOT;
-            // Assumimos que Lula herda quase tudo de L, mas perde se houver outro L.
-            // Aqui só tem Lula L, então ele pega tudo * Swing se quisermos, mas
-            // vamos usar a logica de fatiamento do espectro.
-            // Se Esquerda Nacional caiu (Targets L < Real 2022 L), reduzimos.
-            // Mas o target é % global. 
-            
-            // Vamos distribuir o bolo:
-            // Votos vindos da Direita (2022):
-            const potR = prof.R * prof.TOT;
-            Object.keys(localWeightsR).forEach(cid => {
-                cityVotes[cid] = (cityVotes[cid]||0) + (potR * localWeightsR[cid]);
-            });
+            // Distribui Pote C
+            Object.keys(localWeightsC).forEach(cid => cityVotes[cid] = (cityVotes[cid]||0) + (finalPotC * localWeightsC[cid]));
 
-            // Votos vindos da Esquerda (2022):
-            const potL = prof.L * prof.TOT;
-            // Assumindo Lula pega 95% do L, e Ciro rouba um pouco? 
-            // Simples: Divide potL proporcionalmente aos targets L (se tiver mais de 1)
-            // Como só tem Lula na base L neste exemplo:
-            // Mas espera: Se Lula caiu de 48 pra 40 nacional, ele perdeu votos. Pra quem?
-            // O modelo de fatiamento assume fidelidade ideológica. 
-            // Para permitir migração (Lula -> Ciro), precisamos de uma "Matriz de Transferencia" ou
-            // ajustar os Potes.
-            // SIMPLIFICAÇÃO FUNCIONAL: Ajustar o tamanho dos potes baseado na variação nacional dos espectros.
-            
-            // Ajuste de Tamanho de Espectro Nacional:
-            // Real 2022: L~48, R~43, C~9
-            // Target 2026: L=40, R=50, C=10 (Exemplo)
-            // Swing L = 40/48 = 0.83. Swing R = 50/43 = 1.16.
-            
-            const swingL = spectrumTotals.L / 0.48; // Aprox
-            const swingR = spectrumTotals.R / 0.43; 
-            const swingC = spectrumTotals.C / 0.09;
-
-            // Potes Ajustados Localmente
-            const finalPotL = potL * swingL;
-            const finalPotR = potR * swingR;
-            const finalPotC = potC = (prof.TOT - finalPotL - finalPotR); // Resto vai pro centro/indefinido
-            
-            // Distribuir Pote L (Apenas Lula na lista)
-            if(CANDIDATES.find(c=>c.id=='LULA')) cityVotes['LULA'] = finalPotL;
-
-            // Distribuir Pote R (Já calculado os pesos relativos locais)
-            Object.keys(localWeightsR).forEach(cid => {
-                cityVotes[cid] = (cityVotes[cid]||0) + (finalPotR * localWeightsR[cid]); // Substitui o calculo anterior
-            });
-
-            // Distribuir Pote C (Renan, Ciro)
-            let localWeightsC = {}; let sumC = 0;
-            CANDIDATES.filter(c=>c.base==='C').forEach(c => {
-                let w = targets[c.id];
-                if(c.home === state) w *= c.homeBoost || 1;
-                localWeightsC[c.id] = w;
-                sumC += w;
-            });
-            Object.keys(localWeightsC).forEach(cid => {
-                const ratio = sumC > 0 ? localWeightsC[cid]/sumC : 0;
-                cityVotes[cid] = (cityVotes[cid]||0) + (Math.max(0, finalPotC) * ratio);
-            });
-
-            // 3. SEGUNDO TURNO (Se ativo)
+            // === SEGUNDO TURNO ===
             if(app.state.secondTurn) {
                 const c1 = document.getElementById('stCand1').value;
                 const c2 = document.getElementById('stCand2').value;
-                
                 let v1 = cityVotes[c1] || 0;
                 let v2 = cityVotes[c2] || 0;
-                
-                // Transferência dos derrotados
+
+                // Transferência
                 Object.keys(cityVotes).forEach(cid => {
                     if(cid !== c1 && cid !== c2) {
                         const votes = cityVotes[cid];
                         const cand = CANDIDATES.find(x => x.id === cid);
                         const cand1Obj = CANDIDATES.find(x => x.id === c1);
-                        const cand2Obj = CANDIDATES.find(x => x.id === c2);
                         
-                        // Lógica simples de afinidade: Mesmo espectro -> 90% transfere.
-                        // Espectro oposto -> 10% transfere.
-                        let p1 = 0.5, p2 = 0.5; // Neutro
-                        
+                        // Afinidade Ideológica (90% se mesma base, 10% se oposta)
+                        let p1 = 0.5;
                         if(cand.base === cand1Obj.base) p1 = 0.9;
-                        else if(cand.base === cand2Obj.base) p1 = 0.1;
-                        
-                        p2 = 1 - p1;
+                        else if(cand.base !== cand1Obj.base) p1 = 0.1;
+                        // Centro pende pra quem? 50/50 neutro por enquanto
                         
                         v1 += votes * p1;
-                        v2 += votes * p2;
+                        v2 += votes * (1-p1);
                     }
                 });
-                
                 resultCache[id] = { [c1]: v1, [c2]: v2, TOTAL: v1+v2 };
             } else {
                 cityVotes.TOTAL = Object.values(cityVotes).reduce((a,b)=>a+b,0);
@@ -499,120 +460,88 @@ const app = {
 
     renderMap: () => {
         if(app.layers.mun) app.map.removeLayer(app.layers.mun);
-        
+        if(!app.data.currentSim) return;
+
         app.layers.mun = L.geoJSON(app.data.geoJson, {
+            smoothFactor: 0.5,
             style: (feature) => {
                 const id = feature.properties.id || feature.properties.codarea;
                 const res = app.data.currentSim[id];
                 
-                if(!res || res.TOTAL === 0) return { fillColor: '#333', weight: 0, fillOpacity:1 };
+                if(!res || res.TOTAL === 0) return { fillColor: '#222', weight: 0, fillOpacity:1 };
                 
-                // Achar vencedor
-                let winner = null; 
-                let max = -1;
-                Object.entries(res).forEach(([k, v]) => {
-                    if(k !== 'TOTAL' && v > max) { max = v; winner = k; }
-                });
+                let winner = null, max = -1;
+                Object.entries(res).forEach(([k, v]) => { if(k!=='TOTAL' && v>max) { max=v; winner=k; } });
                 
                 const pct = (max / res.TOTAL) * 100;
                 const candObj = CANDIDATES.find(c => c.id === winner);
                 const colorHex = candObj ? candObj.color : '#333';
                 
-                // Intensidade (Darker = Stronger)
-                // Escala de 30% a 70%
-                let intensity = (pct - 30) / (70 - 30); // 0 a 1
-                if(intensity < 0) intensity = 0;
-                if(intensity > 1) intensity = 1;
-                
-                // Misturar com preto (para escurecer os fortes) ou branco (para clarear os fracos)?
-                // O pedido era: 20% claro, 100% escuro (saturado).
-                // Leaflet fill color direct mix.
-                
                 return {
                     fillColor: app.getGradientColor(colorHex, pct),
-                    weight: app.state.selectedId === id ? 2 : 0.2,
-                    color: app.state.selectedId === id ? '#fff' : '#000',
+                    weight: app.state.selectedId == id ? 1.5 : 0.2,
+                    color: app.state.selectedId == id ? '#fff' : '#000',
                     fillOpacity: 1
                 };
             },
-            onEachFeature: (feature, layer) => {
-                const id = feature.properties.id || feature.properties.codarea;
-                layer.on('click', () => app.selectRegion(id, feature.properties.name));
-            }
+            onEachFeature: (f, l) => l.on('click', () => app.selectRegion(f.properties.id || f.properties.codarea, f.properties.name))
         }).addTo(app.map);
     },
 
     getGradientColor: (hex, pct) => {
-        // Escala discreta para performance e visual "mapa eleitoral"
-        // <35, 35-45, 45-55, 55-65, >65
         const c = app.hexToRgb(hex);
-        let factor = 0; // Quanto de BRANCO misturar (0 = cor pura, 1 = branco)
+        // Lógica de "Mistura com Branco" conforme pedido anteriormente (Claro <-> Saturado)
+        // <35% (Muito Claro), >65% (Saturado)
+        let f = 0; 
+        if (pct < 35) f = 0.6;
+        else if (pct < 45) f = 0.4;
+        else if (pct < 55) f = 0.2;
+        else if (pct < 65) f = 0.1;
+        else f = 0; // Pura
         
-        if (pct < 35) factor = 0.6;
-        else if (pct < 45) factor = 0.4;
-        else if (pct < 55) factor = 0.2;
-        else if (pct < 65) factor = 0.1;
-        else factor = 0; // Saturado
-        
-        const r = Math.round(c.r + (255 - c.r) * factor);
-        const g = Math.round(c.g + (255 - c.g) * factor);
-        const b = Math.round(c.b + (255 - c.b) * factor);
+        const r = Math.round(c.r + (255 - c.r) * f);
+        const g = Math.round(c.g + (255 - c.g) * f);
+        const b = Math.round(c.b + (255 - c.b) * f);
         return `rgb(${r},${g},${b})`;
     },
 
     hexToRgb: (hex) => {
-        const bigint = parseInt(hex.replace('#',''), 16);
-        return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
+        const n = parseInt(hex.replace('#',''), 16);
+        return { r: (n>>16)&255, g: (n>>8)&255, b: n&255 };
     },
 
     updateSidePanel: () => {
         const list = document.getElementById('resultsList');
-        const totalEl = document.getElementById('totalVotes');
         const regionName = document.getElementById('regionName');
+        const totalEl = document.getElementById('totalVotes');
         list.innerHTML = '';
         
-        // Agregar dados (Nacional ou Local)
-        let agg = {};
-        let total = 0;
-        
-        const targetIds = app.state.selectedId ? [app.state.selectedId] : Object.keys(app.data.currentSim);
+        const ids = app.state.selectedId ? [app.state.selectedId] : Object.keys(app.data.currentSim);
         regionName.textContent = app.state.selectedName;
         
-        targetIds.forEach(id => {
+        let agg = {}, total = 0;
+        ids.forEach(id => {
             const d = app.data.currentSim[id];
             if(d) {
-                Object.keys(d).forEach(k => {
-                    if(k!=='TOTAL') agg[k] = (agg[k]||0) + d[k];
-                });
+                Object.keys(d).forEach(k => { if(k!=='TOTAL') agg[k] = (agg[k]||0)+d[k]; });
                 total += d.TOTAL;
             }
         });
         
         totalEl.textContent = total.toLocaleString('pt-BR');
         
-        // Ordenar e Renderizar
-        const sorted = Object.entries(agg).sort((a,b) => b[1] - a[1]);
-        
-        sorted.forEach(([candId, votes]) => {
-            const pct = (votes / total) * 100;
-            const cObj = CANDIDATES.find(c => c.id === candId);
-            
+        Object.entries(agg).sort((a,b)=>b[1]-a[1]).forEach(([cid, votes]) => {
+            const pct = (votes/total)*100;
+            const cObj = CANDIDATES.find(c=>c.id===cid);
             const row = document.createElement('div');
             row.className = 'cand-row';
             row.innerHTML = `
-                <div style="width:3px; height:30px; background:${cObj.color}; margin-right:8px;"></div>
+                <div style="width:4px; height:30px; background:${cObj.color}; margin-right:8px;"></div>
                 <div style="flex:1;">
                     <div style="display:flex; justify-content:space-between; font-weight:700; font-size:0.9rem;">
-                        <span>${cObj.name}</span>
-                        <span style="color:${cObj.color}">${pct.toFixed(2)}%</span>
+                        <span>${cObj.name}</span><span style="color:${cObj.color}">${pct.toFixed(2)}%</span>
                     </div>
-                    <div style="font-size:0.7rem; color:#888; display:flex; justify-content:space-between;">
-                        <span>${cObj.party}</span>
-                        <span>${Math.round(votes).toLocaleString()}</span>
-                    </div>
-                    <div class="cand-bar-bg">
-                        <div class="cand-bar-fill" style="width:${pct}%; background:${cObj.color};"></div>
-                    </div>
+                    <div class="cand-bar-bg"><div class="cand-bar-fill" style="width:${pct}%; background:${cObj.color}"></div></div>
                 </div>
             `;
             list.appendChild(row);
@@ -620,32 +549,26 @@ const app = {
     },
 
     selectRegion: (id, name) => {
-        app.state.selectedId = id;
-        app.state.selectedName = name;
+        app.state.selectedId = id; app.state.selectedName = name;
         document.getElementById('btnBack').style.display = 'block';
         app.updateSidePanel();
-        app.renderMap(); // Re-render para highlight borda
+        app.renderMap();
     },
-    
     resetSelection: () => {
-        app.state.selectedId = null;
-        app.state.selectedName = "Brasil";
+        app.state.selectedId = null; app.state.selectedName = "Brasil";
         document.getElementById('btnBack').style.display = 'none';
         app.updateSidePanel();
         app.renderMap();
     },
 
+    // Modo Histórico (Placeholder simples redirecionando lógica)
+    loadHistoricalData: async () => {
+        alert("Modo histórico requer os JSONs antigos na pasta data/. O foco desta demo é o Simulador 2026.");
+    },
     toggleMode: () => {
-        const mode = document.getElementById('modeSelect').value;
-        if(mode === 'sim2026') {
-            document.getElementById('simPanel').style.display = 'flex';
-            document.getElementById('histPanel').style.display = 'none';
-            app.calcMap();
-        } else {
-            document.getElementById('simPanel').style.display = 'none';
-            document.getElementById('histPanel').style.display = 'block';
-            alert("Modo Histórico ainda não integrado neste demo (requer carregar JSONs antigos). Foco na Simulação 2026.");
-        }
+        const m = document.getElementById('modeSelect').value;
+        document.getElementById('simPanel').style.display = m === 'sim2026' ? 'flex' : 'none';
+        document.getElementById('histPanel').style.display = m === 'hist' ? 'block' : 'none';
     }
 };
 
