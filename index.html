@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlas Histórico V20</title>
+    <title>Atlas Histórico V21</title>
     
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -39,7 +39,9 @@
         }
 
         #app { width: 100vw; height: 100vh; display: flex; position: relative; }
-        #map { flex: 1; height: 100%; background: #1a1a1a; z-index: 1; }
+        
+        /* Fundo do mapa cinza médio para destacar tanto cores claras quanto escuras */
+        #map { flex: 1; height: 100%; background: #222; z-index: 1; }
 
         .sidebar {
             width: 380px;
@@ -170,7 +172,7 @@
     <!-- BARRA ESQUERDA -->
     <aside class="sidebar">
         <div class="header">
-            <h1>Atlas V20</h1>
+            <h1>Atlas V21</h1>
             <div style="font-size: 0.8rem; color: var(--text-muted);">Histórico 1994 - 2022</div>
         </div>
         
@@ -229,7 +231,7 @@
 
         <div style="padding: 15px; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border-color);">
             
-            <!-- BOTÃO DE VOLTAR DINÂMICO -->
+            <!-- BOTÃO DE VOLTAR -->
             <button id="btnBack" class="btn-back" style="display: none;" onclick="app.resetSelection()">
                 <i class="fas fa-arrow-left"></i> Voltar para o Brasil
             </button>
@@ -251,12 +253,13 @@
     <!-- LEGENDA -->
     <div class="legend">
         <div style="font-size: 0.8rem; margin-bottom: 8px; font-weight: 700; color: white;">
-            Intensidade do Vencedor
+            Percentual do Vencedor
         </div>
         <div class="legend-grid" id="legendColors"></div>
         <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:#aaa; margin-top:5px;">
             <span>0%</span><span>50%</span><span>100%</span>
         </div>
+        <div style="font-size:0.6rem; color:#666; text-align:center; margin-top:2px;">(Mais Escuro = Mais Votado)</div>
     </div>
 </div>
 
@@ -282,26 +285,26 @@ const app = {
         selectedId: null,
         selectedName: "Brasil",
         ignored: new Set(),
-        customColors: JSON.parse(localStorage.getItem('v20_colors') || '{}')
+        customColors: JSON.parse(localStorage.getItem('v21_colors') || '{}')
     },
 
     init: () => {
         app.map = L.map('map', {
             center: [-15, -50], zoom: 4, zoomControl: false,
-            preferCanvas: true, background: '#151515'
+            preferCanvas: true, background: '#222'
         });
         
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            opacity: 0.2 // Mapa base bem escuro
+            opacity: 0.3 // Mapa base leve para dar contexto sem brigar com as cores
         }).addTo(app.map);
 
-        // LEGENDA EM DEGRAUS OPACOS
+        // LEGENDA EM DEGRAUS OPACOS (CLARO -> ESCURO)
         const legendDiv = document.getElementById('legendColors');
         for(let i=0; i<10; i++) {
             const el = document.createElement('div');
             el.className = 'legend-item';
-            // Exemplo cinza
-            el.style.background = app.getSteppedColor('#888888', (i*10)+5); 
+            // Exemplo neutro (Cinza)
+            el.style.background = app.getSteppedColor('#666666', (i*10)+5); 
             legendDiv.appendChild(el);
         }
 
@@ -309,27 +312,34 @@ const app = {
         app.loadData();
     },
 
-    // --- NOVA LÓGICA DE CORES OPAQUE ---
-    // Retorna uma cor 100% opaca que varia da "versão escura" até a "versão pura"
+    // --- NOVA LÓGICA DE CORES OPAQUE (Claro -> Escuro/Puro) ---
     getSteppedColor: (hex, pct) => {
         const step = Math.floor(pct / 10); // 0 a 9
-        // 0% -> Mistura com preto (80% preto)
-        // 100% -> Cor pura
-        const brightness = 0.2 + (step * 0.088); 
-        return app.adjustBrightness(hex, brightness);
+        
+        // 0-10% (step 0): Mistura com Branco (85% Branco) -> Cor Clara Pastel
+        // 90-100% (step 9): Cor Original (0% Branco) -> Cor Pura
+        
+        // Fator de Branco: 
+        // Step 0 -> 0.85
+        // Step 9 -> 0.0
+        const whiteFactor = 0.85 - (Math.min(step, 9) * 0.094); 
+        
+        return app.mixWithWhite(hex, Math.max(0, whiteFactor));
     },
 
-    adjustBrightness: (hex, factor) => {
+    mixWithWhite: (hex, amount) => {
+        // Converte Hex para RGB
         let c = hex.substring(1).split('');
         if(c.length==3) c= [c[0], c[0], c[1], c[1], c[2], c[2]];
         c = '0x'+c.join('');
         let r = (c>>16)&255, g = (c>>8)&255, b = c&255;
         
-        r = Math.min(255, Math.max(0, r * factor));
-        g = Math.min(255, Math.max(0, g * factor));
-        b = Math.min(255, Math.max(0, b * factor));
+        // Mistura com branco (255)
+        r = Math.round(r + (255 - r) * amount);
+        g = Math.round(g + (255 - g) * amount);
+        b = Math.round(b + (255 - b) * amount);
         
-        return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
+        return `rgb(${r}, ${g}, ${b})`;
     },
 
     loadData: async () => {
@@ -465,11 +475,7 @@ const app = {
     selectRegion: (id, name) => {
         app.state.selectedId = id;
         app.state.selectedName = name;
-        
-        // Mostrar botão voltar se algo estiver selecionado
-        const btn = document.getElementById('btnBack');
-        btn.style.display = 'flex';
-        
+        document.getElementById('btnBack').style.display = 'flex';
         app.refreshUI();
     },
 
@@ -478,13 +484,11 @@ const app = {
         app.state.selectedName = "Brasil";
         document.getElementById('btnBack').style.display = 'none';
         
-        // Se estiver vendo cidades de um estado, volta para o mapa do Brasil
         if(app.state.view === 'states' && app.layers.cities) {
             app.map.removeLayer(app.layers.cities);
             app.layers.brazil.addTo(app.map);
             app.map.setView([-15, -50], 4);
         }
-        
         app.refreshUI();
     },
 
@@ -599,7 +603,7 @@ const app = {
         return {
             fillColor: color,
             weight: scope === 'estados' ? 1.5 : 0.5,
-            color: '#000000', // CONTORNO PRETO SOLICITADO
+            color: '#000000', // CONTORNO PRETO
             fillOpacity: 1    // OPACO
         };
     },
@@ -644,7 +648,7 @@ const app = {
         });
         pickr.on('save', (c) => {
             app.state.customColors[p] = c.toHEXA().toString();
-            localStorage.setItem('v20_colors', JSON.stringify(app.state.customColors));
+            localStorage.setItem('v21_colors', JSON.stringify(app.state.customColors));
             el.style.background = c.toHEXA().toString();
             app.refreshUI();
             pickr.destroyAndRemove();
