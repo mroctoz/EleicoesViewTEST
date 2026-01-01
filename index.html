@@ -330,13 +330,13 @@ const app = {
                             // Espólio do Bolsonaro
                             // GO (52): Caiado forte
                             if(uf === '52') {
-                                cityVotes['caiado'] = (cityVotes['caiado']||0) + (v * 0.4);
-                                cityVotes['flavio'] = (cityVotes['flavio']||0) + (v * 0.6);
+                                cityVotes['caiado'] = (cityVotes['caiado']||0) + (v * 0.25);
+                                cityVotes['flavio'] = (cityVotes['flavio']||0) + (v * 0.75);
                             } 
                             // PR (41): Ratinho forte
                             else if (uf === '41') {
-                                cityVotes['ratinho'] = (cityVotes['ratinho']||0) + (v * 0.4);
-                                cityVotes['flavio']  = (cityVotes['flavio']||0) + (v * 0.6);
+                                cityVotes['ratinho'] = (cityVotes['ratinho']||0) + (v * 0.2);
+                                cityVotes['flavio']  = (cityVotes['flavio']||0) + (v * 0.8);
                             }
                             // Geral
                             else {
@@ -348,8 +348,8 @@ const app = {
                         }
                         else if (keyUpper.includes('CIRO')) {
                             // Ciro -> Renan (SP) ou Ciro (CE) ou Lula
-                            if(uf === '23') cityVotes['ciro'] = (cityVotes['ciro']||0) + (v * 0.15);
-                            else cityVotes['renan'] = (cityVotes['renan']||0) + (v * 0.5);
+                            if(uf === '23') cityVotes['ciro'] = (cityVotes['ciro']||0) + (v * 0.05);
+                            else cityVotes['renan'] = (cityVotes['renan']||0) + (v * 0.05);
                             
                             cityVotes['lula'] = (cityVotes['lula']||0) + (v * 0.3); // Parte vai pro lula
                         }
