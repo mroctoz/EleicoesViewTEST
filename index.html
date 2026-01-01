@@ -5,15 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Atlas Histórico V25 - High Res</title>
     
-    <!-- Leaflet -->
+    <!-- Leaflet & Bibliotecas -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <!-- Fonts/Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
-    <!-- Color Picker -->
     <link href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
 
@@ -39,9 +35,9 @@
         }
 
         #app { width: 100vw; height: 100vh; display: flex; position: relative; }
-        
         #map { flex: 1; height: 100%; background: #1a1a1a; z-index: 1; }
 
+        /* SIDEBAR */
         .sidebar {
             width: 380px;
             background: var(--bg-card);
@@ -50,7 +46,6 @@
             z-index: 1000;
             border-right: 1px solid var(--border-color);
             box-shadow: 5px 0 30px rgba(0,0,0,0.5);
-            transition: width 0.3s;
         }
         .sidebar-right { border-left: 1px solid var(--border-color); border-right: none; width: 420px; }
 
@@ -64,28 +59,26 @@
             background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
 
-        /* Toggle Button Style */
+        /* TOGGLE BUTTONS */
         .mode-toggle {
             display: flex; background: #050505; border: 1px solid #333;
             border-radius: 8px; margin-top: 15px; overflow: hidden;
         }
         .mode-btn {
-            flex: 1; padding: 10px; font-size: 0.8rem; font-weight: 700;
+            flex: 1; padding: 12px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px;
             text-align: center; cursor: pointer; color: #666; transition: 0.2s;
         }
-        .mode-btn.active { background: #222; color: white; }
-        .mode-btn:hover { color: white; }
+        .mode-btn.active { background: #222; color: white; border-bottom: 2px solid var(--accent-blue); }
+        .mode-btn:hover { color: white; background: #111; }
 
+        /* CONTROLS */
         .controls { padding: 20px; flex: 1; overflow-y: auto; }
-        
         .control-group { margin-bottom: 15px; }
-        .control-group label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .control-group label { display: block; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase; }
         
         select {
-            width: 100%; padding: 12px; border-radius: 8px;
-            border: 1px solid #333;
-            background-color: #050505; color: white;
-            font-family: inherit; font-size: 0.9rem;
+            width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333;
+            background-color: #050505; color: white; font-family: inherit; font-size: 0.9rem;
             appearance: none; cursor: pointer;
         }
         select:focus { border-color: var(--accent-blue); outline: none; }
@@ -97,45 +90,36 @@
             font-weight: 700; color: white; cursor: pointer; margin-top: 10px;
             transition: transform 0.2s;
         }
-        button.btn-primary:hover { transform: translateY(-2px); }
+        button.btn-primary:hover { transform: translateY(-2px); filter: brightness(1.1); }
 
         button.btn-back {
-            width: 100%; padding: 10px; border-radius: 8px;
-            background: #222; border: 1px solid #444; 
-            color: white; cursor: pointer; margin-bottom: 15px;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
+            width: 100%; padding: 10px; border-radius: 8px; background: #222; border: 1px solid #444; 
+            color: white; cursor: pointer; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;
             font-size: 0.9rem; font-weight: 600;
         }
         button.btn-back:hover { background: #333; border-color: var(--accent-blue); }
 
-        /* SIMULATOR SLIDERS STYLE */
+        /* SLIDERS */
         .sim-slider-box {
             background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
             padding: 10px; border-radius: 8px; margin-bottom: 10px;
         }
         .sim-top { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; }
         .sim-party { font-size: 0.7rem; color: #666; text-transform: uppercase; font-weight: 700; }
-        input[type=range] {
-            width: 100%; -webkit-appearance: none; background: transparent; margin-top: 8px;
-        }
+        input[type=range] { width: 100%; -webkit-appearance: none; background: transparent; margin-top: 8px; }
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%;
             background: white; cursor: pointer; margin-top: -5px; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%; height: 4px; cursor: pointer; background: #333; border-radius: 2px;
-        }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #333; border-radius: 2px; }
 
-        /* LISTA DIREITA */
+        /* RESULTS LIST */
         .cand-row {
-            display: flex; align-items: center; gap: 10px;
-            padding: 12px; margin-bottom: 8px;
+            display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 8px;
             background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
             border-radius: 8px; transition: all 0.2s;
         }
         .cand-row:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
-        .cand-row.disabled { opacity: 0.4; filter: grayscale(1); }
-
         .cand-check {
             width: 18px; height: 18px; border: 2px solid #555; border-radius: 4px;
             display: flex; align-items: center; justify-content: center; cursor: pointer;
@@ -149,21 +133,17 @@
         .progress-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 6px; overflow: hidden; }
         .progress-fill { height: 100%; transition: width 0.5s ease; }
 
+        /* LEGEND & TOOLTIP */
         .legend {
             position: absolute; bottom: 30px; right: 450px;
             background: #0a0c10; padding: 15px; border: 1px solid #333;
             border-radius: 12px; z-index: 999; box-shadow: 0 10px 40px rgba(0,0,0,0.8);
         }
-        .legend-grid { 
-            display: flex; height: 20px; width: 225px;
-            border-radius: 4px; overflow: hidden; border: 1px solid #444; 
-        }
+        .legend-grid { display: flex; height: 20px; width: 225px; border-radius: 4px; overflow: hidden; border: 1px solid #444; }
         .legend-item { flex: 1; border-right: 1px solid rgba(0,0,0,0.3); }
-        .legend-item:last-child { border-right: none; }
-
+        
         .map-controls {
-            position: absolute; top: 20px; right: 450px;
-            display: flex; flex-direction: column; gap: 8px; z-index: 999;
+            position: absolute; top: 20px; right: 450px; display: flex; flex-direction: column; gap: 8px; z-index: 999;
         }
         .map-btn {
             width: 40px; height: 40px; background: #0a0c10; border: 1px solid #333;
@@ -197,7 +177,7 @@
 
 <div id="loader">
     <div class="spinner"></div>
-    <h3>Processando Dados...</h3>
+    <h3>Carregando Dados...</h3>
 </div>
 
 <div id="app">
@@ -239,7 +219,6 @@
                     <option value="1994">1994</option>
                 </select>
             </div>
-            
             <div class="control-group">
                 <label>TURNO</label>
                 <select id="turnSelect">
@@ -247,7 +226,6 @@
                     <option value="2">2º Turno</option>
                 </select>
             </div>
-
             <div class="control-group">
                 <label>CARGO</label>
                 <select id="roleSelect">
@@ -256,14 +234,14 @@
                     <option value="senator">Senador</option>
                 </select>
             </div>
-
             <button class="btn-primary" onclick="app.loadData()">CARREGAR MAPA</button>
         </div>
 
         <!-- CONTROLES SIMULAÇÃO -->
         <div class="controls" id="simControls" style="display: none;">
             <div style="font-size: 0.75rem; color: #888; text-align: center; margin-bottom: 20px;">
-                Ajuste os percentuais e clique em GERAR SIMULAÇÃO.
+                Crie um cenário alternativo baseado na geografia de 2022.<br>
+                <b>Clique em GERAR para processar.</b>
             </div>
 
             <div id="slidersContainer"></div>
@@ -273,8 +251,8 @@
                 <div id="totalSimVal" style="font-size:1.4rem; font-weight:800; color:#4ade80;">100%</div>
             </div>
 
-            <button class="btn-primary" onclick="app.generateAndLoadSimulation()" style="margin-top: 20px;">
-                <i class="fas fa-magic"></i> GERAR SIMULAÇÃO
+            <button class="btn-primary" onclick="app.runSimulation()" style="margin-top: 20px;">
+                <i class="fas fa-bolt"></i> GERAR SIMULAÇÃO
             </button>
         </div>
     </aside>
@@ -287,16 +265,13 @@
             <h2 id="regionName">Brasil</h2>
             <div style="font-size: 0.8rem; color: var(--accent-blue);" id="regionType">Nacional</div>
         </div>
-
         <div style="padding: 15px; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border-color);">
             <button id="btnBack" class="btn-back" style="display: none;" onclick="app.resetSelection()">
                 <i class="fas fa-arrow-left"></i> Voltar para o Brasil
             </button>
-
             <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted);">Votos Totais</div>
             <div id="totalVotesVal" style="font-size: 1.4rem; font-weight: 800; color: white;">-</div>
         </div>
-
         <div class="controls" id="resultsContainer"></div>
     </aside>
 
@@ -321,7 +296,6 @@
 // CONFIGURAÇÃO
 // =========================================================
 const CONFIG = {
-    // TODAS AS CHAVES EM MAIÚSCULO PARA EVITAR ERROS DE MATCHING
     colors: {
         'PT': '#E12525', 'PL': '#5756d6', 'PSB': '#E12525', 'PDT': '#F58220', 
         'UNIÃO': '#009EE3', 'PSDB': '#003399', 'MDB': '#008000', 'PSD': '#FAA21B',
@@ -332,7 +306,6 @@ const CONFIG = {
         'PRONA': '#006400', 'PFL': '#0056A8', 'PMDB': '#008000', 'PSOL': '#FFCC00',
         'OUTROS': '#666666', 'DEFAULT': '#555555'
     },
-    // Nomes Exibidos e IDs Internos
     simCandidates: [
         { name: 'LULA', party: 'PT', val: 45 },
         { name: 'FLÁVIO BOLSONARO', party: 'PL', val: 30 },
@@ -342,15 +315,16 @@ const CONFIG = {
         { name: 'CIRO GOMES', party: 'PSDB', val: 3 },
         { name: 'ALDO REBELO', party: 'DC', val: 1 }
     ],
-    // REGRAS DE HERANÇA (Keys devem bater com os dados de 2022_president.json)
+    // Dicionário de Migração (Herança de Votos 2022 -> 2026)
+    // Usa correspondência parcial (ex: "LULA" dá match em "LULA (PT)")
     inheritance: [
-        { dest: 'LULA (PT)', src: 'LULA (PT)', ratio: 1.0, reg: {} },
-        { dest: 'FLÁVIO BOLSONARO (PL)', src: 'JAIR BOLSONARO (PL)', ratio: 0.65, reg: {} },
-        { dest: 'RONALDO CAIADO (UNIÃO)', src: 'JAIR BOLSONARO (PL)', ratio: 0.15, reg: {'52': 5.0} },
-        { dest: 'RATINHO JR (PSD)', src: 'JAIR BOLSONARO (PL)', ratio: 0.10, reg: {'41': 5.0} },
-        { dest: 'RENAN SANTOS (MISSÃO)', src: 'CIRO GOMES (PDT)', ratio: 2.0, reg: {'35': 1.5} },
-        { dest: 'CIRO GOMES (PSDB)', src: 'CIRO GOMES (PDT)', ratio: 0.5, reg: {'23': 2.0} },
-        { dest: 'ALDO REBELO (DC)', src: 'SIMONE TEBET (MDB)', ratio: 0.5, reg: {} }
+        { dest: 'LULA', party: 'PT', source: 'LULA', weight: 1.0, regionBonus: {} },
+        { dest: 'FLÁVIO BOLSONARO', party: 'PL', source: 'JAIR BOLSONARO', weight: 0.65, regionBonus: {} },
+        { dest: 'RONALDO CAIADO', party: 'UNIÃO', source: 'JAIR BOLSONARO', weight: 0.15, regionBonus: {'52': 5.0} }, // Goiás
+        { dest: 'RATINHO JR', party: 'PSD', source: 'JAIR BOLSONARO', weight: 0.10, regionBonus: {'41': 5.0} }, // Paraná
+        { dest: 'RENAN SANTOS', party: 'MISSÃO', source: 'CIRO GOMES', weight: 2.0, regionBonus: {'35': 1.5} }, // SP
+        { dest: 'CIRO GOMES', party: 'PSDB', source: 'CIRO GOMES', weight: 0.5, regionBonus: {'23': 2.0} }, // Ceará
+        { dest: 'ALDO REBELO', party: 'DC', source: 'SIMONE TEBET', weight: 0.5, regionBonus: {} }
     ]
 };
 
@@ -370,7 +344,7 @@ const GRADIENT_SCHEME = [
 const app = {
     map: null,
     layers: { brazil: null, cities: null },
-    data: { full: null, current: null, simBase: null, names: {}, geoJsonCache: null },
+    data: { full: null, current: null, names: {}, geoJsonCache: null },
     state: {
         mode: 'history', // 'history' | 'simulation'
         view: 'states', 
@@ -387,7 +361,7 @@ const app = {
         
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { opacity: 0.4 }).addTo(app.map);
 
-        // Legenda
+        // Renderiza legenda
         const legendDiv = document.getElementById('legendColors');
         [20, 30, 40, 50, 60, 70, 80, 90, 100].forEach(pct => {
             const el = document.createElement('div');
@@ -398,25 +372,33 @@ const app = {
 
         app.renderSliders();
         app.loadBrazilLayer();
-        app.loadData(); // Inicia com Histórico 2022
+        app.loadData();
     },
 
     setMode: (mode) => {
         app.state.mode = mode;
         
-        // CORREÇÃO DO BUG DO BOTÃO: Usar toggle em vez de string replace
+        // Toggle de Classes CSS (Correção do bug do botão)
         const btnHist = document.getElementById('btnModeHist');
         const btnSim = document.getElementById('btnModeSim');
         
-        btnHist.classList.toggle('active', mode === 'history');
-        btnSim.classList.toggle('active', mode === 'simulation');
-
-        document.getElementById('historyControls').style.display = mode === 'history' ? 'block' : 'none';
-        document.getElementById('simControls').style.display = mode === 'simulation' ? 'block' : 'none';
-
-        if(mode === 'history') app.loadData();
+        if(mode === 'history') {
+            btnHist.classList.add('active');
+            btnSim.classList.remove('active');
+            document.getElementById('historyControls').style.display = 'block';
+            document.getElementById('simControls').style.display = 'none';
+            app.loadData();
+        } else {
+            btnHist.classList.remove('active');
+            btnSim.classList.add('active');
+            document.getElementById('historyControls').style.display = 'none';
+            document.getElementById('simControls').style.display = 'block';
+        }
     },
 
+    // ============================================
+    // SIMULAÇÃO - LÓGICA DE HERANÇA
+    // ============================================
     renderSliders: () => {
         const c = document.getElementById('slidersContainer');
         c.innerHTML = '';
@@ -448,134 +430,114 @@ const app = {
         totEl.style.color = total === 100 ? '#4ade80' : '#facc15';
     },
 
-    generateAndLoadSimulation: async () => {
+    runSimulation: async () => {
         const loader = document.getElementById('loader');
         loader.classList.remove('hidden');
         app.state.view = document.getElementById('viewModeSelect').value;
 
         try {
-            // 1. CARREGA 2022 (OBRIGATÓRIO PARA A BASE)
+            // 1. OBRIGATÓRIO: Carregar 2022_president.json (Fonte da Herança)
             if (!app.data.full || !app.data.full['1']) {
                 const res = await fetch('data/2022_president.json');
-                if(!res.ok) throw new Error("Base de dados 2022 não encontrada.");
+                if(!res.ok) throw new Error("Arquivo 'data/2022_president.json' não encontrado. Necessário para a base.");
                 app.data.full = await res.json();
                 app.data.names = app.data.full['1'].meta_nomes || {};
             }
 
-            // 2. CARREGA MALHA CORRETA
-            if(app.state.view === 'all_cities') {
+            // 2. Garante a visualização correta
+            if(app.state.view === 'all_cities' && !app.layers.cities) {
                 await app.loadAllMunicipalities();
-            } else {
+            } else if (app.state.view === 'states') {
                 app.resetMapToStates();
             }
 
-            // 3. GERA BASE NA MEMÓRIA
-            // Se já gerou antes, não recalcula do zero (performance)
-            // Mas o usuário pode ter mudado de modo, então recalculamos para garantir estado limpo
-            app.data.simBase = { municipios: {}, estados: {} };
+            // 3. Processamento Pesado: Criar Cenário Base
             const sourceMuns = app.data.full['1'].municipios;
-            
+            const simResult = { municipios: {}, estados: {} };
+
+            // Totais para cálculo do multiplicador
+            const nationalTotals = {};
+
+            // Passo A: Aplicar Herança (Bolsonaro -> Caiado, etc)
             for (let ibge in sourceMuns) {
                 const srcVotes = sourceMuns[ibge];
                 const uf = ibge.substring(0, 2);
                 const newVotes = {};
-                let totalOld = 0;
+                let totalVotesInCity = 0;
 
                 CONFIG.inheritance.forEach(rule => {
-                    const baseVal = srcVotes[rule.src] || 0;
-                    const factor = rule.ratio * (rule.reg[uf] || 1.0);
-                    newVotes[rule.dest] = Math.floor(baseVal * factor);
-                    totalOld += baseVal;
+                    // Procura chave correspondente (Ex: "JAIR BOLSONARO (PL)" contém "JAIR BOLSONARO")
+                    const srcKey = Object.keys(srcVotes).find(k => k.includes(rule.source));
+                    const baseVal = srcKey ? srcVotes[srcKey] : 0;
+                    
+                    const factor = rule.weight * (rule.regionBonus[uf] || 1.0);
+                    const calculated = Math.floor(baseVal * factor);
+                    
+                    if (calculated > 0) {
+                        const destKey = `${rule.dest} (${rule.party})`;
+                        newVotes[destKey] = (newVotes[destKey] || 0) + calculated;
+                        nationalTotals[destKey] = (nationalTotals[destKey] || 0) + calculated;
+                        totalVotesInCity += calculated;
+                    }
                 });
 
-                // Evita mapa cinza: se zerou tudo, joga em "OUTROS" para ter volume
-                const totalNew = Object.values(newVotes).reduce((a,b)=>a+b,0);
-                if(totalNew === 0 && totalOld > 0) {
-                    newVotes['OUTROS (OUTROS)'] = totalOld;
+                // Evitar cidade fantasma: se zerou, preenche com Outros
+                if (totalVotesInCity === 0 && Object.values(srcVotes).reduce((a,b)=>a+b,0) > 0) {
+                    newVotes['OUTROS (OUTROS)'] = 100;
                 }
 
-                app.data.simBase.municipios[ibge] = newVotes;
+                simResult.municipios[ibge] = newVotes;
             }
 
-            // Agrega Estados
-            for(let ibge in app.data.simBase.municipios) {
+            // Passo B: Calcular Multiplicadores dos Sliders
+            const grandTotal = Object.values(nationalTotals).reduce((a,b)=>a+b, 0);
+            const multipliers = {};
+            
+            CONFIG.simCandidates.forEach(cand => {
+                const key = `${cand.name} (${cand.party})`;
+                const currentVal = nationalTotals[key] || 0;
+                const currentPct = grandTotal > 0 ? (currentVal / grandTotal) * 100 : 0;
+                
+                multipliers[key] = currentPct > 0 ? (cand.val / currentPct) : 0;
+            });
+
+            // Passo C: Aplicar Multiplicadores e Agregar Estados
+            const finalData = { municipios: {}, estados: {} };
+
+            for (let ibge in simResult.municipios) {
+                const votes = simResult.municipios[ibge];
+                const finalVotes = {};
+                
+                for (let key in votes) {
+                    const mult = multipliers[key] !== undefined ? multipliers[key] : 1; // 1 para Outros
+                    const val = Math.floor(votes[key] * mult);
+                    if(val > 0) finalVotes[key] = val;
+                }
+                
+                finalData.municipios[ibge] = finalVotes;
+                
+                // Agrega Estado
                 const uf = ibge.substring(0, 2);
-                if(!app.data.simBase.estados[uf]) app.data.simBase.estados[uf] = {};
-                const munVotes = app.data.simBase.municipios[ibge];
-                for(let cand in munVotes) {
-                    app.data.simBase.estados[uf][cand] = (app.data.simBase.estados[uf][cand]||0) + munVotes[cand];
+                if(!finalData.estados[uf]) finalData.estados[uf] = {};
+                for(let k in finalVotes) {
+                    finalData.estados[uf][k] = (finalData.estados[uf][k]||0) + finalVotes[k];
                 }
             }
 
-            // 4. APLICA MATEMÁTICA DOS SLIDERS
-            app.applySimulationMath();
+            // INJETA DADOS E ATUALIZA
+            app.data.current = finalData;
+            app.refreshUI();
 
         } catch(e) {
             console.error(e);
-            alert("Erro: " + e.message);
+            alert("Erro na Simulação: " + e.message);
         } finally {
             loader.classList.add('hidden');
         }
     },
 
-    applySimulationMath: () => {
-        if(!app.data.simBase) return;
-
-        // Calcula Totais da Base Gerada
-        const baseTotals = {};
-        const stateData = app.data.simBase.estados;
-        for(let uf in stateData) {
-            for(let key in stateData[uf]) {
-                const name = key.split(' (')[0].trim(); // Pega só o nome
-                baseTotals[name] = (baseTotals[name] || 0) + stateData[uf][key];
-            }
-        }
-        
-        const grandTotal = Object.values(baseTotals).reduce((a,b)=>a+b, 0);
-
-        // Calcula Multiplicadores
-        const multipliers = {};
-        CONFIG.simCandidates.forEach(c => {
-            const baseVal = baseTotals[c.name] || 0;
-            const currentPct = grandTotal > 0 ? (baseVal / grandTotal) * 100 : 0;
-            multipliers[c.name] = currentPct > 0 ? (c.val / currentPct) : 0;
-        });
-
-        const newCurrent = { estados: {}, municipios: {} };
-        const apply = (source) => {
-            const dest = {};
-            for(let k in source) {
-                const votos = source[k];
-                const novos = {};
-                for(let candKey in votos) {
-                    const name = candKey.split(' (')[0].trim();
-                    let mult = 1; // Default mantém se não tiver slider
-                    
-                    if(multipliers[name] !== undefined) {
-                        mult = multipliers[name];
-                    } else if (name === 'OUTROS') {
-                        mult = 1; // Mantém Outros
-                    } else {
-                        mult = 0; // Se não é slider e não é outros, zera
-                    }
-                    
-                    const novosVotos = Math.floor(votos[candKey] * mult);
-                    if (novosVotos > 0) novos[candKey] = novosVotos;
-                }
-                dest[k] = novos;
-            }
-            return dest;
-        };
-
-        newCurrent.municipios = apply(app.data.simBase.municipios);
-        newCurrent.estados = apply(app.data.simBase.estados);
-
-        app.data.current = newCurrent;
-        app.refreshUI();
-    },
-
     // ============================================
-    // CORE DO APP
+    // CORE (MANTIDO)
     // ============================================
     getGradientConfig: (pct) => {
         let config = GRADIENT_SCHEME[0];
@@ -784,6 +746,7 @@ const app = {
         }
 
         if (!app.state.selectedId) {
+             // Agrega Brasil
              Object.values(app.data.current.estados).forEach(st => {
                  Object.entries(st).forEach(([c, v]) => rawVotes[c] = (rawVotes[c]||0)+v);
              });
