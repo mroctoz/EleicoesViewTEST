@@ -265,6 +265,13 @@
             </div>
 
             <button id="btnSimulate" class="btn-primary" onclick="app.runSimulation()" style="margin-top: 20px;">
+                <!-- CONTROLE DE TOTAL DE VOTOS -->
+<div class="control-group" style="margin-top:15px; border-top:1px solid #333; padding-top:15px;">
+    <label>Projeção de Votos Válidos</label>
+    <!-- Valor padrão aproximado de 2022 (~118mi) ou 2026 (~125mi) -->
+    <input type="number" id="simTotalInput" value="121274352" 
+           style="width:100%; padding:10px; background:#050505; border:1px solid #333; color:#4ade80; border-radius:6px; font-family:inherit; font-weight:700;">
+</div>
                 <i class="fas fa-magic"></i> GERAR SIMULAÇÃO
             </button>
         </div>
