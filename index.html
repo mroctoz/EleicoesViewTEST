@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlas Histórico V23</title>
+    <title>Atlas Histórico V25</title>
     
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -40,7 +40,7 @@
 
         #app { width: 100vw; height: 100vh; display: flex; position: relative; }
         
-        /* Fundo do mapa escuro */
+        /* Fundo do mapa escuro para contraste */
         #map { flex: 1; height: 100%; background: #1a1a1a; z-index: 1; }
 
         .sidebar {
@@ -119,7 +119,7 @@
         .progress-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 6px; overflow: hidden; }
         .progress-fill { height: 100%; transition: width 0.5s ease; }
 
-        /* LEGENDA REAJUSTADA */
+        /* LEGENDA */
         .legend {
             position: absolute; bottom: 30px; right: 450px;
             background: #0a0c10; padding: 15px; border: 1px solid #333;
@@ -165,14 +165,14 @@
 
 <div id="loader">
     <div class="spinner"></div>
-    <h3>Carregando Atlas...</h3>
+    <h3>Carregando Dados...</h3>
 </div>
 
 <div id="app">
     <!-- BARRA ESQUERDA -->
     <aside class="sidebar">
         <div class="header">
-            <h1>Atlas V23</h1>
+            <h1>Atlas V25</h1>
             <div style="font-size: 0.8rem; color: var(--text-muted);">Histórico 1994 - 2022</div>
         </div>
         
@@ -250,14 +250,14 @@
         <div class="map-btn" onclick="app.map.zoomOut()">-</div>
     </div>
 
-    <!-- LEGENDA CORRIGIDA -->
+    <!-- LEGENDA -->
     <div class="legend">
         <div style="font-size: 0.8rem; margin-bottom: 8px; font-weight: 700; color: white;">
-            Intensidade do Vencedor
+            Percentual do Vencedor
         </div>
         <div class="legend-grid" id="legendColors"></div>
         <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:#aaa; margin-top:5px;">
-            <span>Baixa % (Claro)</span><span>Alta % (Escuro)</span>
+            <span>0% (Claro)</span><span>100% (Saturado)</span>
         </div>
     </div>
 </div>
@@ -284,7 +284,7 @@ const app = {
         selectedId: null,
         selectedName: "Brasil",
         ignored: new Set(),
-        customColors: JSON.parse(localStorage.getItem('v23_colors') || '{}')
+        customColors: JSON.parse(localStorage.getItem('v25_colors') || '{}')
     },
 
     init: () => {
@@ -297,12 +297,12 @@ const app = {
             opacity: 0.4
         }).addTo(app.map);
 
-        // LEGENDA: Claro (Esquerda) -> Escuro/Puro (Direita)
+        // LEGENDA EM DEGRAUS DE ALTO CONTRASTE
         const legendDiv = document.getElementById('legendColors');
         for(let i=0; i<10; i++) {
             const el = document.createElement('div');
             el.className = 'legend-item';
-            // Usa cor cinza neutra para ilustrar o gradiente na legenda
+            // Exemplo Cinza para Legenda
             el.style.background = app.getGradientColor('#666666', (i*10)+5); 
             legendDiv.appendChild(el);
         }
@@ -311,25 +311,21 @@ const app = {
         app.loadData();
     },
 
-    // --- NOVA LÓGICA DE DEGRADÊ ---
-    // 0%  = Mistura com Branco/Cinza Claro (Visualmente 'Claro')
-    // 100% = Cor Pura (Visualmente 'Escuro/Intenso')
+    // --- NOVA LÓGICA DE DEGRADÊ (ALTO CONTRASTE) ---
     getGradientColor: (hex, pct) => {
-        // Step vai de 0 a 9
-        const step = Math.floor(pct / 10);
+        const step = Math.floor(pct / 10); // 0 a 9
         
-        // Fator de mistura com BRANCO.
-        // Se Step 0 (Baixa votação) -> Mistura MUITO branco (0.8) -> Cor clara/pastel
-        // Se Step 9 (Alta votação) -> Mistura POUCO branco (0.0) -> Cor pura
-        const whiteMix = 0.8 - (step * 0.088); 
+        // 0-10% (step 0): Mistura com 90% Branco -> Quase Branco
+        // 90-100% (step 9): Mistura com 0% Branco -> Cor Pura
+        // Isso força um degradê bem visível.
+        const whiteMix = 0.9 - (Math.min(step, 9) * 0.1); 
         
-        return app.mixColor(hex, '#dddddd', Math.max(0, whiteMix));
+        return app.mixColor(hex, '#ffffff', Math.max(0, whiteMix));
     },
 
-    // Mistura cor1 com cor2 baseado na quantidade (0 a 1)
     mixColor: (hex1, hex2, amount) => {
         const c1 = app.hexToRgb(hex1);
-        const c2 = app.hexToRgb(hex2); // Cor clara de mistura
+        const c2 = app.hexToRgb(hex2); // Cor de mistura (Branco)
         
         const r = Math.round(c1.r + (c2.r - c1.r) * amount);
         const g = Math.round(c1.g + (c2.g - c1.g) * amount);
@@ -383,7 +379,7 @@ const app = {
 
     loadAllMunicipalities: async () => {
         const loader = document.getElementById('loader');
-        loader.querySelector('h3').textContent = "Carregando Cidades...";
+        loader.querySelector('h3').textContent = "Carregando Malha Municipal...";
         loader.classList.remove('hidden');
 
         try {
@@ -511,8 +507,8 @@ const app = {
 
         let rawVotes = {};
         
-        // CORREÇÃO DO BUG: Se não tiver ID selecionado, mostra dados nacionais
-        // (Isso funciona independente de estar no modo Estados ou Cidades)
+        // CORREÇÃO: Removemos a restrição de 'all_cities'
+        // Se nada estiver selecionado, SEMPRE soma os estados para o total nacional
         if (!app.state.selectedId) {
              if(app.data.current) {
                 Object.values(app.data.current.estados).forEach(st => {
@@ -520,7 +516,7 @@ const app = {
                 });
              }
         } else {
-            // Se tiver ID selecionado, pega dados locais
+            // Se tiver seleção, busca específico
             const scope = (app.state.selectedId.length === 2) ? 'estados' : 'municipios';
             rawVotes = app.data.current[scope][app.state.selectedId] || {};
         }
@@ -610,8 +606,8 @@ const app = {
         return {
             fillColor: color,
             weight: scope === 'estados' ? 1.5 : 0.5,
-            color: '#000000', // CONTORNO PRETO OPACO
-            fillOpacity: 1    // COMPLETAMENTE OPACO
+            color: '#000000', // Contorno preto
+            fillOpacity: 1    // Opaco
         };
     },
 
@@ -655,7 +651,7 @@ const app = {
         });
         pickr.on('save', (c) => {
             app.state.customColors[p] = c.toHEXA().toString();
-            localStorage.setItem('v23_colors', JSON.stringify(app.state.customColors));
+            localStorage.setItem('v25_colors', JSON.stringify(app.state.customColors));
             el.style.background = c.toHEXA().toString();
             app.refreshUI();
             pickr.destroyAndRemove();
