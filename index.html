@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlas Histórico V21</title>
+    <title>Atlas Histórico V23</title>
     
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -40,8 +40,8 @@
 
         #app { width: 100vw; height: 100vh; display: flex; position: relative; }
         
-        /* Fundo do mapa cinza médio para destacar tanto cores claras quanto escuras */
-        #map { flex: 1; height: 100%; background: #222; z-index: 1; }
+        /* Fundo do mapa escuro */
+        #map { flex: 1; height: 100%; background: #1a1a1a; z-index: 1; }
 
         .sidebar {
             width: 380px;
@@ -119,7 +119,7 @@
         .progress-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 6px; overflow: hidden; }
         .progress-fill { height: 100%; transition: width 0.5s ease; }
 
-        /* LEGENDA */
+        /* LEGENDA REAJUSTADA */
         .legend {
             position: absolute; bottom: 30px; right: 450px;
             background: #0a0c10; padding: 15px; border: 1px solid #333;
@@ -149,7 +149,7 @@
         .tt-body { padding: 10px; }
 
         #loader {
-            position: absolute; inset: 0; background: rgba(5,5,5,0.9); z-index: 9999;
+            position: absolute; inset: 0; background: rgba(5,5,5,0.95); z-index: 9999;
             display: flex; align-items: center; justify-content: center; flex-direction: column;
             transition: opacity 0.3s;
         }
@@ -165,14 +165,14 @@
 
 <div id="loader">
     <div class="spinner"></div>
-    <h3>Carregando Dados...</h3>
+    <h3>Carregando Atlas...</h3>
 </div>
 
 <div id="app">
     <!-- BARRA ESQUERDA -->
     <aside class="sidebar">
         <div class="header">
-            <h1>Atlas V21</h1>
+            <h1>Atlas V23</h1>
             <div style="font-size: 0.8rem; color: var(--text-muted);">Histórico 1994 - 2022</div>
         </div>
         
@@ -250,16 +250,15 @@
         <div class="map-btn" onclick="app.map.zoomOut()">-</div>
     </div>
 
-    <!-- LEGENDA -->
+    <!-- LEGENDA CORRIGIDA -->
     <div class="legend">
         <div style="font-size: 0.8rem; margin-bottom: 8px; font-weight: 700; color: white;">
-            Percentual do Vencedor
+            Intensidade do Vencedor
         </div>
         <div class="legend-grid" id="legendColors"></div>
         <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:#aaa; margin-top:5px;">
-            <span>0%</span><span>50%</span><span>100%</span>
+            <span>Baixa % (Claro)</span><span>Alta % (Escuro)</span>
         </div>
-        <div style="font-size:0.6rem; color:#666; text-align:center; margin-top:2px;">(Mais Escuro = Mais Votado)</div>
     </div>
 </div>
 
@@ -285,26 +284,26 @@ const app = {
         selectedId: null,
         selectedName: "Brasil",
         ignored: new Set(),
-        customColors: JSON.parse(localStorage.getItem('v21_colors') || '{}')
+        customColors: JSON.parse(localStorage.getItem('v23_colors') || '{}')
     },
 
     init: () => {
         app.map = L.map('map', {
             center: [-15, -50], zoom: 4, zoomControl: false,
-            preferCanvas: true, background: '#222'
+            preferCanvas: true, background: '#1a1a1a'
         });
         
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            opacity: 0.3 // Mapa base leve para dar contexto sem brigar com as cores
+            opacity: 0.4
         }).addTo(app.map);
 
-        // LEGENDA EM DEGRAUS OPACOS (CLARO -> ESCURO)
+        // LEGENDA: Claro (Esquerda) -> Escuro/Puro (Direita)
         const legendDiv = document.getElementById('legendColors');
         for(let i=0; i<10; i++) {
             const el = document.createElement('div');
             el.className = 'legend-item';
-            // Exemplo neutro (Cinza)
-            el.style.background = app.getSteppedColor('#666666', (i*10)+5); 
+            // Usa cor cinza neutra para ilustrar o gradiente na legenda
+            el.style.background = app.getGradientColor('#666666', (i*10)+5); 
             legendDiv.appendChild(el);
         }
 
@@ -312,34 +311,38 @@ const app = {
         app.loadData();
     },
 
-    // --- NOVA LÓGICA DE CORES OPAQUE (Claro -> Escuro/Puro) ---
-    getSteppedColor: (hex, pct) => {
-        const step = Math.floor(pct / 10); // 0 a 9
+    // --- NOVA LÓGICA DE DEGRADÊ ---
+    // 0%  = Mistura com Branco/Cinza Claro (Visualmente 'Claro')
+    // 100% = Cor Pura (Visualmente 'Escuro/Intenso')
+    getGradientColor: (hex, pct) => {
+        // Step vai de 0 a 9
+        const step = Math.floor(pct / 10);
         
-        // 0-10% (step 0): Mistura com Branco (85% Branco) -> Cor Clara Pastel
-        // 90-100% (step 9): Cor Original (0% Branco) -> Cor Pura
+        // Fator de mistura com BRANCO.
+        // Se Step 0 (Baixa votação) -> Mistura MUITO branco (0.8) -> Cor clara/pastel
+        // Se Step 9 (Alta votação) -> Mistura POUCO branco (0.0) -> Cor pura
+        const whiteMix = 0.8 - (step * 0.088); 
         
-        // Fator de Branco: 
-        // Step 0 -> 0.85
-        // Step 9 -> 0.0
-        const whiteFactor = 0.85 - (Math.min(step, 9) * 0.094); 
-        
-        return app.mixWithWhite(hex, Math.max(0, whiteFactor));
+        return app.mixColor(hex, '#dddddd', Math.max(0, whiteMix));
     },
 
-    mixWithWhite: (hex, amount) => {
-        // Converte Hex para RGB
+    // Mistura cor1 com cor2 baseado na quantidade (0 a 1)
+    mixColor: (hex1, hex2, amount) => {
+        const c1 = app.hexToRgb(hex1);
+        const c2 = app.hexToRgb(hex2); // Cor clara de mistura
+        
+        const r = Math.round(c1.r + (c2.r - c1.r) * amount);
+        const g = Math.round(c1.g + (c2.g - c1.g) * amount);
+        const b = Math.round(c1.b + (c2.b - c1.b) * amount);
+        
+        return `rgb(${r}, ${g}, ${b})`;
+    },
+
+    hexToRgb: (hex) => {
         let c = hex.substring(1).split('');
         if(c.length==3) c= [c[0], c[0], c[1], c[1], c[2], c[2]];
         c = '0x'+c.join('');
-        let r = (c>>16)&255, g = (c>>8)&255, b = c&255;
-        
-        // Mistura com branco (255)
-        r = Math.round(r + (255 - r) * amount);
-        g = Math.round(g + (255 - g) * amount);
-        b = Math.round(b + (255 - b) * amount);
-        
-        return `rgb(${r}, ${g}, ${b})`;
+        return { r: (c>>16)&255, g: (c>>8)&255, b: c&255 };
     },
 
     loadData: async () => {
@@ -408,7 +411,7 @@ const app = {
             app.map.fitBounds(app.layers.cities.getBounds());
 
         } catch(e) { alert("Erro ao carregar malha."); } 
-        finally { loader.classList.add('hidden'); }
+        finally { loader.classList.add('hidden'); app.updateSidebarRight(); }
     },
 
     resetMapToStates: () => {
@@ -507,13 +510,17 @@ const app = {
         titleEl.textContent = app.state.selectedName;
 
         let rawVotes = {};
-        if (!app.state.selectedId && app.state.view !== 'all_cities') {
+        
+        // CORREÇÃO DO BUG: Se não tiver ID selecionado, mostra dados nacionais
+        // (Isso funciona independente de estar no modo Estados ou Cidades)
+        if (!app.state.selectedId) {
              if(app.data.current) {
                 Object.values(app.data.current.estados).forEach(st => {
                     Object.entries(st).forEach(([c, v]) => rawVotes[c] = (rawVotes[c]||0)+v);
                 });
              }
-        } else if (app.state.selectedId) {
+        } else {
+            // Se tiver ID selecionado, pega dados locais
             const scope = (app.state.selectedId.length === 2) ? 'estados' : 'municipios';
             rawVotes = app.data.current[scope][app.state.selectedId] || {};
         }
@@ -594,17 +601,17 @@ const app = {
         const stats = app.recalcStats(raw || {});
 
         if (!stats || !stats.winner) {
-            return { fillColor: '#1a1a1a', weight: 0.5, color: '#000', fillOpacity: 1 };
+            return { fillColor: '#222', weight: 0.5, color: '#000', fillOpacity: 1 };
         }
 
         const { party } = app.parseCandKey(stats.winner);
-        const color = app.getSteppedColor(app.getCandColor(party), stats.pct);
+        const color = app.getGradientColor(app.getCandColor(party), stats.pct);
 
         return {
             fillColor: color,
             weight: scope === 'estados' ? 1.5 : 0.5,
-            color: '#000000', // CONTORNO PRETO
-            fillOpacity: 1    // OPACO
+            color: '#000000', // CONTORNO PRETO OPACO
+            fillOpacity: 1    // COMPLETAMENTE OPACO
         };
     },
 
@@ -648,7 +655,7 @@ const app = {
         });
         pickr.on('save', (c) => {
             app.state.customColors[p] = c.toHEXA().toString();
-            localStorage.setItem('v21_colors', JSON.stringify(app.state.customColors));
+            localStorage.setItem('v23_colors', JSON.stringify(app.state.customColors));
             el.style.background = c.toHEXA().toString();
             app.refreshUI();
             pickr.destroyAndRemove();
