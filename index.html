@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlas Histórico V25 - High Res</title>
+    <title>Atlas Histórico & Simulador 2026</title>
     
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -27,6 +27,7 @@
             --text-muted: #94a3b8;
             --border-color: rgba(255, 255, 255, 0.1);
             --gradient-primary: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            --sim-highlight: #ff0055;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -40,7 +41,6 @@
 
         #app { width: 100vw; height: 100vh; display: flex; position: relative; }
         
-        /* Fundo do mapa escuro para contraste */
         #map { flex: 1; height: 100%; background: #1a1a1a; z-index: 1; }
 
         .sidebar {
@@ -51,8 +51,26 @@
             z-index: 1000;
             border-right: 1px solid var(--border-color);
             box-shadow: 5px 0 30px rgba(0,0,0,0.5);
+            transition: width 0.3s ease;
         }
-        .sidebar-right { border-left: 1px solid var(--border-color); border-right: none; width: 420px; }
+        
+        /* Seção do Simulador */
+        .sim-panel {
+            background: rgba(40, 10, 20, 0.3);
+            border-top: 1px solid var(--sim-highlight);
+            border-bottom: 1px solid var(--sim-highlight);
+            padding: 15px;
+            margin-bottom: 15px;
+            display: none; /* Oculto por padrão */
+            animation: fadeIn 0.5s;
+        }
+        .sim-panel.active { display: block; }
+        .sim-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 0.8rem; }
+        .sim-name { width: 90px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sim-slider { flex: 1; accent-color: var(--accent-blue); cursor: pointer; }
+        .sim-val { width: 45px; text-align: right; font-family: monospace; color: var(--accent-blue); }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
         .header {
             padding: 24px;
@@ -65,16 +83,13 @@
         }
 
         .controls { padding: 20px; flex: 1; overflow-y: auto; }
-        
         .control-group { margin-bottom: 15px; }
         .control-group label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
         
         select {
             width: 100%; padding: 12px; border-radius: 8px;
-            border: 1px solid #333;
-            background-color: #050505; color: white;
-            font-family: inherit; font-size: 0.9rem;
-            appearance: none; cursor: pointer;
+            border: 1px solid #333; background-color: #050505; color: white;
+            font-family: inherit; font-size: 0.9rem; appearance: none; cursor: pointer;
         }
         select:focus { border-color: var(--accent-blue); outline: none; }
         option { background-color: #050505; color: white; padding: 10px; }
@@ -96,7 +111,6 @@
         }
         button.btn-back:hover { background: #333; border-color: var(--accent-blue); }
 
-        /* LISTA DIREITA */
         .cand-row {
             display: flex; align-items: center; gap: 10px;
             padding: 12px; margin-bottom: 8px;
@@ -119,15 +133,13 @@
         .progress-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 6px; overflow: hidden; }
         .progress-fill { height: 100%; transition: width 0.5s ease; }
 
-        /* LEGENDA */
         .legend {
             position: absolute; bottom: 30px; right: 450px;
             background: #0a0c10; padding: 15px; border: 1px solid #333;
             border-radius: 12px; z-index: 999; box-shadow: 0 10px 40px rgba(0,0,0,0.8);
         }
-        /* Ajuste do Grid para refletir os 9 degraus */
         .legend-grid { 
-            display: flex; height: 20px; width: 225px; /* 25px por item */
+            display: flex; height: 20px; width: 225px;
             border-radius: 4px; overflow: hidden; border: 1px solid #444; 
         }
         .legend-item { flex: 1; border-right: 1px solid rgba(0,0,0,0.3); }
@@ -144,7 +156,6 @@
         }
         .map-btn:hover { background: #222; color: white; }
 
-        /* TOOLTIP */
         .custom-tooltip {
             background: #0a0c10; border: 1px solid #333; color: white;
             border-radius: 8px; font-family: 'Inter', sans-serif; padding: 0;
@@ -178,14 +189,15 @@
     <aside class="sidebar">
         <div class="header">
             <h1>Atlas V25</h1>
-            <div style="font-size: 0.8rem; color: var(--text-muted);">Histórico 1994 - 2022</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Histórico & Simulador 2026</div>
         </div>
         
         <div class="controls">
             <div class="control-group">
-                <label>ANO</label>
-                <select id="yearSelect">
-                    <option value="2022">2022</option>
+                <label>ANO / CENÁRIO</label>
+                <select id="yearSelect" onchange="app.handleYearChange()">
+                    <option value="2026" style="color:#ff0055; font-weight:bold;">★ SIMULADOR 2026</option>
+                    <option value="2022" selected>2022</option>
                     <option value="2018">2018</option>
                     <option value="2014">2014</option>
                     <option value="2010">2010</option>
@@ -196,6 +208,15 @@
                 </select>
             </div>
             
+            <!-- PAINEL SIMULADOR -->
+            <div id="simulatorPanel" class="sim-panel">
+                <div style="margin-bottom:10px; font-size:0.8rem; color:var(--sim-highlight); font-weight:700;">
+                    <i class="fas fa-sliders-h"></i> AJUSTE O CENÁRIO (BRASIL)
+                </div>
+                <div id="simInputs"></div>
+                <button class="btn-primary" style="background: var(--sim-highlight); margin-top:10px;" onclick="app.runSimulation()">APLICAR CENÁRIO</button>
+            </div>
+
             <div class="control-group">
                 <label>TURNO</label>
                 <select id="turnSelect">
@@ -235,19 +256,15 @@
         </div>
 
         <div style="padding: 15px; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border-color);">
-            
-            <!-- BOTÃO DE VOLTAR -->
             <button id="btnBack" class="btn-back" style="display: none;" onclick="app.resetSelection()">
                 <i class="fas fa-arrow-left"></i> Voltar para o Brasil
             </button>
 
-            <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted);">Votos Totais</div>
+            <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted);">Votos Válidos Totais</div>
             <div id="totalVotesVal" style="font-size: 1.4rem; font-weight: 800; color: white;">-</div>
         </div>
 
-        <div class="controls" id="resultsContainer">
-            <!-- LISTA -->
-        </div>
+        <div class="controls" id="resultsContainer"></div>
     </aside>
 
     <div class="map-controls">
@@ -255,7 +272,6 @@
         <div class="map-btn" onclick="app.map.zoomOut()">-</div>
     </div>
 
-    <!-- LEGENDA -->
     <div class="legend">
         <div style="font-size: 0.8rem; margin-bottom: 8px; font-weight: 700; color: white;">
             Percentual do Vencedor (Intensidade)
@@ -268,11 +284,9 @@
 </div>
 
 <script>
-// =========================================================
-// CONFIGURAÇÃO DOS DEGRAUS DE COR (GRADIENTE DISCRETO)
-// =========================================================
+// ================= CONFIG & COLORS =================
 const GRADIENT_SCHEME = [
-    { min: 0,  mix: '#ffffff', ratio: 0.85, ref: '#E6E6E6' }, // <= 20%
+    { min: 0,  mix: '#ffffff', ratio: 0.85, ref: '#E6E6E6' },
     { min: 20, mix: '#ffffff', ratio: 0.85, ref: '#E6E6E6' },
     { min: 30, mix: '#ffffff', ratio: 0.65, ref: '#CCCCCC' },
     { min: 40, mix: '#ffffff', ratio: 0.45, ref: '#B2B2B2' },
@@ -281,7 +295,7 @@ const GRADIENT_SCHEME = [
     { min: 70, mix: '#000000', ratio: 0.25, ref: '#666666' },
     { min: 80, mix: '#000000', ratio: 0.45, ref: '#4D4D4D' },
     { min: 90, mix: '#000000', ratio: 0.60, ref: '#343434' },
-    { min: 100,mix: '#000000', ratio: 0.75, ref: '#202020' }  // 100%
+    { min: 100,mix: '#000000', ratio: 0.75, ref: '#202020' }
 ];
 
 const CONFIG = {
@@ -292,6 +306,7 @@ const CONFIG = {
         'SOLIDARIEDADE': '#F58220', 'PATRIOTA': '#FFD700', 'PCdoB': '#FF0000',
         'PV': '#00FF00', 'CIDADANIA': '#FFA500', 'AVANTE': '#800080',
         'PRONA': '#006400', 'PFL': '#0056A8', 'PMDB': '#008000', 'PSOL': '#FFCC00',
+        'MISSÃO': '#333333', 'DC': '#800080', // Cores Simulador
         'OUTROS': '#666666', 'DEFAULT': '#555555'
     }
 };
@@ -303,14 +318,17 @@ const app = {
         full: null, 
         current: null, 
         names: {},
-        geoJsonCache: null // Cache para a malha municipal unificada
+        geoJsonCache: null,
+        simulationBase: null, // Armazena dados originais 2026 para swing
+        simSwings: {} // Armazena os desvios configurados pelo usuário
     },
     state: {
         view: 'states', 
         selectedId: null,
         selectedName: "Brasil",
         ignored: new Set(),
-        customColors: JSON.parse(localStorage.getItem('v25_colors') || '{}')
+        customColors: JSON.parse(localStorage.getItem('v25_colors') || '{}'),
+        isSimulating: false
     },
 
     init: () => {
@@ -319,18 +337,13 @@ const app = {
             preferCanvas: true, background: '#1a1a1a'
         });
         
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            opacity: 0.4
-        }).addTo(app.map);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { opacity: 0.4 }).addTo(app.map);
 
-        // CONFIGURAR LEGENDA (VISUALIZAÇÃO DOS DEGRAUS EM CINZA)
         const legendDiv = document.getElementById('legendColors');
-        const steps = [20, 30, 40, 50, 60, 70, 80, 90, 100];
-        steps.forEach(pct => {
+        [20, 30, 40, 50, 60, 70, 80, 90, 100].forEach(pct => {
             const el = document.createElement('div');
             el.className = 'legend-item';
-            const stepConfig = app.getGradientConfig(pct);
-            el.style.background = stepConfig.ref;
+            el.style.background = app.getGradientConfig(pct).ref;
             legendDiv.appendChild(el);
         });
 
@@ -338,37 +351,137 @@ const app = {
         app.loadData();
     },
 
-    getGradientConfig: (pct) => {
-        let config = GRADIENT_SCHEME[0];
-        for (let i = 0; i < GRADIENT_SCHEME.length; i++) {
-            if (pct >= GRADIENT_SCHEME[i].min) {
-                config = GRADIENT_SCHEME[i];
-            }
+    // --- LÓGICA DE SIMULAÇÃO (SWINGOMETER) ---
+    
+    handleYearChange: () => {
+        const year = document.getElementById('yearSelect').value;
+        const panel = document.getElementById('simulatorPanel');
+        
+        if (year === '2026') {
+            panel.classList.add('active');
+            app.state.isSimulating = true;
+            document.getElementById('roleSelect').value = 'president'; // Forçar Presidência
+            document.getElementById('roleSelect').disabled = true;
+        } else {
+            panel.classList.remove('active');
+            app.state.isSimulating = false;
+            document.getElementById('roleSelect').disabled = false;
         }
-        return config;
+        // Não recarrega automatico para permitir ajuste antes
     },
 
-    getDiscreteColor: (hex, pct) => {
-        const config = app.getGradientConfig(pct);
-        return app.mixColor(hex, config.mix, config.ratio);
-    },
-
-    mixColor: (hex1, hex2, amount) => {
-        const c1 = app.hexToRgb(hex1);
-        const c2 = app.hexToRgb(hex2);
+    initSimulatorControls: () => {
+        const container = document.getElementById('simInputs');
+        container.innerHTML = '';
         
-        const r = Math.round(c1.r + (c2.r - c1.r) * amount);
-        const g = Math.round(c1.g + (c2.g - c1.g) * amount);
-        const b = Math.round(c1.b + (c2.b - c1.b) * amount);
-        
-        return `rgb(${r}, ${g}, ${b})`;
+        // Calcular médias nacionais do arquivo base carregado
+        const totals = app.recalcStats(app.getNationalVotes());
+        if(!totals) return;
+
+        totals.ranking.forEach(r => {
+            if(r.cand === 'Brancos/Nulos' || r.cand === 'Abstenção') return;
+            const { name, party } = app.parseCandKey(r.cand);
+            const pct = r.pct.toFixed(1);
+            
+            // Inicializar swing zerado
+            if (!(r.cand in app.data.simSwings)) app.data.simSwings[r.cand] = 0;
+
+            const div = document.createElement('div');
+            div.className = 'sim-row';
+            div.innerHTML = `
+                <div class="sim-name" title="${name}">${name}</div>
+                <input type="range" class="sim-slider" min="0" max="100" step="0.5" value="${pct}" 
+                    data-cand="${r.cand}" oninput="app.updateSimVal(this)">
+                <div class="sim-val">${pct}%</div>
+            `;
+            container.appendChild(div);
+        });
     },
 
-    hexToRgb: (hex) => {
-        let c = hex.substring(1).split('');
-        if(c.length==3) c= [c[0], c[0], c[1], c[1], c[2], c[2]];
-        c = '0x'+c.join('');
-        return { r: (c>>16)&255, g: (c>>8)&255, b: c&255 };
+    updateSimVal: (el) => {
+        el.nextElementSibling.textContent = parseFloat(el.value).toFixed(1) + '%';
+    },
+
+    runSimulation: () => {
+        // Calcular o Swing (Diferença entre o desejado e a base)
+        const inputs = document.querySelectorAll('.sim-slider');
+        const nationalBase = app.recalcStats(app.getNationalVotes(true)); // True para pegar o raw base
+        
+        // Primeiro resetar swings
+        app.data.simSwings = {};
+
+        inputs.forEach(input => {
+            const cand = input.dataset.cand;
+            const targetPct = parseFloat(input.value);
+            
+            // Encontrar % base nacional
+            const baseCand = nationalBase.ranking.find(r => r.cand === cand);
+            const basePct = baseCand ? baseCand.pct : 0;
+            
+            // Swing em pontos percentuais (ex: Base 30%, Alvo 40% -> Swing +10)
+            app.data.simSwings[cand] = targetPct - basePct;
+        });
+
+        app.refreshUI();
+    },
+
+    // Aplica o swing em um conjunto de votos (município ou estado)
+    applySwing: (originalVotes) => {
+        if (!app.state.isSimulating) return originalVotes;
+        
+        const newVotes = {};
+        let totalOriginal = 0;
+        Object.values(originalVotes).forEach(v => totalOriginal += v);
+        
+        if(totalOriginal === 0) return originalVotes;
+
+        // 1. Converter votos brutos para porcentagem original
+        const originalPcts = {};
+        Object.entries(originalVotes).forEach(([cand, v]) => {
+            originalPcts[cand] = (v / totalOriginal) * 100;
+        });
+
+        // 2. Aplicar Uniform Swing (Clamp 0-100)
+        let newPcts = {};
+        let sumNewPcts = 0;
+
+        // Candidatos que existem no original
+        Object.keys(originalVotes).forEach(cand => {
+            const swing = app.data.simSwings[cand] || 0;
+            let val = originalPcts[cand] + swing;
+            if(val < 0) val = 0;
+            newPcts[cand] = val;
+            sumNewPcts += val;
+        });
+
+        // 3. Normalizar para manter coerência (soma 100%)
+        // Se a soma for > 100 ou < 100, redistribuir proporcionalmente
+        // OU simplesmente recalcular os votos brutos baseados no novo PCT relativo
+        
+        if (sumNewPcts === 0) sumNewPcts = 1; // Evitar div 0
+
+        Object.entries(newPcts).forEach(([cand, pct]) => {
+            // Regra de três para voltar a votos inteiros mantendo o total de votos válidos da cidade constante
+            // (Assumindo que abstenção não muda na simulação para simplificar)
+            const normalizedPct = pct / sumNewPcts; 
+            newVotes[cand] = Math.round(totalOriginal * normalizedPct);
+        });
+
+        return newVotes;
+    },
+
+    // --- FIM SIMULAÇÃO ---
+
+    getNationalVotes: (forceBase = false) => {
+        // Retorna soma nacional para calculo
+        let rawVotes = {};
+        const source = (app.state.isSimulating && forceBase) ? app.data.simulationBase : app.data.current;
+        if(!source) return {};
+        
+        Object.values(source.estados).forEach(st => {
+            Object.entries(st).forEach(([c, v]) => rawVotes[c] = (rawVotes[c]||0)+v);
+        });
+        return rawVotes;
     },
 
     loadData: async () => {
@@ -392,8 +505,17 @@ const app = {
             } else {
                 app.data.full = json;
                 app.data.current = json[turn];
+                
+                // Backup para simulação
+                if(year === '2026') {
+                    // Deep copy para preservar base
+                    app.data.simulationBase = JSON.parse(JSON.stringify(json[turn]));
+                }
+
                 app.data.names = json[turn].meta_nomes || {};
                 
+                if(year === '2026') app.initSimulatorControls();
+
                 if (viewMode === 'all_cities') await app.loadAllMunicipalities();
                 else app.resetMapToStates();
                 
@@ -401,12 +523,15 @@ const app = {
             }
         } catch (e) {
             console.error(e);
-            alert("Erro: " + e.message);
+            alert("Erro: " + e.message + "\nCertifique-se de gerar o JSON de 2026 primeiro.");
         } finally {
             loader.classList.add('hidden');
         }
     },
 
+    // ... (Mantém fetchGeoJsonCache, loadAllMunicipalities, resetMapToStates, loadBrazilLayer iguais ao anterior) ...
+    // ... INCLUINDO loadStateCities ...
+    
     fetchGeoJsonCache: async () => {
         if (app.data.geoJsonCache) return app.data.geoJsonCache;
         const url = "https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json";
@@ -420,32 +545,23 @@ const app = {
         const loader = document.getElementById('loader');
         loader.querySelector('h3').textContent = "Carregando Malha Municipal Unificada...";
         loader.classList.remove('hidden');
-
         try {
             if(app.layers.cities) app.map.removeLayer(app.layers.cities);
             if(app.layers.brazil) app.map.removeLayer(app.layers.brazil);
-
             const data = await app.fetchGeoJsonCache();
-
             app.layers.cities = L.geoJSON(data, {
-                // SOLUÇÃO PARA BURACOS: smoothFactor baixo evita simplificação excessiva que cria fendas
                 smoothFactor: 0.3,
                 style: (f) => app.getStyle(f, 'municipios'),
                 onEachFeature: (f, layer) => {
                     const id = f.properties.id || f.properties.codarea;
                     const name = app.data.names[id] || f.properties.name;
-                    layer.on('click', (e) => {
-                        L.DomEvent.stopPropagation(e);
-                        app.selectRegion(id, name);
-                    });
+                    layer.on('click', (e) => { L.DomEvent.stopPropagation(e); app.selectRegion(id, name); });
                     app.bindTooltip(layer, id, 'municipios', name);
                 }
             }).addTo(app.map);
-            
             app.state.view = 'all_cities';
             app.map.fitBounds(app.layers.cities.getBounds());
-
-        } catch(e) { alert("Erro ao carregar malha."); } 
+        } catch(e) { alert("Erro malha."); } 
         finally { loader.classList.add('hidden'); app.updateSidebarRight(); }
     },
 
@@ -485,39 +601,30 @@ const app = {
         loader.classList.remove('hidden');
         try {
             const fullData = await app.fetchGeoJsonCache();
-
             const stateFeatures = fullData.features.filter(f => {
                 const cod = f.properties.id || f.properties.codarea;
                 return cod && cod.toString().startsWith(ufId);
             });
-
             const stateGeoJson = { type: "FeatureCollection", features: stateFeatures };
-
             if(app.layers.cities) app.map.removeLayer(app.layers.cities);
             if(app.layers.brazil) app.map.removeLayer(app.layers.brazil);
-
             app.layers.cities = L.geoJSON(stateGeoJson, {
-                // SOLUÇÃO PARA BURACOS
                 smoothFactor: 0.3,
                 style: (f) => app.getStyle(f, 'municipios'),
                 onEachFeature: (f, l) => {
                     const id = f.properties.id || f.properties.codarea;
                     const name = app.data.names[id] || f.properties.name;
-                    l.on('click', (e) => {
-                        L.DomEvent.stopPropagation(e);
-                        app.selectRegion(id, name);
-                    });
+                    l.on('click', (e) => { L.DomEvent.stopPropagation(e); app.selectRegion(id, name); });
                     app.bindTooltip(l, id, 'municipios', name);
                 }
             }).addTo(app.map);
-            
             app.map.fitBounds(app.layers.cities.getBounds());
             app.selectRegion(ufId, ufName);
-
         } catch(e) { console.error(e); } 
         finally { loader.classList.add('hidden'); }
     },
 
+    // ... (Mantém selectRegion, resetSelection) ...
     selectRegion: (id, name) => {
         app.state.selectedId = id;
         app.state.selectedName = name;
@@ -529,7 +636,6 @@ const app = {
         app.state.selectedId = null;
         app.state.selectedName = "Brasil";
         document.getElementById('btnBack').style.display = 'none';
-        
         if(app.state.view === 'states' && app.layers.cities) {
             app.map.removeLayer(app.layers.cities);
             app.layers.brazil.addTo(app.map);
@@ -554,6 +660,7 @@ const app = {
 
         let rawVotes = {};
         
+        // Agregar votos base
         if (!app.state.selectedId) {
              if(app.data.current) {
                 Object.values(app.data.current.estados).forEach(st => {
@@ -563,6 +670,15 @@ const app = {
         } else {
             const scope = (app.state.selectedId.length === 2) ? 'estados' : 'municipios';
             rawVotes = app.data.current[scope][app.state.selectedId] || {};
+        }
+
+        // APLICAR SIMULAÇÃO SE NECESSÁRIO
+        // Nota: Se estivermos no modo "Brasil" (sem seleção), a simulação é aplicada estado a estado na soma, 
+        // ou aplicamos globalmente. Para ser consistente com o mapa, devemos somar os estados já simulados.
+        // Mas para performance, se for Brasil e simulação, pegamos o raw e aplicamos o swing global? 
+        // Não, o swing varia localmente? Não, o Uniform Swing é linear, então swing no todo == soma dos swings.
+        if (app.state.isSimulating) {
+            rawVotes = app.applySwing(rawVotes);
         }
 
         const allCands = new Set([...Object.keys(rawVotes), ...app.state.ignored]);
@@ -633,12 +749,17 @@ const app = {
         return { total, winner, pct: winner ? (max/total)*100 : 0, ranking: rank };
     },
 
-    // ESTILO COM CONTORNO BRANCO FINO E DEGRADÊ DISCRETO
     getStyle: (feature, scope) => {
         if(!app.data.current) return { fillColor: '#111', weight: 0.2, color: '#ffffff' };
         
         const id = feature.properties.id || feature.properties.codarea; 
-        const raw = app.data.current[scope][id];
+        let raw = app.data.current[scope][id];
+        
+        // INTERCEPTAR PARA SIMULAÇÃO
+        if (app.state.isSimulating && raw) {
+            raw = app.applySwing(raw);
+        }
+
         const stats = app.recalcStats(raw || {});
 
         if (!stats || !stats.winner) {
@@ -647,24 +768,23 @@ const app = {
 
         const { party } = app.parseCandKey(stats.winner);
         const color = app.getDiscreteColor(app.getCandColor(party), stats.pct);
-
-        // BORDA MAIS FINA PARA MUNICÍPIOS (0.2) E MAIOR PARA ESTADOS (0.6)
         const borderWeight = scope === 'estados' ? 0.6 : 0.2;
 
         return {
-            fillColor: color,
-            weight: borderWeight,
-            color: '#ffffff',
-            fillOpacity: 1,
-            // AJUSTE DE RENDERIZAÇÃO PARA EVITAR BURACOS
-            lineJoin: 'round',
-            lineCap: 'round'
+            fillColor: color, weight: borderWeight, color: '#ffffff', fillOpacity: 1,
+            lineJoin: 'round', lineCap: 'round'
         };
     },
 
     bindTooltip: (layer, id, scope, name) => {
         layer.bindTooltip(() => {
-            const raw = app.data.current[scope][id];
+            let raw = app.data.current[scope][id];
+            
+            // INTERCEPTAR PARA SIMULAÇÃO NO TOOLTIP
+            if (app.state.isSimulating && raw) {
+                raw = app.applySwing(raw);
+            }
+
             const stats = app.recalcStats(raw || {});
             
             if(!stats) return `<div class="custom-tooltip"><div class="tt-head">${name}</div><div class="tt-body">Sem dados</div></div>`;
@@ -687,13 +807,37 @@ const app = {
         }, { sticky: true, direction: 'top' });
     },
 
+    // Funções auxiliares cores
+    getGradientConfig: (pct) => {
+        let config = GRADIENT_SCHEME[0];
+        for (let i = 0; i < GRADIENT_SCHEME.length; i++) {
+            if (pct >= GRADIENT_SCHEME[i].min) config = GRADIENT_SCHEME[i];
+        }
+        return config;
+    },
+    getDiscreteColor: (hex, pct) => {
+        const config = app.getGradientConfig(pct);
+        return app.mixColor(hex, config.mix, config.ratio);
+    },
+    mixColor: (hex1, hex2, amount) => {
+        const c1 = app.hexToRgb(hex1);
+        const c2 = app.hexToRgb(hex2);
+        const r = Math.round(c1.r + (c2.r - c1.r) * amount);
+        const g = Math.round(c1.g + (c2.g - c1.g) * amount);
+        const b = Math.round(c1.b + (c2.b - c1.b) * amount);
+        return `rgb(${r}, ${g}, ${b})`;
+    },
+    hexToRgb: (hex) => {
+        let c = hex.substring(1).split('');
+        if(c.length==3) c= [c[0], c[0], c[1], c[1], c[2], c[2]];
+        c = '0x'+c.join('');
+        return { r: (c>>16)&255, g: (c>>8)&255, b: c&255 };
+    },
     parseCandKey: (k) => {
         const m = k.match(/(.*?)\s*\((.*?)\)/);
         return m ? { name: m[1], party: m[2] } : { name: k, party: 'DEFAULT' };
     },
-
     getCandColor: (p) => app.state.customColors[p] || CONFIG.colors[p] || CONFIG.colors['DEFAULT'],
-
     openColorPicker: (p, def, el) => {
         const pickr = Pickr.create({
             el: el, theme: 'nano', default: def,
