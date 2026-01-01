@@ -297,31 +297,52 @@ const app = {
             opacity: 0.4
         }).addTo(app.map);
 
-        // LEGENDA EM DEGRAUS DE ALTO CONTRASTE
-        const legendDiv = document.getElementById('legendColors');
-        for(let i=0; i<10; i++) {
-            const el = document.createElement('div');
-            el.className = 'legend-item';
-            // Exemplo Cinza para Legenda
-            el.style.background = app.getGradientColor('#666666', (i*10)+5); 
-            legendDiv.appendChild(el);
-        }
+// LEGENDA EM DEGRAUS DE ALTO CONTRASTE
+const legendDiv = document.getElementById('legendColors');
+for(let i=0; i<10; i++) {
+    const el = document.createElement('div');
+    el.className = 'legend-item';
+    // Exemplo usando a cor padrão para demonstrar o novo degradê
+    const pct = i * 10 + 5; // 5, 15, 25, ..., 95
+    el.style.background = app.getGradientColor('#3b82f6', pct); // Usando azul como exemplo
+    legendDiv.appendChild(el);
+}
 
         app.loadBrazilLayer();
         app.loadData();
     },
 
-    // --- NOVA LÓGICA DE DEGRADÊ (ALTO CONTRASTE) ---
-    getGradientColor: (hex, pct) => {
-        const step = Math.floor(pct / 10); // 0 a 9
-        
-        // 0-10% (step 0): Mistura com 90% Branco -> Quase Branco
-        // 90-100% (step 9): Mistura com 0% Branco -> Cor Pura
-        // Isso força um degradê bem visível.
-        const whiteMix = 0.9 - (Math.min(step, 9) * 0.1); 
-        
-        return app.mixColor(hex, '#cccccc', Math.max(0, whiteMix));
-    },
+// --- NOVA LÓGICA DE DEGRADÊ COM CONTRASTE ELEVADO ---
+getGradientColor: (hex, pct) => {
+    // Sistema de faixas com alto contraste
+    let mixRatio;
+    
+    if (pct < 40) {
+        // Abaixo de 40%: Tons muito claros (alta visibilidade)
+        const step = Math.min(Math.floor(pct / 10), 3); // 0-3
+        mixRatio = 0.85 - (step * 0.25); // 85% a 10% de branco
+    } 
+    else if (pct >= 40 && pct < 50) {
+        // Faixa 40%-49.99%: Tom médio-claro (contraste moderado)
+        const subStep = (pct - 40) / 10; // 0 a 0.999
+        mixRatio = 0.6 - (subStep * 0.3); // 60% a 30% de branco
+    }
+    else if (pct >= 50 && pct < 60) {
+        // Faixa 50%-59.99%: Tom médio-escuro (contraste forte)
+        const subStep = (pct - 50) / 10; // 0 a 0.999
+        mixRatio = 0.4 - (subStep * 0.2); // 40% a 20% de branco
+    }
+    else {
+        // Acima de 60%: Tons escuros a puros
+        const step = Math.min(Math.floor((pct - 60) / 10) + 6, 9); // 6-9
+        mixRatio = 0.3 - ((step - 6) * 0.1); // 30% a 0% de branco
+    }
+    
+    // Cor de mistura ajustada para melhor contraste
+    const mixColor = pct < 50 ? '#f0f0f0' : '#a0a0a0';
+    
+    return app.mixColor(hex, mixColor, Math.max(0, Math.min(1, mixRatio)));
+},
 
     mixColor: (hex1, hex2, amount) => {
         const c1 = app.hexToRgb(hex1);
@@ -606,7 +627,7 @@ const app = {
         return {
             fillColor: color,
             weight: scope === 'estados' ? 0.2 : 0.2,
-            color: '#ffffff', // Contorno preto
+            color: '#000000', // Contorno preto
             fillOpacity: 1    // Opaco
         };
     },
