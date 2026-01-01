@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlas Histórico V25 - High Res</title>
+    <title>Atlas Histórico V25 - High Res & Simulação</title>
     
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
-    <!-- Fonts/Icons -->
+    <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
@@ -106,7 +106,7 @@
         }
         button.btn-back:hover { background: #333; border-color: var(--accent-blue); }
 
-        /* LISTA DIREITA */
+        /* LISTA */
         .cand-row {
             display: flex; align-items: center; gap: 10px;
             padding: 12px; margin-bottom: 8px;
@@ -130,7 +130,7 @@
         .progress-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 6px; overflow: hidden; }
         .progress-fill { height: 100%; transition: width 0.5s ease; }
 
-        /* SIMULADOR SLIDERS */
+        /* SLIDERS */
         .sim-slider-box {
             background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
             padding: 12px; border-radius: 8px; margin-bottom: 10px;
@@ -165,7 +165,6 @@
         }
         .map-btn:hover { background: #222; color: white; }
 
-        /* TOOLTIP */
         .custom-tooltip {
             background: #0a0c10; border: 1px solid #333; color: white;
             border-radius: 8px; font-family: 'Inter', sans-serif; padding: 0;
@@ -215,7 +214,7 @@
             </div>
         </div>
         
-        <!-- CONTROLES HISTÓRICO -->
+        <!-- HISTÓRICO -->
         <div class="controls" id="historyControls">
             <div class="control-group">
                 <label>ANO</label>
@@ -231,47 +230,25 @@
                 </select>
             </div>
             
-            <div class="control-group">
-                <label>TURNO</label>
-                <select id="turnSelect">
-                    <option value="1">1º Turno</option>
-                    <option value="2">2º Turno</option>
-                </select>
-            </div>
-
-            <div class="control-group">
-                <label>CARGO</label>
-                <select id="roleSelect">
-                    <option value="president">Presidente</option>
-                    <option value="governor">Governador</option>
-                    <option value="senator">Senador</option>
-                </select>
-            </div>
-
+            <div class="control-group"><label>TURNO</label><select id="turnSelect"><option value="1">1º Turno</option><option value="2">2º Turno</option></select></div>
+            <div class="control-group"><label>CARGO</label><select id="roleSelect"><option value="president">Presidente</option><option value="governor">Governador</option><option value="senator">Senador</option></select></div>
             <button class="btn-primary" onclick="app.loadData()">CARREGAR MAPA</button>
         </div>
 
-        <!-- CONTROLES SIMULAÇÃO -->
+        <!-- SIMULAÇÃO -->
         <div class="controls" id="simControls" style="display: none;">
             <div style="font-size: 0.75rem; color: #888; text-align: center; margin-bottom: 20px;">
-                Os votos são redistribuídos com base na geografia de 2022 e pesos regionais.
+                Os votos são redistribuídos com base na geografia de 2022 e normalizados pelo total fixo abaixo.
             </div>
 
             <div id="slidersContainer"></div>
             
             <div style="margin-top:15px; padding:12px; background:#151a23; border-radius:8px; text-align:center; border: 1px solid #333;">
-                <label style="font-size:0.65rem; margin-bottom: 0;">SOMA TOTAL</label>
+                <label style="font-size:0.65rem; margin-bottom: 0;">PERCENTUAL TOTAL</label>
                 <div id="totalSimVal" style="font-size:1.3rem; font-weight:800; color:#4ade80;">100%</div>
             </div>
 
             <button id="btnSimulate" class="btn-primary" onclick="app.runSimulation()" style="margin-top: 20px;">
-                <!-- CONTROLE DE TOTAL DE VOTOS -->
-<div class="control-group" style="margin-top:15px; border-top:1px solid #333; padding-top:15px;">
-    <label>Projeção de Votos Válidos</label>
-    <!-- Valor padrão aproximado de 2022 (~118mi) ou 2026 (~125mi) -->
-    <input type="number" id="simTotalInput" value="121274352" 
-           style="width:100%; padding:10px; background:#050505; border:1px solid #333; color:#4ade80; border-radius:6px; font-family:inherit; font-weight:700;">
-</div>
                 <i class="fas fa-magic"></i> GERAR SIMULAÇÃO
             </button>
         </div>
@@ -287,19 +264,14 @@
         </div>
 
         <div style="padding: 15px; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border-color);">
-            
-            <!-- BOTÃO DE VOLTAR -->
             <button id="btnBack" class="btn-back" style="display: none;" onclick="app.resetSelection()">
                 <i class="fas fa-arrow-left"></i> Voltar para Visão Geral
             </button>
-
             <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Votos Totais (Válidos)</div>
             <div id="totalVotesVal" style="font-size: 1.6rem; font-weight: 800; color: white;">-</div>
         </div>
 
-        <div class="controls" id="resultsContainer">
-            <!-- LISTA DE CANDIDATOS -->
-        </div>
+        <div class="controls" id="resultsContainer"></div>
     </aside>
 
     <div class="map-controls">
@@ -307,33 +279,42 @@
         <div class="map-btn" onclick="app.map.zoomOut()">-</div>
     </div>
 
-    <!-- LEGENDA -->
     <div class="legend">
         <div style="font-size: 0.8rem; margin-bottom: 8px; font-weight: 700; color: white;">
             Percentual do Vencedor
         </div>
         <div class="legend-grid" id="legendColors"></div>
         <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:#aaa; margin-top:5px;">
-            <span>&le;20% (Claro)</span><span>100% (Escuro)</span>
+            <span>&le;20%</span><span>100%</span>
         </div>
     </div>
 </div>
 
 <script>
 // =============================================================================
-// ÁREA DE CUSTOMIZAÇÃO - PESOS DA SIMULAÇÃO
+// VALOR FIXO DO TOTAL DE VOTOS (ALTERE AQUI)
+// =============================================================================
+const CONST_TOTAL_VOTOS = 120034523; // Ex: 123 milhões
+
+// =============================================================================
+// CONFIGURAÇÃO DE PESOS (INTOCADO CONFORME PEDIDO)
 // =============================================================================
 const CONFIG_PESOS = {
-    // IMPORTANTE: 'dest' deve ser IGUAL ao 'id' do SIM_CANDIDATES
-    // 'src' busca palavra-chave no arquivo de 2022 (Ex: "JAIR" acha "JAIR BOLSONARO")
     rules: [
         { src: 'LULA', dest: 'LULA', ratio: 0.9, regionBonus: {'15': 0.9} }, // Nordeste/Norte
+        { src: 'LULA', dest: 'LULA', ratio: 1.0, regionBonus: {} },
         { src: 'LULA', dest: 'LULA', ratio: 0.9, regionBonus: {'23': 0.9} }, // Nordeste/Norte
+        { src: 'JAIR', dest: 'FLAVIO', ratio: 0.65, regionBonus: {} },
         { src: 'LULA', dest: 'LULA', ratio: 0.9, regionBonus: {'21': 0.9} }, // Nordeste/Norte
+        { src: 'JAIR', dest: 'CAIADO', ratio: 0.15, regionBonus: {'52': 6.0} }, 
         { src: 'LULA', dest: 'LULA', ratio: 0.9, regionBonus: {'12': 0.9} }, // Nordeste/Norte
+        { src: 'JAIR', dest: 'RATINHO', ratio: 0.10, regionBonus: {'41': 6.0} }, 
         { src: 'LULA', dest: 'LULA', ratio: 0.9, regionBonus: {'14': 0.9} }, // Nordeste/Norte
-        
+        { src: 'CIRO', dest: 'RENAN', ratio: 0.60, regionBonus: {'35': 2.0} }, 
+
+        { src: 'TEBET', dest: 'RENAN', ratio: 0.50, regionBonus: {'35': 2.0} },
         { src: 'JAIR', dest: 'FLAVIO', ratio: 0.8, regionBonus: {'33': 1.1} }, // RJ
+        { src: 'CIRO', dest: 'CIRO', ratio: 0.40, regionBonus: {'23': 3.0} }, 
         { src: 'JAIR', dest: 'CAIADO', ratio: 0.1, regionBonus: {'52': 2.2} }, // Goiás
         { src: 'JAIR', dest: 'RATINHO', ratio: 0.05, regionBonus: {'41': 2.2} }, // Paraná
         { src: 'JAIR', dest: 'RENAN', ratio: 0.05, regionBonus: {'42': 1.2} }, // SC
@@ -341,12 +322,11 @@ const CONFIG_PESOS = {
         { src: 'RENAN', dest: 'RENAN', ratio: 1, regionBonus: {'51': 1.1} }, // MT
         { src: 'RENAN', dest: 'RENAN', ratio: 1, regionBonus: {'17': 0.9} }, // TO
         { src: 'FELIPE', dest: 'RENAN', ratio: 0.7, regionBonus: {} },
-        
+
         { src: 'CIRO', dest: 'RENAN', ratio: 0.20, regionBonus: {'35': 1.3} }, // SP
         { src: 'CIRO', dest: 'CIRO', ratio: 0.80, regionBonus: {'23': 1.0} }, // CE
-        
-        { src: 'TEBET', dest: 'RENAN', ratio: 0.50, regionBonus: {'35': 1.2} }, 
-        { src: 'TEBET', dest: 'ALDO', ratio: 0.50, regionBonus: {} }
+
+        { src: 'TEBET', dest: 'RENAN', ratio: 0.50, regionBonus: {'35': 1.2} },
     ]
 };
 
@@ -389,12 +369,7 @@ const app = {
     map: null,
     layers: { brazil: null, cities: null },
     data: { full: null, current: null, names: {}, geoJsonCache: null },
-    state: {
-        mode: 'history', view: 'states', 
-        selectedId: null, selectedName: "Brasil",
-        ignored: new Set(),
-        customColors: JSON.parse(localStorage.getItem('v25_colors') || '{}')
-    },
+    state: { mode: 'history', view: 'states', selectedId: null, selectedName: "Brasil", ignored: new Set(), customColors: JSON.parse(localStorage.getItem('v25_colors') || '{}') },
 
     init: () => {
         app.map = L.map('map', {
@@ -423,7 +398,6 @@ const app = {
         document.getElementById('tabSim').className = `mode-tab ${mode==='simulation'?'active':''}`;
         document.getElementById('historyControls').style.display = mode==='history'?'block':'none';
         document.getElementById('simControls').style.display = mode==='simulation'?'block':'none';
-        
         if(mode === 'history') app.loadData();
     },
 
@@ -457,7 +431,6 @@ const app = {
         const val = parseInt(el.value);
         CONFIG.simCandidates[idx].val = val;
         document.getElementById(`val_${idx}`).innerText = val + "%";
-
         const total = CONFIG.simCandidates.reduce((a,b) => a+b.val, 0);
         const totEl = document.getElementById('totalSimVal');
         totEl.innerText = total + "%";
@@ -465,7 +438,7 @@ const app = {
     },
 
     // =========================================================================
-    // LÓGICA DE SIMULAÇÃO (CORRIGIDA)
+    // LÓGICA DE SIMULAÇÃO (COM CORREÇÃO DO MAPA MUNICIPAL)
     // =========================================================================
     runSimulation: async () => {
         const loader = document.getElementById('loader');
@@ -474,10 +447,11 @@ const app = {
         loader.classList.remove('hidden');
         document.getElementById('loaderMsg').innerText = "Processando...";
         btn.innerText = "CALCULANDO...";
-        app.state.ignored.clear(); 
+        app.state.ignored.clear();
 
         setTimeout(async () => {
             try {
+                // 1. Garante base 2022
                 if (!app.data.full || !app.data.full['1']) {
                     const res = await fetch('data/2022_president.json');
                     if(!res.ok) throw new Error("Base 2022 não encontrada.");
@@ -485,9 +459,12 @@ const app = {
                     app.data.names = app.data.full['1'].meta_nomes || {};
                 }
 
-                if(app.state.view === 'all_cities' && !app.layers.cities) {
-                    await app.loadAllMunicipalities();
-                } else if (app.state.view === 'states') {
+                // 2. GARANTE O MAPA CORRETO (Fix do Bug)
+                // Se for All Cities, força o load. Se for States, limpa.
+                if(app.state.view === 'all_cities') {
+                    // Importante: await para garantir que a camada esteja pronta antes de pintar
+                    await app.loadAllMunicipalities(); 
+                } else {
                     app.resetMapToStates();
                 }
 
@@ -495,7 +472,7 @@ const app = {
                 const nationalTotals = {}; 
                 const baseMap = {};
 
-                // 1. Herança de Votos
+                // Passo A: Herança
                 for (let ibge in sourceMuns) {
                     const srcVotes = sourceMuns[ibge];
                     const uf = ibge.substring(0, 2);
@@ -504,13 +481,11 @@ const app = {
                     for (let key22 in srcVotes) {
                         const votes = srcVotes[key22];
                         const keyUpper = key22.toUpperCase();
-
                         CONFIG_PESOS.rules.forEach(rule => {
                             if (keyUpper.includes(rule.src)) {
                                 const bonus = rule.regionBonus[uf] || 1.0;
                                 const transfer = Math.floor(votes * rule.ratio * bonus);
                                 if (transfer > 0) {
-                                    // Usa o ID interno como chave
                                     newVotes[rule.dest] = (newVotes[rule.dest] || 0) + transfer;
                                     nationalTotals[rule.dest] = (nationalTotals[rule.dest] || 0) + transfer;
                                 }
@@ -520,43 +495,57 @@ const app = {
                     baseMap[ibge] = newVotes;
                 }
 
-                // 2. Sliders
+                // Passo B: Sliders
                 const grandTotal = Object.values(nationalTotals).reduce((a,b)=>a+b, 0);
                 const multipliers = {};
-
                 CONFIG.simCandidates.forEach(c => {
                     const baseVal = nationalTotals[c.id] || 0;
-                    const currentPct = grandTotal > 0 ? (baseVal / grandTotal) * 100 : 0;
-                    // Se a base for 0, o multiplicador é 0
-                    multipliers[c.id] = currentPct > 0 ? (c.val / currentPct) : 0;
+                    const pct = grandTotal > 0 ? (baseVal / grandTotal) * 100 : 0;
+                    multipliers[c.id] = pct > 0 ? (c.val / pct) : 0;
                 });
 
-                // 3. Resultado Final
+                // Passo C: Aplicação & NORMALIZAÇÃO PELO CONST_TOTAL_VOTOS
                 const finalMuns = {};
                 const finalStates = {};
+                let simGrandTotal = 0;
 
+                // C1: Calcula bruto
+                const rawSim = {};
                 for (let ibge in baseMap) {
                     const preVotes = baseMap[ibge];
+                    const temp = {};
+                    for (let key in preVotes) {
+                        const mult = multipliers[key] || 0;
+                        const val = Math.floor(preVotes[key] * mult);
+                        if(val > 0) temp[key] = val;
+                    }
+                    rawSim[ibge] = temp;
+                    simGrandTotal += Object.values(temp).reduce((a,b)=>a+b, 0);
+                }
+
+                // C2: Normaliza para CONST_TOTAL_VOTOS
+                const normFactor = simGrandTotal > 0 ? (CONST_TOTAL_VOTOS / simGrandTotal) : 1;
+
+                for (let ibge in rawSim) {
+                    const temp = rawSim[ibge];
                     const finalVotes = {};
                     let hasVotes = false;
 
-                    // Itera pelos IDs dos candidatos e aplica multiplicador
                     CONFIG.simCandidates.forEach(c => {
-                        const baseVal = preVotes[c.id] || 0;
-                        const val = Math.floor(baseVal * multipliers[c.id]);
-                        
-                        if (val > 0) {
-                            // Constrói a chave final "Nome (PARTIDO)"
-                            const keyStr = `${c.name} (${c.party})`;
-                            finalVotes[keyStr] = val;
-                            hasVotes = true;
+                        if(temp[c.id]) {
+                            const normalizedVal = Math.floor(temp[c.id] * normFactor);
+                            if(normalizedVal > 0) {
+                                finalVotes[`${c.name} (${c.party})`] = normalizedVal;
+                                hasVotes = true;
+                            }
                         }
                     });
 
-                    if (!hasVotes) finalVotes['OUTROS (OUTROS)'] = 100;
+                    if (!hasVotes) finalVotes['OUTROS (OUTROS)'] = 100; // Evita buraco
 
                     finalMuns[ibge] = finalVotes;
 
+                    // Agrega Estado
                     const uf = ibge.substring(0, 2);
                     if(!finalStates[uf]) finalStates[uf] = {};
                     for(let k in finalVotes) {
@@ -566,7 +555,6 @@ const app = {
 
                 app.data.current = { municipios: finalMuns, estados: finalStates };
                 app.refreshUI();
-                
                 btn.innerHTML = '<i class="fas fa-magic"></i> GERAR SIMULAÇÃO';
 
             } catch(e) {
@@ -580,69 +568,8 @@ const app = {
     },
 
     // =========================================================================
-    // CORE DO APP (MAPA, LISTA, CHECKBOXES)
+    // MAPA & CACHE
     // =========================================================================
-    getGradientConfig: (pct) => {
-        let config = GRADIENT_SCHEME[0];
-        for (let i = 0; i < GRADIENT_SCHEME.length; i++) {
-            if (pct >= GRADIENT_SCHEME[i].min) config = GRADIENT_SCHEME[i];
-        }
-        return config;
-    },
-
-    getDiscreteColor: (hex, pct) => {
-        const config = app.getGradientConfig(pct);
-        return app.mixColor(hex, config.mix, config.ratio);
-    },
-
-    mixColor: (hex1, hex2, amount) => {
-        const c1 = app.hexToRgb(hex1);
-        const c2 = app.hexToRgb(hex2);
-        const r = Math.round(c1.r + (c2.r - c1.r) * amount);
-        const g = Math.round(c1.g + (c2.g - c1.g) * amount);
-        const b = Math.round(c1.b + (c2.b - c1.b) * amount);
-        return `rgb(${r}, ${g}, ${b})`;
-    },
-
-    hexToRgb: (hex) => {
-        let c = hex.substring(1).split('');
-        if(c.length==3) c= [c[0], c[0], c[1], c[1], c[2], c[2]];
-        c = '0x'+c.join('');
-        return { r: (c>>16)&255, g: (c>>8)&255, b: c&255 };
-    },
-
-    loadData: async () => {
-        const loader = document.getElementById('loader');
-        loader.classList.remove('hidden');
-        app.state.ignored.clear();
-        
-        const year = document.getElementById('yearSelect').value;
-        const role = document.getElementById('roleSelect').value;
-        const turn = document.getElementById('turnSelect').value;
-        app.state.view = document.getElementById('viewModeSelect').value;
-
-        try {
-            const res = await fetch(`data/${year}_${role}.json`);
-            if(!res.ok) throw new Error("Dados não encontrados.");
-            const json = await res.json();
-            
-            app.data.full = json;
-            app.data.current = json[turn];
-            app.data.names = json[turn].meta_nomes || {};
-            
-            if(app.state.mode === 'history') {
-                if (app.state.view === 'all_cities') await app.loadAllMunicipalities();
-                else app.resetMapToStates();
-                app.refreshUI();
-            }
-
-        } catch(e) {
-            if(app.state.mode === 'history') console.error(e);
-        } finally {
-            loader.classList.add('hidden');
-        }
-    },
-
     fetchGeoJsonCache: async () => {
         if (app.data.geoJsonCache) return app.data.geoJsonCache;
         const url = "https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json";
@@ -658,8 +585,9 @@ const app = {
         loader.classList.remove('hidden');
 
         try {
-            if(app.layers.cities) app.map.removeLayer(app.layers.cities);
-            if(app.layers.brazil) app.map.removeLayer(app.layers.brazil);
+            // Limpa antes de adicionar para evitar sobreposição ou erro de referência
+            if (app.layers.cities) app.map.removeLayer(app.layers.cities);
+            if (app.layers.brazil) app.map.removeLayer(app.layers.brazil);
 
             const data = await app.fetchGeoJsonCache();
 
@@ -678,9 +606,16 @@ const app = {
             }).addTo(app.map);
             
             app.state.view = 'all_cities';
-            app.map.fitBounds(app.layers.cities.getBounds());
+            // Só dá zoom fit se não estivermos já no nível de município vindo de um estado
+            if (!app.state.selectedId || app.state.selectedId.length === 2) {
+                app.map.fitBounds(app.layers.cities.getBounds());
+            }
         } catch(e) { console.log(e); } 
-        finally { loader.classList.add('hidden'); app.updateSidebarRight(); }
+        finally { 
+            loader.classList.add('hidden'); 
+            // Atualiza sidebar se necessário
+            if(app.data.current) app.updateSidebarRight(); 
+        }
     },
 
     resetMapToStates: () => {
@@ -706,7 +641,6 @@ const app = {
             style: (f) => app.getStyle(f, 'estados'),
             onEachFeature: (f, l) => {
                 l.on('click', () => {
-                    // FUNCIONALIDADE DRILL-DOWN: Clicar estado abre cidades
                     app.loadStateCities(f.properties.id, f.properties.name);
                 });
                 app.bindTooltip(l, f.properties.id, 'estados', f.properties.name);
@@ -741,6 +675,38 @@ const app = {
             app.selectRegion(ufId, ufName);
         } catch(e) { console.error(e); } 
         finally { loader.classList.add('hidden'); }
+    },
+
+    // =========================================================================
+    // RESTO DO CORE DO APP
+    // =========================================================================
+    getGradientConfig: (pct) => {
+        let config = GRADIENT_SCHEME[0];
+        for (let i = 0; i < GRADIENT_SCHEME.length; i++) {
+            if (pct >= GRADIENT_SCHEME[i].min) config = GRADIENT_SCHEME[i];
+        }
+        return config;
+    },
+
+    getDiscreteColor: (hex, pct) => {
+        const config = app.getGradientConfig(pct);
+        return app.mixColor(hex, config.mix, config.ratio);
+    },
+
+    mixColor: (hex1, hex2, amount) => {
+        const c1 = app.hexToRgb(hex1);
+        const c2 = app.hexToRgb(hex2);
+        const r = Math.round(c1.r + (c2.r - c1.r) * amount);
+        const g = Math.round(c1.g + (c2.g - c1.g) * amount);
+        const b = Math.round(c1.b + (c2.b - c1.b) * amount);
+        return `rgb(${r}, ${g}, ${b})`;
+    },
+
+    hexToRgb: (hex) => {
+        let c = hex.substring(1).split('');
+        if(c.length==3) c= [c[0], c[0], c[1], c[1], c[2], c[2]];
+        c = '0x'+c.join('');
+        return { r: (c>>16)&255, g: (c>>8)&255, b: c&255 };
     },
 
     selectRegion: (id, name) => {
