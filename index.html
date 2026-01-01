@@ -297,51 +297,149 @@ const app = {
             opacity: 0.4
         }).addTo(app.map);
 
-// LEGENDA EM DEGRAUS DE ALTO CONTRASTE
+// LEGENDA COM NOVO DEGRADÊ HARMONIOSO
 const legendDiv = document.getElementById('legendColors');
 for(let i=0; i<10; i++) {
     const el = document.createElement('div');
     el.className = 'legend-item';
-    // Exemplo usando a cor padrão para demonstrar o novo degradê
     const pct = i * 10 + 5; // 5, 15, 25, ..., 95
-    el.style.background = app.getGradientColor('#3b82f6', pct); // Usando azul como exemplo
+    // Usa uma cor de exemplo (azul do tema) para demonstrar o degradê
+    el.style.background = app.getGradientColor('#3b82f6', pct);
     legendDiv.appendChild(el);
 }
 
-        app.loadBrazilLayer();
-        app.loadData();
-    },
-
-// --- NOVA LÓGICA DE DEGRADÊ COM CONTRASTE ELEVADO ---
+// --- NOVA LÓGICA DE DEGRADÊ COM HSL HARMONIOSO ---
 getGradientColor: (hex, pct) => {
-    // Sistema de faixas com alto contraste
-    let mixRatio;
+    // Converte HEX para HSL
+    const hsl = app.hexToHsl(hex);
+    
+    // Sistema baseado em luminosidade (Lightness) para criar o degradê
+    // Quanto maior o percentual, menor a luminosidade (cores mais escuras/saturadas)
     
     if (pct < 40) {
-        // Abaixo de 40%: Tons muito claros (alta visibilidade)
-        const step = Math.min(Math.floor(pct / 10), 3); // 0-3
-        mixRatio = 0.85 - (step * 0.25); // 85% a 10% de branco
-    } 
+        // 0-40%: Cores muito claras e pouco saturadas
+        const factor = pct / 40; // 0 a 1
+        const lightness = 85 - (factor * 20); // 85% a 65%
+        const saturation = 30 + (factor * 40); // 30% a 70%
+        
+        return app.hslToHex(hsl.h, saturation, lightness);
+    }
     else if (pct >= 40 && pct < 50) {
-        // Faixa 40%-49.99%: Tom médio-claro (contraste moderado)
-        const subStep = (pct - 40) / 10; // 0 a 0.999
-        mixRatio = 0.6 - (subStep * 0.3); // 60% a 30% de branco
+        // 40-50%: Cores médio-claras
+        const factor = (pct - 40) / 10; // 0 a 1
+        const lightness = 65 - (factor * 10); // 65% a 55%
+        const saturation = 70 + (factor * 10); // 70% a 80%
+        
+        return app.hslToHex(hsl.h, saturation, lightness);
     }
     else if (pct >= 50 && pct < 60) {
-        // Faixa 50%-59.99%: Tom médio-escuro (contraste forte)
-        const subStep = (pct - 50) / 10; // 0 a 0.999
-        mixRatio = 0.4 - (subStep * 0.2); // 40% a 20% de branco
+        // 50-60%: Cores médio-escuras
+        const factor = (pct - 50) / 10; // 0 a 1
+        const lightness = 55 - (factor * 10); // 55% a 45%
+        const saturation = 80 + (factor * 10); // 80% a 90%
+        
+        return app.hslToHex(hsl.h, saturation, lightness);
     }
     else {
-        // Acima de 60%: Tons escuros a puros
-        const step = Math.min(Math.floor((pct - 60) / 10) + 6, 9); // 6-9
-        mixRatio = 0.3 - ((step - 6) * 0.1); // 30% a 0% de branco
+        // 60-100%: Cores escuras e altamente saturadas
+        const factor = (pct - 60) / 40; // 0 a 1
+        const lightness = 45 - (factor * 20); // 45% a 25%
+        const saturation = 90 + (factor * 10); // 90% a 100% (ou manter em 100)
+        
+        return app.hslToHex(hsl.h, Math.min(saturation, 100), Math.max(lightness, 20));
+    }
+},
+
+// --- FUNÇÕES AUXILIARES PARA CONVERSÃO HSL ---
+hexToHsl: (hex) => {
+    // Remove o # se presente
+    hex = hex.replace('#', '');
+    
+    // Converte HEX para RGB
+    let r, g, b;
+    if (hex.length === 3) {
+        r = parseInt(hex[0] + hex[0], 16);
+        g = parseInt(hex[1] + hex[1], 16);
+        b = parseInt(hex[2] + hex[2], 16);
+    } else if (hex.length === 6) {
+        r = parseInt(hex.substring(0, 2), 16);
+        g = parseInt(hex.substring(2, 4), 16);
+        b = parseInt(hex.substring(4, 6), 16);
+    } else {
+        return { h: 0, s: 0, l: 50 }; // Fallback
     }
     
-    // Cor de mistura ajustada para melhor contraste
-    const mixColor = pct < 50 ? '#f0f0f0' : '#a0a0a0';
+    // Normaliza os valores RGB para 0-1
+    r /= 255; g /= 255; b /= 255;
     
-    return app.mixColor(hex, mixColor, Math.max(0, Math.min(1, mixRatio)));
+    // Encontra min e max
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    
+    // Calcula luminosidade
+    let l = (max + min) / 2;
+    
+    // Calcula saturação
+    let s = 0;
+    if (max !== min) {
+        s = (max - min) / (1 - Math.abs(2 * l - 1));
+    }
+    
+    // Calcula matiz (hue)
+    let h = 0;
+    if (max === r) {
+        h = ((g - b) / (max - min)) % 6;
+    } else if (max === g) {
+        h = (2 + (b - r) / (max - min)) % 6;
+    } else {
+        h = (4 + (r - g) / (max - min)) % 6;
+    }
+    
+    h = Math.round(h * 60);
+    if (h < 0) h += 360;
+    
+    s = Math.round(s * 100);
+    l = Math.round(l * 100);
+    
+    return { h, s, l };
+},
+
+hslToHex: (h, s, l) => {
+    // Converte HSL para HEX
+    s /= 100;
+    l /= 100;
+    
+    const c = (1 - Math.abs(2 * l - 1)) * s;
+    const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    const m = l - c / 2;
+    
+    let r, g, b;
+    
+    if (h >= 0 && h < 60) {
+        [r, g, b] = [c, x, 0];
+    } else if (h >= 60 && h < 120) {
+        [r, g, b] = [x, c, 0];
+    } else if (h >= 120 && h < 180) {
+        [r, g, b] = [0, c, x];
+    } else if (h >= 180 && h < 240) {
+        [r, g, b] = [0, x, c];
+    } else if (h >= 240 && h < 300) {
+        [r, g, b] = [x, 0, c];
+    } else {
+        [r, g, b] = [c, 0, x];
+    }
+    
+    r = Math.round((r + m) * 255);
+    g = Math.round((g + m) * 255);
+    b = Math.round((b + m) * 255);
+    
+    // Converte para HEX
+    const toHex = (n) => {
+        const hex = n.toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+    };
+    
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 },
 
     mixColor: (hex1, hex2, amount) => {
