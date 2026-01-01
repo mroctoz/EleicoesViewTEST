@@ -50,6 +50,7 @@
             z-index: 1000;
             border-right: 1px solid var(--border-color);
             box-shadow: 5px 0 30px rgba(0,0,0,0.5);
+            transition: width 0.3s;
         }
         .sidebar-right { border-left: 1px solid var(--border-color); border-right: none; width: 420px; }
 
@@ -212,8 +213,8 @@
             </div>
         </div>
         
-        <!-- CONTROLE COMUM: VISUALIZAÇÃO -->
-        <div style="padding: 10px 20px 0 20px;">
+        <!-- VISUALIZAÇÃO COMUM (ESTADOS/MUNICÍPIOS) -->
+        <div style="padding: 20px 20px 0 20px;">
             <div class="control-group">
                 <label>VISUALIZAÇÃO</label>
                 <select id="viewModeSelect">
@@ -272,8 +273,7 @@
                 <div id="totalSimVal" style="font-size:1.4rem; font-weight:800; color:#4ade80;">100%</div>
             </div>
 
-            <!-- BOTÃO ADICIONADO -->
-            <button class="btn-primary" onclick="app.loadSimulationBase()" style="margin-top: 20px;">
+            <button class="btn-primary" onclick="app.generateAndLoadSimulation()" style="margin-top: 20px;">
                 <i class="fas fa-magic"></i> GERAR SIMULAÇÃO
             </button>
         </div>
@@ -293,7 +293,7 @@
                 <i class="fas fa-arrow-left"></i> Voltar para o Brasil
             </button>
 
-            <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted);">Votos Totais (Simulados/Reais)</div>
+            <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted);">Votos Totais</div>
             <div id="totalVotesVal" style="font-size: 1.4rem; font-weight: 800; color: white;">-</div>
         </div>
 
@@ -321,7 +321,6 @@
 // CONFIGURAÇÃO
 // =========================================================
 const CONFIG = {
-    // Cores originais + Cores Simulação
     colors: {
         'PT': '#E12525', 'PL': '#5756d6', 'PSB': '#E12525', 'PDT': '#F58220', 
         'UNIÃO': '#009EE3', 'PSDB': '#003399', 'MDB': '#008000', 'PSD': '#FAA21B',
@@ -332,7 +331,6 @@ const CONFIG = {
         'PRONA': '#006400', 'PFL': '#0056A8', 'PMDB': '#008000', 'PSOL': '#FFCC00',
         'OUTROS': '#666666', 'DEFAULT': '#555555'
     },
-    // Definição da Simulação
     simCandidates: [
         { name: 'Lula', party: 'PT', val: 45 },
         { name: 'Flávio Bolsonaro', party: 'PL', val: 30 },
@@ -341,6 +339,17 @@ const CONFIG = {
         { name: 'Ratinho Jr', party: 'PSD', val: 5 },
         { name: 'Ciro Gomes', party: 'PSDB', val: 3 },
         { name: 'Aldo Rebelo', party: 'DC', val: 1 }
+    ],
+    // REGRAS DE HERANÇA POLÍTICA (Fonte -> Destino)
+    // Isso roda na memória do navegador para evitar dependência de arquivos externos
+    inheritance: [
+        { dest: 'Lula (PT)', src: 'LULA (PT)', ratio: 1.0, reg: {} },
+        { dest: 'Flávio Bolsonaro (PL)', src: 'JAIR BOLSONARO (PL)', ratio: 0.65, reg: {} },
+        { dest: 'Ronaldo Caiado (UNIÃO)', src: 'JAIR BOLSONARO (PL)', ratio: 0.15, reg: {'52': 5.0} },
+        { dest: 'Ratinho Jr (PSD)', src: 'JAIR BOLSONARO (PL)', ratio: 0.10, reg: {'41': 5.0} },
+        { dest: 'Renan Santos (MISSÃO)', src: 'CIRO GOMES (PDT)', ratio: 2.0, reg: {'35': 1.5} },
+        { dest: 'Ciro Gomes (PSDB)', src: 'CIRO GOMES (PDT)', ratio: 0.5, reg: {'23': 2.0} },
+        { dest: 'Aldo Rebelo (DC)', src: 'SIMONE TEBET (MDB)', ratio: 0.5, reg: {} }
     ]
 };
 
@@ -388,27 +397,22 @@ const app = {
 
         app.renderSliders();
         app.loadBrazilLayer();
-        app.loadData(); 
+        app.loadData(); // Inicia com Histórico 2022
     },
 
     setMode: (mode) => {
         app.state.mode = mode;
         
-        // UI Updates
         document.getElementById('btnModeHist').className = mode === 'mode-btn ' + (mode === 'history' ? 'active' : '');
         document.getElementById('btnModeSim').className = mode === 'mode-btn ' + (mode === 'simulation' ? 'active' : '');
         document.getElementById('historyControls').style.display = mode === 'history' ? 'block' : 'none';
         document.getElementById('simControls').style.display = mode === 'simulation' ? 'block' : 'none';
 
-        if(mode === 'simulation' && app.data.simBase) {
-            app.updateSimulation();
-        } else if (mode === 'history') {
-            app.loadData();
-        }
+        if(mode === 'history') app.loadData();
     },
 
     // ============================================
-    // LÓGICA DE SIMULAÇÃO
+    // SIMULAÇÃO IN-MEMORY (SEM ARQUIVOS EXTERNOS)
     // ============================================
     renderSliders: () => {
         const c = document.getElementById('slidersContainer');
@@ -441,58 +445,86 @@ const app = {
         totEl.style.color = total === 100 ? '#4ade80' : '#facc15';
     },
 
-    loadSimulationBase: async () => {
+    generateAndLoadSimulation: async () => {
         const loader = document.getElementById('loader');
         loader.classList.remove('hidden');
-        
-        // Sincroniza view mode
         app.state.view = document.getElementById('viewModeSelect').value;
 
         try {
-            // 1. Carrega dados da simulação (JSON) se necessário
-            if(!app.data.simBase) {
-                // Tenta carregar do caminho gerado pelo script Python
-                const res = await fetch('dados_processados/2026_base.json');
-                if(!res.ok) {
-                    // Fallback para pasta data normal se o usuário moveu
-                    const res2 = await fetch('data/2026_base.json');
-                    if(!res2.ok) throw new Error("Arquivo 'dados_processados/2026_base.json' não encontrado.");
-                    const json2 = await res2.json();
-                    app.data.simBase = json2['1'];
-                    app.data.names = json2['1'].meta_nomes || {};
-                } else {
-                    const json = await res.json();
-                    app.data.simBase = json['1'];
-                    app.data.names = json['1'].meta_nomes || {};
-                }
+            // 1. Garante que temos dados de 2022 para usar como base
+            if (!app.data.full || !app.data.full['1']) {
+                const res = await fetch('data/2022_president.json');
+                if(!res.ok) throw new Error("Base de dados 2022 não encontrada.");
+                app.data.full = await res.json();
             }
 
-            // 2. Carrega Malha Municipal se necessário
-            if(app.state.view === 'all_cities' && !app.layers.cities) {
+            // 2. Garante a malha correta carregada
+            if(app.state.view === 'all_cities') {
                 await app.loadAllMunicipalities();
-            } else if (app.state.view === 'states') {
+            } else {
                 app.resetMapToStates();
             }
 
-            // 3. Calcula e Renderiza
-            app.updateSimulation();
+            // 3. GERA A BASE DA SIMULAÇÃO NA MEMÓRIA
+            // Isso substitui o script Python, evitando erro de arquivo não encontrado
+            if(!app.data.simBase) {
+                app.data.simBase = { municipios: {}, estados: {} };
+                const sourceMuns = app.data.full['1'].municipios;
+                
+                // Processa cada município
+                for (let ibge in sourceMuns) {
+                    const srcVotes = sourceMuns[ibge];
+                    const uf = ibge.substring(0, 2);
+                    const newVotes = {};
+                    let totalOld = 0;
 
-        } catch(e) { 
-            console.error(e); 
-            alert("Erro: " + e.message + "\nCertifique-se de ter rodado o script Python."); 
-        } finally { loader.classList.add('hidden'); }
+                    // Aplica regras de herança
+                    CONFIG.inheritance.forEach(rule => {
+                        const baseVal = srcVotes[rule.src] || 0;
+                        const factor = rule.ratio * (rule.reg[uf] || 1.0);
+                        newVotes[rule.dest] = Math.floor(baseVal * factor);
+                        totalOld += baseVal;
+                    });
+
+                    // Preenche lacunas com "Outros" para não zerar cidades
+                    const totalNew = Object.values(newVotes).reduce((a,b)=>a+b,0);
+                    if(totalNew === 0 && totalOld > 0) {
+                        newVotes['Outros (OUTROS)'] = totalOld;
+                    }
+
+                    app.data.simBase.municipios[ibge] = newVotes;
+                }
+
+                // Agrega Estados
+                for(let ibge in app.data.simBase.municipios) {
+                    const uf = ibge.substring(0, 2);
+                    if(!app.data.simBase.estados[uf]) app.data.simBase.estados[uf] = {};
+                    const munVotes = app.data.simBase.municipios[ibge];
+                    for(let cand in munVotes) {
+                        app.data.simBase.estados[uf][cand] = (app.data.simBase.estados[uf][cand]||0) + munVotes[cand];
+                    }
+                }
+            }
+
+            // 4. Aplica os Multiplicadores dos Sliders
+            app.applySimulationMath();
+
+        } catch(e) {
+            console.error(e);
+            alert("Erro: " + e.message);
+        } finally {
+            loader.classList.add('hidden');
+        }
     },
 
-    updateSimulation: () => {
+    applySimulationMath: () => {
         if(!app.data.simBase) return;
 
-        // 1. Calcula totais da Base (para normalização)
+        // Calcula Totais da Base Gerada
         const baseTotals = {};
         const stateData = app.data.simBase.estados;
-        
         for(let uf in stateData) {
             for(let key in stateData[uf]) {
-                // Normaliza chave (remove espaços extras e partido) para matching
                 const name = key.split(' (')[0].trim();
                 baseTotals[name] = (baseTotals[name] || 0) + stateData[uf][key];
             }
@@ -500,23 +532,17 @@ const app = {
         
         const grandTotal = Object.values(baseTotals).reduce((a,b)=>a+b, 0);
 
-        // 2. Define Multiplicadores
+        // Calcula Multiplicadores
         const multipliers = {};
         CONFIG.simCandidates.forEach(c => {
-            const baseVal = baseTotals[c.name.trim()] || 0;
+            // Case insensitive match
+            const baseVal = Object.entries(baseTotals).find(([k,v]) => k.toLowerCase() === c.name.toLowerCase())?.[1] || 0;
             const currentPct = (baseVal / grandTotal) * 100;
-            
-            // Se o candidato existe na base, aplica fator. Se não, é 0.
-            if(currentPct > 0) {
-                multipliers[c.name] = c.val / currentPct;
-            } else {
-                multipliers[c.name] = 0; 
-            }
+            multipliers[c.name] = currentPct > 0 ? (c.val / currentPct) : 0;
         });
 
-        // 3. Aplica nos dados
+        // Aplica nos dados atuais
         const newCurrent = { estados: {}, municipios: {} };
-        
         const apply = (source) => {
             const dest = {};
             for(let k in source) {
@@ -524,19 +550,18 @@ const app = {
                 const novos = {};
                 for(let candKey in votos) {
                     const name = candKey.split(' (')[0].trim();
-                    // Encontra multiplicador pelo nome do candidato
-                    // Usa Object.keys para achar a chave correta no CONFIG caso haja diferenças sutis
+                    // Match slider
                     let mult = 0;
-                    const configKey = Object.keys(multipliers).find(k => k === name);
-                    if(configKey) mult = multipliers[configKey];
-
+                    const slider = CONFIG.simCandidates.find(sc => sc.name.toLowerCase() === name.toLowerCase());
+                    if(slider) mult = multipliers[slider.name];
+                    
                     const novosVotos = Math.floor(votos[candKey] * mult);
                     if (novosVotos > 0) novos[candKey] = novosVotos;
                 }
                 dest[k] = novos;
             }
             return dest;
-        }
+        };
 
         newCurrent.municipios = apply(app.data.simBase.municipios);
         newCurrent.estados = apply(app.data.simBase.estados);
@@ -546,7 +571,7 @@ const app = {
     },
 
     // ============================================
-    // CORE (MANTIDO INTACTO)
+    // CORE DO APP (MANTIDO)
     // ============================================
     getGradientConfig: (pct) => {
         let config = GRADIENT_SCHEME[0];
@@ -755,7 +780,6 @@ const app = {
         }
 
         if (!app.state.selectedId) {
-             // Agrega Brasil
              Object.values(app.data.current.estados).forEach(st => {
                  Object.entries(st).forEach(([c, v]) => rawVotes[c] = (rawVotes[c]||0)+v);
              });
