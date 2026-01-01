@@ -320,7 +320,7 @@ const app = {
         // Isso força um degradê bem visível.
         const whiteMix = 0.9 - (Math.min(step, 9) * 0.1); 
         
-        return app.mixColor(hex, '#ffffff', Math.max(0, whiteMix));
+        return app.mixColor(hex, '#cccccc', Math.max(0, whiteMix));
     },
 
     mixColor: (hex1, hex2, amount) => {
