@@ -5,67 +5,88 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Atlas Histórico & Simulação 2026</title>
     
-    <!-- Leaflet -->
+    <!-- Leaflet & Bibliotecas -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <!-- Fonts/Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
     <!-- Color Picker -->
     <link href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
 
     <style>
-        :root { --bg: #0a0c10; --card: rgba(20,24,32,0.98); --blue: #3b82f6; --text: #fff; }
+        :root {
+            --bg: #0a0c10;
+            --card: rgba(20,24,32,0.98);
+            --blue: #3b82f6;
+            --text: #fff;
+            --border: rgba(255,255,255,0.1);
+        }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; height: 100vh; }
         #app { width: 100vw; height: 100vh; display: flex; }
         #map { flex: 1; background: #151515; }
 
-        .sidebar { width: 380px; background: var(--card); border-right: 1px solid #333; display: flex; flex-direction: column; z-index: 1000; box-shadow: 5px 0 20px rgba(0,0,0,0.5); }
-        .sidebar-right { border-left: 1px solid #333; border-right: none; }
+        /* SIDEBAR */
+        .sidebar { width: 380px; background: var(--card); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 1000; box-shadow: 5px 0 20px rgba(0,0,0,0.5); }
+        .sidebar-right { border-left: 1px solid var(--border); border-right: none; }
         
-        .header { padding: 20px; background: #111; border-bottom: 1px solid #333; }
-        .header h1 { font-size: 1.2rem; font-weight: 800; background: linear-gradient(90deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header { padding: 20px; background: #111; border-bottom: 1px solid var(--border); }
+        .header h1 { font-size: 1.2rem; font-weight: 800; background: linear-gradient(90deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
 
         .controls { padding: 20px; flex: 1; overflow-y: auto; }
         .control-group { margin-bottom: 15px; }
-        label { display: block; font-size: 0.7rem; color: #888; font-weight: 700; margin-bottom: 5px; }
-        select, button { width: 100%; padding: 10px; background: #050505; border: 1px solid #333; color: white; border-radius: 6px; cursor: pointer; }
-        button.btn-primary { background: var(--blue); border: none; font-weight: 700; margin-top: 10px; }
-        button.btn-primary:hover { filter: brightness(1.1); }
+        label { display: block; font-size: 0.7rem; color: #888; font-weight: 700; margin-bottom: 5px; text-transform: uppercase; }
+        select, button { width: 100%; padding: 12px; background: #050505; border: 1px solid #333; color: white; border-radius: 6px; cursor: pointer; font-family: inherit; }
+        button.btn-primary { background: var(--blue); border: none; font-weight: 700; margin-top: 10px; transition: 0.2s; }
+        button.btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        
+        button.btn-back { background: #222; margin-bottom: 10px; font-size: 0.8rem; }
+        button.btn-back:hover { background: #333; }
 
         /* TABS */
-        .tabs { display: flex; gap: 5px; margin-top: 10px; }
-        .tab { flex: 1; padding: 8px; text-align: center; background: #222; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; color: #777; }
-        .tab.active { background: var(--blue); color: white; }
+        .tabs { display: flex; gap: 5px; margin-top: 15px; background: #000; padding: 4px; border-radius: 8px; border: 1px solid #333; }
+        .tab { flex: 1; padding: 8px; text-align: center; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 700; color: #666; transition: 0.2s; }
+        .tab.active { background: #222; color: white; }
+        .tab:hover:not(.active) { color: #999; }
 
         /* SLIDERS */
-        .slider-row { margin-bottom: 12px; background: rgba(255,255,255,0.03); padding: 10px; border-radius: 6px; }
-        .s-head { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 700; }
-        input[type=range] { width: 100%; margin-top: 8px; }
+        .slider-row { margin-bottom: 12px; background: rgba(255,255,255,0.03); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); }
+        .s-head { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; margin-bottom: 5px; }
+        .s-sub { font-size: 0.65rem; color: #666; text-transform: uppercase; font-weight: 600; }
+        input[type=range] { width: 100%; margin-top: 8px; -webkit-appearance: none; background: transparent; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: #333; border-radius: 2px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; margin-top: -6px; height: 16px; width: 16px; background: #fff; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
 
         /* LIST */
         .cand-row { display: flex; gap: 10px; padding: 10px; border-bottom: 1px solid #222; align-items: center; }
-        .cand-color { width: 12px; height: 12px; border-radius: 50%; }
+        .cand-color { width: 12px; height: 12px; border-radius: 3px; }
         .cand-info { flex: 1; font-size: 0.85rem; }
-        .cand-bar { height: 4px; background: #333; margin-top: 4px; border-radius: 2px; overflow: hidden; }
-        .cand-fill { height: 100%; }
+        .cand-bar { height: 4px; background: #222; margin-top: 6px; border-radius: 2px; overflow: hidden; }
+        .cand-fill { height: 100%; transition: width 0.5s; }
 
-        .legend { position: absolute; bottom: 30px; right: 450px; background: #000; padding: 10px; border-radius: 8px; border: 1px solid #333; z-index: 999; }
-        .l-grad { width: 200px; height: 15px; background: linear-gradient(to right, #ddd 0%, #000 100%); margin-bottom: 5px; }
+        .legend { position: absolute; bottom: 30px; right: 450px; background: #0a0c10; padding: 12px; border-radius: 8px; border: 1px solid #333; z-index: 999; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        .l-grad { width: 200px; height: 12px; background: linear-gradient(to right, #ddd 0%, #aaa 40%, #000 100%); margin-bottom: 5px; border-radius: 2px; opacity: 0.8; }
         
-        #loader { position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; color: white; transition: opacity 0.3s; }
+        .map-btns { position: absolute; top: 20px; right: 450px; display: flex; flex-direction: column; gap: 5px; z-index: 999; }
+        .map-btn { width: 36px; height: 36px; background: #0a0c10; border: 1px solid #333; color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 6px; font-weight: 700; }
+        .map-btn:hover { background: #222; }
+
+        #loader { position: absolute; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; transition: opacity 0.3s; }
         .hidden { opacity: 0; pointer-events: none; }
+        .spinner { width: 40px; height: 40px; border: 3px solid #333; border-top-color: var(--blue); border-radius: 50%; animation: spin 1s infinite linear; margin-bottom: 15px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-<div id="loader"><h3>Carregando...</h3></div>
+<div id="loader">
+    <div class="spinner"></div>
+    <h3 id="loaderMsg">Carregando Atlas...</h3>
+</div>
 
 <div id="app">
+    <!-- LEFT SIDEBAR -->
     <aside class="sidebar">
         <div class="header">
             <h1>Atlas V25</h1>
@@ -75,15 +96,17 @@
             </div>
         </div>
 
-        <div class="controls" style="border-bottom: 1px solid #333;">
-            <label>VISUALIZAÇÃO</label>
-            <select id="viewMode" onchange="app.changeView()">
-                <option value="states">Estados</option>
-                <option value="all_cities">Municípios</option>
-            </select>
+        <div style="padding: 15px 20px 0;">
+            <div class="control-group">
+                <label>Visualização</label>
+                <select id="viewMode" onchange="app.changeView()">
+                    <option value="states">Estados (Brasil)</option>
+                    <option value="all_cities">Municípios (Detalhado)</option>
+                </select>
+            </div>
         </div>
 
-        <!-- HISTÓRICO -->
+        <!-- PANE: HISTÓRICO -->
         <div class="controls" id="paneHist">
             <div class="control-group">
                 <label>Ano</label>
@@ -91,65 +114,86 @@
             </div>
             <div class="control-group"><label>Turno</label><select id="turnSel"><option value="1">1º Turno</option><option value="2">2º Turno</option></select></div>
             <div class="control-group"><label>Cargo</label><select id="roleSel"><option value="president">Presidente</option><option value="governor">Governador</option><option value="senator">Senador</option></select></div>
-            <button class="btn-primary" onclick="app.loadData()">CARREGAR</button>
+            <button class="btn-primary" onclick="app.loadData()">CARREGAR MAPA</button>
         </div>
 
-        <!-- SIMULAÇÃO -->
+        <!-- PANE: SIMULAÇÃO -->
         <div class="controls" id="paneSim" style="display:none;">
-            <div style="font-size:0.75rem; color:#888; margin-bottom:15px; text-align:center;">
-                Baseado na projeção demográfica de 2022.<br>Ajuste e clique em <b>GERAR</b>.
+            <div style="font-size:0.75rem; color:#888; margin-bottom:20px; text-align:center; line-height: 1.4;">
+                Defina o cenário nacional.<br>O mapa será calculado com base na demografia de 2022.
             </div>
             <div id="simSliders"></div>
-            <div style="text-align:center; margin:10px 0; font-weight:800;" id="simTotal">100%</div>
-            <button class="btn-primary" onclick="app.loadData()">GERAR SIMULAÇÃO</button>
+            
+            <div style="background:#151515; padding:10px; border-radius:6px; text-align:center; margin:15px 0;">
+                <label style="margin:0;">Soma Total</label>
+                <div style="font-size:1.3rem; font-weight:800; color:#4ade80;" id="simTotal">100%</div>
+            </div>
+            
+            <button class="btn-primary" onclick="app.runSimulation()">
+                <i class="fas fa-calculator"></i> GERAR PROJEÇÃO
+            </button>
         </div>
     </aside>
 
     <div id="map"></div>
 
+    <!-- RIGHT SIDEBAR -->
     <aside class="sidebar sidebar-right">
         <div class="header">
             <h2 id="regName">Brasil</h2>
             <div style="font-size:0.8rem; color:var(--blue);" id="regType">Nacional</div>
         </div>
-        <div style="padding:15px; border-bottom:1px solid #333;">
-            <button class="btn-back" id="btnBack" style="display:none" onclick="app.resetSel()">Voltar ao Brasil</button>
-            <label>Total Votos</label>
+        <div style="padding:15px; border-bottom:1px solid var(--border);">
+            <button class="btn-back" id="btnBack" style="display:none" onclick="app.resetSel()">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </button>
+            <label>Votos Totais</label>
             <div id="totalVotes" style="font-size:1.5rem; font-weight:800;">-</div>
         </div>
         <div class="controls" id="resList"></div>
     </aside>
 
+    <div class="map-btns">
+        <div class="map-btn" onclick="app.map.zoomIn()">+</div>
+        <div class="map-btn" onclick="app.map.zoomOut()">-</div>
+    </div>
+
     <div class="legend">
-        <div style="font-size:0.7rem; font-weight:700; margin-bottom:5px;">Intensidade do Vencedor</div>
+        <div style="font-size:0.7rem; font-weight:700; margin-bottom:5px;">Percentual do Vencedor</div>
         <div class="l-grad"></div>
         <div style="display:flex; justify-content:space-between; font-size:0.6rem; color:#888;">
-            <span>20%</span><span>100%</span>
+            <span>20% (Claro)</span><span>100% (Escuro)</span>
         </div>
     </div>
 </div>
 
 <script>
-const COLORS = {
-    'PT': '#E12525', 'PL': '#5756d6', 'UNIÃO': '#009EE3', 'PSD': '#FAA21B',
-    'MISSÃO': '#D4AF37', 'PSDB': '#003399', 'DC': '#006400', 'DEFAULT': '#555',
-    'MDB': '#008000', 'PDT': '#F58220', 'PSB': '#E12525'
-};
-
-const SIM_CONFIG = [
-    { name: 'LULA', party: 'PT', val: 45 },
-    { name: 'FLÁVIO BOLSONARO', party: 'PL', val: 30 },
-    { name: 'RENAN SANTOS', party: 'MISSÃO', val: 9 },
-    { name: 'RONALDO CAIADO', party: 'UNIÃO', val: 7 },
-    { name: 'RATINHO JR', party: 'PSD', val: 5 },
-    { name: 'CIRO GOMES', party: 'PSDB', val: 3 },
-    { name: 'ALDO REBELO', party: 'DC', val: 1 }
+// =============================================================================
+// CONFIGURAÇÃO DA SIMULAÇÃO (O CÉREBRO)
+// =============================================================================
+const SIM_DATA = [
+    { id: 'lula',   name: 'Lula',   party: 'PT',     val: 45, color: '#E12525', base: ['LULA'] },
+    { id: 'flavio', name: 'Flávio', party: 'PL',     val: 30, color: '#5756d6', base: ['JAIR', 'BOLSONARO'] },
+    { id: 'renan',  name: 'Renan',  party: 'MISSÃO', val: 9,  color: '#D4AF37', base: ['CIRO'] },
+    { id: 'caiado', name: 'Caiado', party: 'UNIÃO',  val: 7,  color: '#009EE3', base: ['JAIR', 'BOLSONARO', 'SORAYA'] },
+    { id: 'ratinho',name: 'Ratinho',party: 'PSD',    val: 5,  color: '#FAA21B', base: ['JAIR', 'BOLSONARO'] },
+    { id: 'ciro',   name: 'Ciro',   party: 'PSDB',   val: 3,  color: '#003399', base: ['CIRO'] },
+    { id: 'aldo',   name: 'Aldo',   party: 'DC',     val: 1,  color: '#006400', base: ['TEBET', 'SIMONE'] }
 ];
+
+const COLORS = {}; 
+SIM_DATA.forEach(c => COLORS[c.party] = c.color);
+COLORS['DEFAULT'] = '#555';
 
 const app = {
     map: null,
     layers: { geo: null },
-    data: { current: null, names: {}, cacheGeo: null },
+    data: { 
+        full22: null,   // Dados brutos de 2022 (necessário para base)
+        current: null,  // Dados sendo exibidos agora (histórico ou simulado)
+        names: {},      // Nomes de cidades
+        geoCache: null  // Cache da malha
+    },
     state: { mode: 'history', view: 'states', sel: null },
 
     init: () => {
@@ -157,129 +201,238 @@ const app = {
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { opacity: 0.3 }).addTo(app.map);
         
         app.renderSliders();
-        app.loadData();
+        app.loadData(); // Carrega histórico inicial
     },
 
     setMode: (m) => {
         app.state.mode = m;
+        // UI Toggles
         document.getElementById('tabHist').className = `tab ${m=='history'?'active':''}`;
         document.getElementById('tabSim').className = `tab ${m=='simulation'?'active':''}`;
         document.getElementById('paneHist').style.display = m=='history'?'block':'none';
         document.getElementById('paneSim').style.display = m=='simulation'?'block':'none';
-        // Não carrega auto, espera clique
+        
+        if(m === 'history') app.loadData();
     },
 
+    // =========================================================================
+    // SLIDERS
+    // =========================================================================
     renderSliders: () => {
         const div = document.getElementById('simSliders');
-        div.innerHTML = SIM_CONFIG.map((c, i) => `
+        div.innerHTML = SIM_DATA.map((c, i) => `
             <div class="slider-row">
-                <div class="s-head"><span style="color:${COLORS[c.party]}">${c.name}</span> <span id="v_${i}">${c.val}%</span></div>
-                <input type="range" min="0" max="100" value="${c.val}" oninput="app.updSlide(${i}, this.value)">
+                <div class="s-head">
+                    <span style="color:${c.color}">${c.name}</span> 
+                    <span id="v_${i}">${c.val}%</span>
+                </div>
+                <div class="s-sub">${c.party}</div>
+                <input type="range" min="0" max="100" value="${c.val}" 
+                       oninput="app.updSlide(${i}, this.value)">
             </div>
         `).join('');
     },
 
     updSlide: (i, v) => {
-        SIM_CONFIG[i].val = parseInt(v);
+        SIM_DATA[i].val = parseInt(v);
         document.getElementById(`v_${i}`).innerText = v + '%';
-        const t = SIM_CONFIG.reduce((a,b)=>a+b.val,0);
+        const t = SIM_DATA.reduce((a,b)=>a+b.val,0);
         const el = document.getElementById('simTotal');
         el.innerText = t + '%';
         el.style.color = t===100 ? '#4ade80' : '#f87171';
     },
 
+    // =========================================================================
+    // DATA LOADING (Histórico)
+    // =========================================================================
     loadData: async () => {
         const loader = document.getElementById('loader');
         loader.classList.remove('hidden');
+        document.getElementById('loaderMsg').innerText = "Carregando Dados...";
         
         try {
-            let data, turn = '1';
-            
-            if (app.state.mode === 'history') {
-                const year = document.getElementById('yearSel').value;
-                const role = document.getElementById('roleSel').value;
-                turn = document.getElementById('turnSel').value;
-                const res = await fetch(`data/${year}_${role}.json`);
-                if(!res.ok) throw new Error("Dados não encontrados");
-                const json = await res.json();
-                data = json[turn];
-            } else {
-                // MODO SIMULAÇÃO: Carrega a base gerada pelo Python
-                const res = await fetch(`data/2026_president.json`);
-                if(!res.ok) throw new Error("Arquivo '2026_president.json' não encontrado.");
-                const json = await res.json();
-                data = json['1']; // Simulação usa estrutura do turno 1
-                
-                // APLICA MATEMÁTICA DOS SLIDERS AQUI
-                data = app.applySimulationMath(data);
-            }
+            app.state.view = document.getElementById('viewMode').value;
+            const year = document.getElementById('yearSel').value;
+            const role = document.getElementById('roleSel').value;
+            const turn = document.getElementById('turnSel').value;
 
-            if(!data) throw new Error("Turno vazio");
+            // Se for histórico, carrega o arquivo pedido
+            // Se for simulação mas sem dados base, carrega 2022_president
+            let fileToLoad = (app.state.mode === 'history') ? `data/${year}_${role}.json` : `data/2022_president.json`;
             
-            app.data.current = data;
-            app.data.names = data.meta_nomes || {};
+            const res = await fetch(fileToLoad);
+            if(!res.ok) throw new Error("Arquivo de dados não encontrado: " + fileToLoad);
+            const json = await res.json();
             
-            await app.renderMap();
-            app.updateStats();
+            // Salva referência de 2022 para simulação usar depois
+            if(fileToLoad.includes('2022_president')) app.data.full22 = json;
+
+            if(app.state.mode === 'history') {
+                app.data.current = json[turn];
+                app.data.names = json[turn].meta_nomes || {};
+                await app.renderMap();
+            }
 
         } catch(e) {
             console.error(e);
-            alert("Erro: " + e.message);
+            if(app.state.mode === 'history') alert("Erro: " + e.message);
         } finally {
             loader.classList.add('hidden');
         }
     },
 
-    applySimulationMath: (baseData) => {
-        // Clona para não estragar o cache
-        const newData = JSON.parse(JSON.stringify(baseData));
-        
-        // 1. Calcular totais nacionais da BASE (arquivo JSON)
-        let baseTotals = {};
-        Object.values(newData.estados).forEach(st => {
-            Object.entries(st).forEach(([k, v]) => {
-                const name = k.split(' (')[0].toUpperCase();
-                baseTotals[name] = (baseTotals[name] || 0) + v;
-            });
-        });
-        
-        const totalValid = Object.values(baseTotals).reduce((a,b)=>a+b, 0);
+    // =========================================================================
+    // SIMULAÇÃO ENGINE (Correção do Bug "Outros")
+    // =========================================================================
+    runSimulation: async () => {
+        const loader = document.getElementById('loader');
+        loader.classList.remove('hidden');
+        document.getElementById('loaderMsg').innerText = "Processando Algoritmo...";
 
-        // 2. Calcular multiplicadores
-        let mults = {};
-        SIM_CONFIG.forEach(c => {
-            const baseVal = baseTotals[c.name] || 0;
-            const basePct = (baseVal / totalValid) * 100;
-            // Se o candidato tem 0 na base, não tem como multiplicar.
-            // O Python já deve ter garantido que todos tenham pelo menos alguns votos.
-            mults[c.name] = basePct > 0 ? (c.val / basePct) : 0;
-        });
+        // Pequeno delay para a UI atualizar
+        setTimeout(async () => {
+            try {
+                // 1. Garantir Base 2022
+                if (!app.data.full22) {
+                    const res = await fetch('data/2022_president.json');
+                    app.data.full22 = await res.json();
+                }
 
-        // 3. Aplicar em cada município
-        const apply = (obj) => {
-            for (let id in obj) {
-                let votes = obj[id];
-                for (let k in votes) {
-                    const name = k.split(' (')[0].toUpperCase();
-                    if (mults[name] !== undefined) {
-                        votes[k] = Math.floor(votes[k] * mults[name]);
+                // 2. Preparar Estrutura Vazia
+                const simResult = { municipios: {}, estados: {} };
+                const source = app.data.full22['1'].municipios;
+                const names = app.data.full22['1'].meta_nomes;
+                
+                // Totais Nacionais da BASE (para normalização)
+                let baseTotals = {};
+                SIM_DATA.forEach(c => baseTotals[c.id] = 0);
+
+                // 3. PASSO 1: HERANÇA POLÍTICA (Quem votou em 2022 vota em quem em 2026?)
+                // Processa cada cidade
+                const cityBaseVotes = {}; // Armazena votos base da cidade antes do slider
+
+                for (let ibge in source) {
+                    const votes22 = source[ibge];
+                    const uf = ibge.substring(0, 2);
+                    const cityVotes = {}; // Votos desta cidade para os candidatos 2026
+
+                    // Itera sobre as chaves do arquivo original (ex: "LULA (PT)", "JAIR BOLSONARO (PL)")
+                    for (let key22 in votes22) {
+                        const v = votes22[key22];
+                        const keyUpper = key22.toUpperCase();
+
+                        // Lógica de Distribuição
+                        if (keyUpper.includes('LULA')) {
+                            // Lula mantém base
+                            cityVotes['lula'] = (cityVotes['lula']||0) + v;
+                        } 
+                        else if (keyUpper.includes('BOLSONARO') || keyUpper.includes('JAIR')) {
+                            // Espólio do Bolsonaro
+                            // GO (52): Caiado forte
+                            if(uf === '52') {
+                                cityVotes['caiado'] = (cityVotes['caiado']||0) + (v * 0.6);
+                                cityVotes['flavio'] = (cityVotes['flavio']||0) + (v * 0.4);
+                            } 
+                            // PR (41): Ratinho forte
+                            else if (uf === '41') {
+                                cityVotes['ratinho'] = (cityVotes['ratinho']||0) + (v * 0.5);
+                                cityVotes['flavio']  = (cityVotes['flavio']||0) + (v * 0.5);
+                            }
+                            // Geral
+                            else {
+                                cityVotes['flavio']  = (cityVotes['flavio']||0) + (v * 0.75);
+                                cityVotes['caiado']  = (cityVotes['caiado']||0) + (v * 0.15);
+                                cityVotes['ratinho'] = (cityVotes['ratinho']||0) + (v * 0.10);
+                            }
+                        }
+                        else if (keyUpper.includes('CIRO')) {
+                            // Ciro -> Renan (SP) ou Ciro (CE) ou Lula
+                            if(uf === '23') cityVotes['ciro'] = (cityVotes['ciro']||0) + (v * 0.6);
+                            else cityVotes['renan'] = (cityVotes['renan']||0) + (v * 0.5);
+                            
+                            cityVotes['lula'] = (cityVotes['lula']||0) + (v * 0.3); // Parte vai pro lula
+                        }
+                        else if (keyUpper.includes('TEBET') || keyUpper.includes('SIMONE')) {
+                            cityVotes['aldo'] = (cityVotes['aldo']||0) + (v * 0.6);
+                            cityVotes['renan'] = (cityVotes['renan']||0) + (v * 0.4);
+                        }
+                    }
+                    
+                    cityBaseVotes[ibge] = cityVotes;
+                    
+                    // Soma no nacional para calcular proporção
+                    for(let cid in cityVotes) {
+                        baseTotals[cid] = (baseTotals[cid]||0) + cityVotes[cid];
                     }
                 }
+
+                // 4. PASSO 2: APLICAR SLIDERS (Multiplicadores)
+                const grandTotalBase = Object.values(baseTotals).reduce((a,b)=>a+b,0);
+                const multipliers = {};
+
+                SIM_DATA.forEach(c => {
+                    const currentVal = baseTotals[c.id] || 0;
+                    const currentPct = grandTotalBase > 0 ? (currentVal/grandTotalBase)*100 : 0;
+                    // Se currentPct for 0 (candidato não herdou nada), damos um "empurrãozinho" artificial
+                    // ou multiplicador 0. Vamos assumir 0.
+                    multipliers[c.id] = currentPct > 0 ? (c.val / currentPct) : 0;
+                });
+
+                // 5. PASSO 3: GERAR JSON FINAL
+                for (let ibge in cityBaseVotes) {
+                    const baseV = cityBaseVotes[ibge];
+                    const finalV = {};
+                    let totalCity = 0;
+
+                    SIM_DATA.forEach(c => {
+                        const raw = baseV[c.id] || 0;
+                        const final = Math.floor(raw * multipliers[c.id]);
+                        if(final > 0) {
+                            // Formato Key: "Nome (PARTIDO)"
+                            const keyStr = `${c.name} (${c.party})`;
+                            finalV[keyStr] = final;
+                            totalCity += final;
+                        }
+                    });
+
+                    // Fallback para evitar cidade cinza (Outros)
+                    if(totalCity === 0) finalV['OUTROS (OUTROS)'] = 100;
+
+                    simResult.municipios[ibge] = finalV;
+
+                    // Agrega Estado
+                    const uf = ibge.substring(0, 2);
+                    if(!simResult.estados[uf]) simResult.estados[uf] = {};
+                    for(let k in finalV) {
+                        simResult.estados[uf][k] = (simResult.estados[uf][k]||0) + finalV[k];
+                    }
+                }
+
+                // Carrega no App
+                app.data.current = simResult;
+                app.data.names = names || {};
+                await app.renderMap();
+                app.updateStats();
+
+            } catch(e) {
+                console.error(e);
+                alert("Erro na simulação: " + e.message);
+            } finally {
+                loader.classList.add('hidden');
             }
-        };
-        
-        apply(newData.municipios);
-        apply(newData.estados);
-        
-        return newData;
+        }, 100);
     },
 
+    // =========================================================================
+    // RENDERIZAÇÃO MAPA
+    // =========================================================================
     changeView: () => {
         app.state.view = document.getElementById('viewMode').value;
         if(app.data.current) app.renderMap();
     },
 
     getGeo: async () => {
+        // Carrega GeoJSON sob demanda
         if (app.state.view === 'states') {
             const r = await fetch('https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson');
             const d = await r.json();
@@ -288,11 +441,11 @@ const app = {
             d.features.forEach(f => f.properties.id = map[f.properties.sigla]);
             return d;
         } else {
-            if(!app.data.cacheGeo) {
+            if(!app.data.geoCache) {
                 const r = await fetch('https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json');
-                app.data.cacheGeo = await r.json();
+                app.data.geoCache = await r.json();
             }
-            return app.data.cacheGeo;
+            return app.data.geoCache;
         }
     },
 
@@ -304,56 +457,72 @@ const app = {
             style: (f) => {
                 const id = f.properties.id || f.properties.codarea;
                 const scope = app.state.view === 'states' ? 'estados' : 'municipios';
-                const votes = app.data.current[scope][id];
+                // Proteção contra undefined
+                const votes = (app.data.current && app.data.current[scope]) ? app.data.current[scope][id] : null;
                 
                 if(!votes) return { fillColor: '#222', color: '#333', weight: 0.5, fillOpacity: 1 };
 
-                // Winner
-                let max = -1, winKey = '';
-                let total = 0;
+                // Winner Logic
+                let max = -1, winKey = '', total = 0;
                 for(let k in votes) {
                     total += votes[k];
                     if(votes[k] > max) { max = votes[k]; winKey = k; }
                 }
                 
-                if(total === 0) return { fillColor: '#222', color: '#333', weight: 0.5 };
+                if(total === 0) return { fillColor: '#222', color: '#333', weight: 0.5, fillOpacity: 1 };
 
                 const pct = (max/total)*100;
-                const party = winKey.match(/\((.*?)\)/)?.[1] || 'DEFAULT';
+                // Extrai partido entre parenteses ex "LULA (PT)" -> "PT"
+                const partyMatch = winKey.match(/\((.*?)\)/);
+                const party = partyMatch ? partyMatch[1] : 'DEFAULT';
                 const color = COLORS[party] || '#555';
                 
-                // Gradient Logic (Branco -> Cor -> Preto)
+                // Gradient Logic
                 const grad = app.mixColor(color, pct);
+                const borderW = app.state.view==='states' ? 1 : 0.2;
+                const borderC = app.state.view==='states' ? '#fff' : 'rgba(255,255,255,0.15)';
 
-                return { fillColor: grad, color: app.state.view==='states'?'#fff':'rgba(255,255,255,0.1)', weight: app.state.view==='states'?1:0.2, fillOpacity: 1 };
+                return { fillColor: grad, color: borderC, weight: borderW, fillOpacity: 1 };
             },
             onEachFeature: (f, l) => {
                 const id = f.properties.id || f.properties.codarea;
-                const name = app.data.names[id] || f.properties.name;
+                const name = (app.data.names && app.data.names[id]) ? app.data.names[id] : f.properties.name;
                 l.bindTooltip(`<b>${name}</b>`, {sticky:true, direction:'top'});
                 l.on('click', e => {
                     L.DomEvent.stopPropagation(e);
                     app.state.sel = {id, name};
                     app.updateStats();
-                    document.getElementById('btnBack').style.display = 'block';
+                    document.getElementById('btnBack').style.display = 'flex';
                 });
             }
         }).addTo(app.map);
+        
+        // Atualiza painel direito global se nada selecionado
+        if(!app.state.sel) app.updateStats();
     },
 
     mixColor: (hex, pct) => {
-        // Simples gradiente: <50% mistura com branco, >50% mistura com preto
+        // Conversão Hex -> RGB
         const c = parseInt(hex.slice(1), 16);
         const R = c >> 16, G = (c >> 8) & 0xff, B = c & 0xff;
         
         let r, g, b;
-        if (pct <= 20) { r=220; g=220; b=220; } // Cinza claro
-        else if (pct < 50) {
-            const f = (pct-20)/30; // 0 a 1
-            r = 255 + (R-255)*f; g = 255 + (G-255)*f; b = 255 + (B-255)*f;
+        // < 50% mistura com branco (Clareia)
+        // > 50% mistura com preto (Escurece) - Ajustado para visualização "High Res"
+        if (pct <= 20) { 
+            // Quase branco
+            r=220; g=220; b=220; 
+        } else if (pct < 50) {
+            const f = (pct-20)/30; // 0..1
+            r = 255 - (255-R)*f;
+            g = 255 - (255-G)*f;
+            b = 255 - (255-B)*f;
         } else {
-            const f = (pct-50)/50; // 0 a 1
-            r = R * (1-f*0.8); g = G * (1-f*0.8); b = B * (1-f*0.8);
+            const f = (pct-50)/50; // 0..1
+            // Escurece levemente, não totalmente preto
+            r = R * (1 - f*0.6);
+            g = G * (1 - f*0.6);
+            b = B * (1 - f*0.6);
         }
         return `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
     },
@@ -371,28 +540,43 @@ const app = {
         const div = document.getElementById('resList');
         div.innerHTML = '';
         const title = document.getElementById('regName');
+        const typeEl = document.getElementById('regType');
         
         let votes = {};
         if (app.state.sel) {
             title.innerText = app.state.sel.name;
+            typeEl.innerText = (app.state.sel.id.length === 2) ? "Estado" : "Município";
             const scope = app.state.view === 'states' ? 'estados' : 'municipios';
-            votes = app.data.current[scope][app.state.sel.id] || {};
+            // Safe access
+            if(app.data.current && app.data.current[scope]) {
+                votes = app.data.current[scope][app.state.sel.id] || {};
+            }
         } else {
             title.innerText = "Brasil";
+            typeEl.innerText = app.state.mode === 'simulation' ? "Simulação Nacional" : "Resultado Nacional";
+            
             // Soma nacional
-            Object.values(app.data.current.estados).forEach(st => {
-                Object.entries(st).forEach(([k,v]) => votes[k] = (votes[k]||0)+v);
-            });
+            if(app.data.current && app.data.current.estados) {
+                Object.values(app.data.current.estados).forEach(st => {
+                    Object.entries(st).forEach(([k,v]) => votes[k] = (votes[k]||0)+v);
+                });
+            }
         }
 
         const total = Object.values(votes).reduce((a,b)=>a+b,0);
-        document.getElementById('totalVotes').innerText = total.toLocaleString();
+        document.getElementById('totalVotes').innerText = total.toLocaleString('pt-BR');
 
         const sorted = Object.entries(votes).sort((a,b) => b[1]-a[1]);
         
+        if(sorted.length === 0) {
+            div.innerHTML = '<div style="text-align:center; color:#666; padding:20px;">Sem dados</div>';
+            return;
+        }
+
         sorted.forEach(([k, v]) => {
             const pct = total ? (v/total)*100 : 0;
-            const party = k.match(/\((.*?)\)/)?.[1] || 'DEFAULT';
+            const partyMatch = k.match(/\((.*?)\)/);
+            const party = partyMatch ? partyMatch[1] : 'OUTROS';
             const name = k.split(' (')[0];
             const c = COLORS[party] || '#555';
             
@@ -404,7 +588,7 @@ const app = {
                             <span>${name}</span>
                             <span style="color:${c}">${pct.toFixed(2)}%</span>
                         </div>
-                        <div style="font-size:0.7rem; color:#888;">${party} • ${v.toLocaleString()} votos</div>
+                        <div style="font-size:0.7rem; color:#888;">${party} • ${v.toLocaleString('pt-BR')} votos</div>
                         <div class="cand-bar"><div class="cand-fill" style="width:${pct}%; background:${c}"></div></div>
                     </div>
                 </div>
