@@ -3,95 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador 2026 - Otimizado</title>
+    <title>Simulador Eleições 2026</title>
     
+    <!-- Leaflet & Dependências -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
     <style>
-        /* CSS OTIMIZADO PARA PERFORMANCE */
-        :root { --bg: #050505; --panel: #111; --text: #eee; --pt: #c4122d; --pl: #002f6c; }
-        body { margin:0; font-family:'Inter', sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; overflow:hidden; }
+        /* TEMA ESCURO DE ALTO CONTRASTE */
+        :root {
+            --bg: #050505;
+            --panel: #111;
+            --text: #eee;
+            --border: #333;
+            --pt: #c4122d; /* Vermelho PT */
+            --pl: #002f6c; /* Azul PL */
+        }
+
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; overflow: hidden; }
         
-        #map { flex:1; background:#0a0a0a; z-index:1; }
+        #map { flex: 1; background: #0a0a0a; z-index: 1; }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 380px; background: var(--panel); border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; z-index: 1000;
+            box-shadow: 10px 0 30px #000;
+        }
+
+        .header { padding: 25px; background: #000; border-bottom: 1px solid var(--border); }
+        h1 { margin: 0; font-size: 1.4rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
         
-        .sidebar { width:360px; background:var(--panel); border-right:1px solid #333; display:flex; flex-direction:column; z-index:1000; box-shadow:5px 0 20px #000; }
-        .header { padding:20px; background:#000; border-bottom:1px solid #333; }
-        .header h1 { margin:0; font-size:1.2rem; letter-spacing:1px; }
-        
-        .controls { padding:20px; flex:1; overflow-y:auto; }
-        
-        /* PLACAR */
-        .scoreboard { display:flex; justify-content:space-between; margin-bottom:30px; background:#1a1a1a; padding:15px; border-radius:8px; border:1px solid #333; }
-        .cand-score { text-align:center; }
-        .big-pct { font-size:1.8rem; font-weight:800; display:block; }
-        .cand-label { font-size:0.8rem; font-weight:600; color:#888; }
-        
+        .controls { padding: 20px; flex: 1; overflow-y: auto; }
+
+        /* SCOREBOARD (PLACAR) */
+        .scoreboard {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-bottom: 25px;
+        }
+        .cand-box { text-align: center; width: 45%; }
+        .cand-val { font-size: 1.8rem; font-weight: 800; display: block; }
+        .cand-label { font-size: 0.8rem; color: #888; font-weight: 600; }
+
         /* SLIDER */
-        input[type=range] { width:100%; cursor:pointer; margin:20px 0; }
-        
+        .slider-group { margin-bottom: 30px; }
+        input[type=range] {
+            width: 100%; -webkit-appearance: none; background: transparent; cursor: pointer; margin: 15px 0;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 8px; background: linear-gradient(90deg, var(--pl), #fff, var(--pt)); border-radius: 4px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 26px; width: 26px; border-radius: 50%;
+            background: #fff; margin-top: -9px; box-shadow: 0 0 10px rgba(0,0,0,0.8); border: 2px solid #000;
+        }
+
+        /* RESULTADOS */
+        .stats-box { background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333; }
+        .stats-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; border-bottom: 1px solid #222; padding-bottom: 8px; }
+        .stats-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .stats-val { font-weight: 700; }
+
         /* LEGENDA */
-        .legend { position:absolute; bottom:20px; right:20px; background:#000; padding:10px; border:1px solid #333; border-radius:6px; z-index:999; width:200px; }
-        .grad-bar { height:10px; width:100%; background:linear-gradient(90deg, #fff, var(--pt)); margin-top:5px; border-radius:2px; }
-        .labels-leg { display:flex; justify-content:space-between; font-size:0.6rem; color:#888; }
+        .legend {
+            position: absolute; bottom: 25px; right: 25px; z-index: 999;
+            background: #000; padding: 15px; border: 1px solid #333; border-radius: 8px; width: 240px;
+        }
+        .grad-bar { height: 12px; width: 100%; background: linear-gradient(90deg, var(--pl), #fff, var(--pt)); margin-top: 5px; border-radius: 2px; }
+        .leg-labels { display: flex; justify-content: space-between; font-size: 0.65rem; color: #888; margin-top: 4px; font-weight: 600; }
+
+        /* TOOLTIP */
+        .map-tooltip {
+            background: rgba(0,0,0,0.95); border: 1px solid #555; color: #fff; 
+            padding: 8px 12px; border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 0.9rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
 
         /* LOADER */
-        #loader { position:absolute; inset:0; background:rgba(0,0,0,0.95); z-index:2000; display:flex; align-items:center; justify-content:center; }
+        #loader {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000;
+            display: flex; align-items: center; justify-content: center; flex-direction: column;
+        }
+        .loader-bar { width: 200px; height: 3px; background: #333; margin-top: 15px; border-radius: 2px; }
+        .loader-fill { width: 0%; height: 100%; background: var(--pt); transition: width 0.3s; }
     </style>
 </head>
 <body>
 
-<div id="loader"><h2 id="loadText">CARREGANDO SIMULADOR...</h2></div>
+<div id="loader">
+    <h3 id="loadText" style="font-weight: 400; letter-spacing: 1px;">INICIANDO SISTEMA...</h3>
+    <div class="loader-bar"><div class="loader-fill" id="loadFill"></div></div>
+</div>
 
 <aside class="sidebar">
     <div class="header">
         <h1>Simulador 2026</h1>
-        <div style="font-size:0.7rem; color:#666; margin-top:5px">Base: <span id="baseOrigin">...</span></div>
+        <div style="font-size:0.75rem; color:#666; margin-top:5px">Cenário Base: Eleiçòes 2022</div>
     </div>
 
     <div class="controls">
         <!-- PLACAR -->
         <div class="scoreboard">
-            <div class="cand-score">
+            <div class="cand-box">
                 <span class="cand-label" style="color:var(--pl)">DIREITA</span>
-                <span class="big-pct" id="txtPl">49.1%</span>
+                <span class="cand-val" id="dispPl">49.1%</span>
             </div>
-            <div class="cand-score">
+            <div style="font-size:1.2rem; color:#444">VS</div>
+            <div class="cand-box">
                 <span class="cand-label" style="color:var(--pt)">ESQUERDA</span>
-                <span class="big-pct" id="txtPt">50.9%</span>
+                <span class="cand-val" id="dispPt">50.9%</span>
             </div>
         </div>
 
-        <label style="font-size:0.8rem; color:#888; text-transform:uppercase;">Intenção de Voto Nacional (Esq)</label>
-        <input type="range" id="simSlider" min="30" max="70" step="0.1">
+        <!-- SLIDER -->
+        <div class="slider-group">
+            <label style="font-size:0.8rem; color:#888; font-weight:700; display:block; margin-bottom:10px;">
+                INTENÇÃO DE VOTO NACIONAL (ESQUERDA)
+            </label>
+            <input type="range" id="simSlider" min="30" max="70" step="0.1" value="50.9">
+            <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:#555;">
+                <span>Vitória Direita</span>
+                <span>Empate</span>
+                <span>Vitória Esquerda</span>
+            </div>
+        </div>
+
+        <!-- ESTATÍSTICAS -->
+        <div class="stats-box">
+            <div style="font-size:0.75rem; color:#666; margin-bottom:12px; font-weight:700">PROJEÇÃO DE MUNICÍPIOS</div>
+            <div class="stats-row">
+                <span>Vitórias Esquerda:</span>
+                <span class="stats-val" style="color:var(--pt)" id="countPt">0</span>
+            </div>
+            <div class="stats-row">
+                <span>Vitórias Direita:</span>
+                <span class="stats-val" style="color:var(--pl)" id="countPl">0</span>
+            </div>
+        </div>
         
-        <div style="margin-top:20px; padding:15px; background:#1a1a1a; border-radius:6px; font-size:0.8rem;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                <span>Cidades Esquerda:</span>
-                <strong id="countPt" style="color:var(--pt)">0</strong>
-            </div>
-            <div style="display:flex; justify-content:space-between;">
-                <span>Cidades Direita:</span>
-                <strong id="countPl" style="color:var(--pl)">0</strong>
-            </div>
+        <div style="margin-top:20px; padding: 15px; border: 1px solid #333; border-radius: 8px; font-size:0.75rem; color:#666; line-height:1.5">
+            <i class="fas fa-info-circle"></i> <strong>Swing Uniforme:</strong> 
+            A variação nacional é aplicada proporcionalmente ao histórico de cada cidade, preservando a identidade política regional.
         </div>
     </div>
 </aside>
 
 <div id="map"></div>
 
+<!-- LEGENDA DE ALTO CONTRASTE -->
 <div class="legend">
-    <div style="font-size:0.7rem; font-weight:700; color:#fff; text-align:center">INTENSIDADE (VENCEDOR)</div>
-    <div style="display:flex; gap:5px; margin-top:5px">
-        <div style="flex:1">
-            <div style="height:8px; background:linear-gradient(90deg, #fff, var(--pl));"></div>
-            <div style="font-size:0.6rem; color:#888; text-align:center">Direita</div>
-        </div>
-        <div style="flex:1">
-            <div style="height:8px; background:linear-gradient(90deg, #fff, var(--pt));"></div>
-            <div style="font-size:0.6rem; color:#888; text-align:center">Esquerda</div>
-        </div>
+    <div style="font-size:0.7rem; font-weight:700; color:#fff; text-align:center; margin-bottom:5px">INTENSIDADE DO VOTO</div>
+    <div class="grad-bar"></div>
+    <div class="leg-labels">
+        <span>100% Dir</span>
+        <span>Empate (Branco)</span>
+        <span>100% Esq</span>
     </div>
 </div>
 
@@ -99,101 +167,125 @@
 const app = {
     map: null,
     geoLayer: null,
-    data: null, // cenario_base_2026.json
-    basePct: 0, // Ponto de partida (Ex: 0.509)
+    data: null, // Será carregado do JSON
+    basePct: 0.509, // Valor padrão de 2022
 
     init: async () => {
+        // Inicializa Mapa (Fundo Escuro)
         app.map = L.map('map', {center: [-15, -50], zoom: 4, zoomControl: false, background:'#0a0a0a', preferCanvas: true});
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {opacity: 0.3}).addTo(app.map);
         
+        // Camada Base Leve (CartoDB Dark)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {opacity: 0.4}).addTo(app.map);
+        
+        // Listener do Slider
         document.getElementById('simSlider').addEventListener('input', (e) => app.simulate(parseFloat(e.target.value)));
         
         await app.loadFiles();
     },
 
     loadFiles: async () => {
+        const bar = document.getElementById('loadFill');
+        const txt = document.getElementById('loadText');
+
         try {
-            // 1. Carregar Malha
-            document.getElementById('loadText').innerText = "BAIXANDO MAPA...";
+            // 1. Carregar Malha Municipal (GeoJSON Simplificado)
+            txt.innerText = "BAIXANDO MAPA...";
+            bar.style.width = '30%';
             const geoRes = await fetch('https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json');
+            if (!geoRes.ok) throw new Error("Falha ao baixar mapa.");
             const geoJson = await geoRes.json();
 
-            // 2. Carregar Dados Processados
-            document.getElementById('loadText').innerText = "CALIBRANDO MODELO...";
-            const dataRes = await fetch('cenario_base_2026.json');
-            app.data = await dataRes.json();
-
-            // Configurar Base
-            app.basePct = app.data.meta.base_nacional;
-            document.getElementById('baseOrigin').innerText = app.data.meta.origem;
+            // 2. Carregar Dados do Cenário (JSON Externo)
+            txt.innerText = "LENDO DADOS DE 2026...";
+            bar.style.width = '60%';
             
-            // Configurar Slider Inicial
+            // Tenta carregar da pasta data/
+            const dataRes = await fetch('data/cenario_base_2026.json');
+            if (!dataRes.ok) throw new Error("Arquivo 'data/cenario_base_2026.json' não encontrado. Verifique se o script Python rodou corretamente.");
+            
+            app.data = await dataRes.json();
+            
+            // Configurar Base com dados reais do arquivo
+            if (app.data.meta && app.data.meta.base_nacional) {
+                app.basePct = app.data.meta.base_nacional;
+            }
+            
+            // Atualizar Slider para posição inicial
             const startVal = (app.basePct * 100).toFixed(1);
             document.getElementById('simSlider').value = startVal;
 
-            // Renderizar Mapa
+            // 3. Renderizar Mapa
+            txt.innerText = "RENDERIZANDO...";
+            bar.style.width = '90%';
+            
+            // Pequeno delay para a UI atualizar
+            await new Promise(r => setTimeout(r, 50));
+
             app.renderMap(geoJson);
             
-            // Primeira Simulação
+            // Rodar simulação inicial
             app.simulate(parseFloat(startVal));
             
             document.getElementById('loader').classList.add('hidden');
 
         } catch (e) {
-            alert("Erro: Gere o arquivo 'cenario_base_2026.json' com o script Python primeiro!");
             console.error(e);
+            alert("ERRO DE CARREGAMENTO:\n" + e.message + "\n\nCertifique-se de estar rodando em um servidor local (python -m http.server).");
+            txt.innerText = "ERRO FATAL";
+            txt.style.color = "red";
         }
     },
 
     renderMap: (geoJson) => {
         app.geoLayer = L.geoJSON(geoJson, {
-            style: { fillColor: '#333', weight: 0.5, color: '#000', fillOpacity: 1 }, // Estilo base
+            style: { fillColor: '#333', weight: 0.5, color: '#000', fillOpacity: 1 }, 
             onEachFeature: (f, l) => {
-                // Tenta achar ID (codarea ou id)
+                // Normaliza ID do município
                 const id = (f.properties.id || f.properties.codarea).toString();
-                f.ibge = id; // Salva para acesso rápido
-                
-                l.bindTooltip(() => app.getTooltip(f.ibge), {sticky: true, direction: 'top'});
+                f.ibge = id; 
+                l.bindTooltip(() => app.getTooltip(f.ibge), {sticky: true, direction: 'top', className: 'map-tooltip'});
             }
         }).addTo(app.map);
     },
 
     simulate: (targetPtPct) => {
-        // Swing = Diferença entre o cenário desejado e a base de 2022
+        // Cálculo do Swing (Variação)
         const swing = (targetPtPct / 100) - app.basePct;
         
-        // Atualiza textos
-        document.getElementById('txtPt').innerText = targetPtPct.toFixed(1) + '%';
-        document.getElementById('txtPl').innerText = (100 - targetPtPct).toFixed(1) + '%';
+        // Atualiza Placar
+        document.getElementById('dispPt').innerText = targetPtPct.toFixed(1) + '%';
+        document.getElementById('dispPl').innerText = (100 - targetPtPct).toFixed(1) + '%';
 
         let cPt = 0, cPl = 0;
 
-        // Loop otimizado sobre as camadas do mapa
         app.geoLayer.eachLayer(layer => {
             const id = layer.feature.ibge;
-            const cityData = app.data.dados[id]; // [pct_esq_2022, total_votos]
+            // Busca dados do município no JSON carregado [pct_2022, total_votos]
+            const cityData = app.data.dados[id]; 
 
             if (cityData) {
                 const baseCityPct = cityData[0];
                 
-                // Aplica Swing Uniforme
+                // Aplica Swing
                 let newPct = baseCityPct + swing;
-                // Limita entre 0 e 1
-                newPct = newPct > 1 ? 1 : (newPct < 0 ? 0 : newPct);
+                // Trava entre 0% e 100%
+                newPct = Math.max(0, Math.min(1, newPct));
                 
-                // Salva estado simulado na feature para o tooltip
-                layer.feature.simPct = newPct;
+                layer.feature.simPct = newPct; // Salva para tooltip
 
                 // Contagem
                 if (newPct > 0.5) cPt++; else cPl++;
 
-                // Define Cor
+                // Define Cor (Opaca + Contorno Preto)
                 layer.setStyle({
                     fillColor: app.getColor(newPct),
                     fillOpacity: 1,
                     weight: 0.5,
-                    color: '#000' // Contorno preto solicitado
+                    color: '#000000'
                 });
+            } else {
+                // Sem dados (Cinza Escuro)
+                layer.setStyle({fillColor: '#222', color:'#000'});
             }
         });
 
@@ -201,30 +293,30 @@ const app = {
         document.getElementById('countPl').innerText = cPl.toLocaleString();
     },
 
-    // Lógica de Cor: Branco (0.5) -> Cor Pura (1.0 ou 0.0)
+    // --- NOVA LÓGICA DE COR (ALTO CONTRASTE) ---
+    // 0.5 = Branco Puro (#FFFFFF)
+    // 1.0 = Vermelho Puro
+    // 0.0 = Azul Puro
     getColor: (pct) => {
         if (pct > 0.5) {
-            // ESQUERDA (0.5 a 1.0) -> Branco a Vermelho
-            // Normaliza 0.5-1.0 para 0-1
+            // ESQUERDA (0.5 a 1.0)
             const intensity = (pct - 0.5) * 2;
-            return app.mixWhite('#c4122d', intensity); // Vermelho
+            return app.mixWhite('#c4122d', intensity); 
         } else {
-            // DIREITA (0.5 a 0.0) -> Branco a Azul
+            // DIREITA (0.5 a 0.0)
             const intensity = (0.5 - pct) * 2;
-            return app.mixWhite('#002f6c', intensity); // Azul
+            return app.mixWhite('#002f6c', intensity);
         }
     },
 
-    // Mistura Branco com Cor baseada na intensidade (0=Branco, 1=Cor)
+    // Mistura Branco (255) com Cor (r,g,b)
+    // Intensity 0 = Branco, Intensity 1 = Cor
     mixWhite: (hex, intensity) => {
-        // Converte hex para int
         const n = parseInt(hex.replace('#',''), 16);
         const r = (n >> 16) & 255;
         const g = (n >> 8) & 255;
         const b = n & 255;
 
-        // Mistura: 255 (Branco) -> r (Cor)
-        // Se intensity 1: usa r. Se intensity 0: usa 255.
         const nr = Math.round(255 + (r - 255) * intensity);
         const ng = Math.round(255 + (g - 255) * intensity);
         const nb = Math.round(255 + (b - 255) * intensity);
@@ -233,20 +325,26 @@ const app = {
     },
 
     getTooltip: (id) => {
-        const name = app.data.nomes[id] || id;
+        const name = (app.data.nomes && app.data.nomes[id]) ? app.data.nomes[id] : id;
         const simPct = app.geoLayer.getLayers().find(l => l.feature.ibge == id)?.feature?.simPct;
         
-        if (simPct === undefined) return name;
+        if (simPct === undefined) return `${name}: Sem dados`;
 
         const winner = simPct > 0.5 ? "ESQUERDA" : "DIREITA";
         const color = simPct > 0.5 ? "var(--pt)" : "var(--pl)";
         const val = simPct > 0.5 ? simPct : (1 - simPct);
 
-        return `<div style="background:#000; color:#fff; padding:5px; border:1px solid #444; border-radius:4px;">
-            <strong>${name}</strong><br>
-            Vence: <span style="color:${color}; font-weight:800">${winner}</span><br>
-            Votos: ${(val*100).toFixed(1)}%
-        </div>`;
+        return `
+            <div style="font-weight:700; border-bottom:1px solid #555; margin-bottom:5px; padding-bottom:3px">${name}</div>
+            <div style="display:flex; justify-content:space-between; gap:15px">
+                <span>Vencedor:</span>
+                <strong style="color:${color}">${winner}</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:3px">
+                <span>Votos:</span>
+                <strong>${(val*100).toFixed(1)}%</strong>
+            </div>
+        `;
     }
 };
 
