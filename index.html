@@ -1,1 +1,673 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atlas Histórico V13</title>
+    
+    <!-- Leaflet & Dependências -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Fontes e Ícones -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Color Picker -->
+    <link href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
 
+    <style>
+        :root {
+            --bg-primary: #0a0c10;
+            --bg-secondary: #11141a;
+            --bg-card: rgba(20, 24, 32, 0.98);
+            --accent-blue: #3b82f6;
+            --text-primary: #ffffff;
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --gradient-primary: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        #app { width: 100vw; height: 100vh; display: flex; position: relative; }
+        #map { flex: 1; height: 100%; background: #151515; z-index: 1; }
+
+        .sidebar {
+            width: 380px;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            display: flex; flex-direction: column;
+            z-index: 1000;
+            border-right: 1px solid var(--border-color);
+            box-shadow: 5px 0 30px rgba(0,0,0,0.5);
+        }
+        .sidebar-right { border-left: 1px solid var(--border-color); border-right: none; width: 420px; }
+
+        .header {
+            padding: 24px;
+            background: linear-gradient(180deg, rgba(10, 12, 16, 1) 0%, rgba(10, 12, 16, 0.8) 100%);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .header h1 {
+            font-size: 1.4rem; font-weight: 800;
+            background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .controls { padding: 20px; flex: 1; overflow-y: auto; }
+        
+        /* DROPDOWNS ESCUROS E ESTILIZADOS */
+        .control-group { margin-bottom: 15px; }
+        .control-group label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        select {
+            width: 100%; padding: 12px; border-radius: 8px;
+            border: 1px solid #333;
+            background-color: #050505; /* Fundo Preto */
+            color: white; font-family: inherit; font-size: 0.9rem;
+            appearance: none; cursor: pointer;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFFFFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat; background-position: right 12px top 50%; background-size: 10px auto;
+        }
+        select:focus { border-color: var(--accent-blue); outline: none; }
+        /* Garante que as opções internas sejam escuras em navegadores que suportam */
+        option { background-color: #050505; color: white; padding: 10px; }
+
+        button.btn-primary { 
+            width: 100%; padding: 12px; border-radius: 8px;
+            background: var(--gradient-primary); border: none; 
+            font-weight: 700; color: white; cursor: pointer; margin-top: 10px;
+            transition: transform 0.2s;
+        }
+        button.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); }
+
+        /* LISTA DIREITA */
+        .cand-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px; margin-bottom: 8px;
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px; transition: all 0.2s;
+        }
+        .cand-row:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
+        .cand-row.disabled { opacity: 0.4; filter: grayscale(1); }
+
+        .cand-check {
+            width: 18px; height: 18px; border: 2px solid #555; border-radius: 4px;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+        }
+        .cand-check.checked { background: var(--accent-blue); border-color: var(--accent-blue); }
+        .cand-check.checked::after { content: '✓'; color: white; font-size: 12px; font-weight: 900; }
+
+        .cand-color { width: 18px; height: 18px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.5); cursor: pointer; }
+        
+        .cand-info { flex: 1; min-width: 0; }
+        .cand-head { display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 600; margin-bottom: 2px; }
+        .cand-sub { font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between; }
+        
+        .progress-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+        .progress-fill { height: 100%; transition: width 0.5s ease; }
+
+        /* LEGENDA OPAQUE & CONTRAST */
+        .legend {
+            position: absolute; bottom: 30px; right: 450px;
+            background: #0a0c10; padding: 15px; border: 1px solid #333;
+            border-radius: 12px; z-index: 999; box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        }
+        .legend-grid { display: flex; height: 20px; width: 220px; border-radius: 4px; overflow: hidden; border: 1px solid #444; }
+        .legend-item { flex: 1; }
+
+        .map-controls {
+            position: absolute; top: 20px; right: 450px;
+            display: flex; flex-direction: column; gap: 8px; z-index: 999;
+        }
+        .map-btn {
+            width: 40px; height: 40px; background: #0a0c10; border: 1px solid #333;
+            color: #ddd; display: flex; align-items: center; justify-content: center;
+            border-radius: 8px; cursor: pointer; font-size: 1.2rem;
+        }
+        .map-btn:hover { background: #222; color: white; }
+
+        /* TOOLTIP */
+        .custom-tooltip {
+            background: #0a0c10; border: 1px solid #333; color: white;
+            border-radius: 8px; font-family: 'Inter', sans-serif; padding: 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        .tt-head { background: #151a23; padding: 10px; font-weight: 700; border-bottom: 1px solid #333; border-radius: 8px 8px 0 0; }
+        .tt-body { padding: 10px; }
+
+        #loader {
+            position: absolute; inset: 0; background: rgba(5,5,5,0.9); z-index: 9999;
+            display: flex; align-items: center; justify-content: center; flex-direction: column;
+            transition: opacity 0.3s;
+        }
+        .hidden { opacity: 0; pointer-events: none; }
+        .spinner {
+            width: 50px; height: 50px; border: 4px solid #333; border-top-color: var(--accent-blue);
+            border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div id="loader">
+    <div class="spinner"></div>
+    <h3>Carregando Dados Históricos...</h3>
+</div>
+
+<div id="app">
+    <!-- BARRA ESQUERDA: CONTROLES -->
+    <aside class="sidebar">
+        <div class="header">
+            <h1>Atlas Histórico V13</h1>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">1994 - 2022</div>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label>ANO DA ELEIÇÃO</label>
+                <select id="yearSelect">
+                    <option value="2022">2022</option>
+                    <option value="2018">2018</option>
+                    <option value="2014">2014</option>
+                    <option value="2010">2010</option>
+                    <option value="2006">2006</option>
+                    <option value="2002">2002</option>
+                    <option value="1998">1998</option>
+                    <option value="1994">1994</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>TURNO</label>
+                <select id="turnSelect">
+                    <option value="1">1º Turno</option>
+                    <option value="2">2º Turno</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>CARGO</label>
+                <select id="roleSelect">
+                    <option value="president">Presidente</option>
+                    <option value="governor">Governador</option>
+                    <option value="senator">Senador</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>VISUALIZAÇÃO</label>
+                <select id="viewModeSelect">
+                    <option value="states">Por Estados (Brasil)</option>
+                    <option value="all_cities">Brasil Municipal (Completo)</option>
+                </select>
+            </div>
+
+            <button class="btn-primary" onclick="app.loadData()">CARREGAR MAPA</button>
+
+            <div style="margin-top: 20px; font-size: 0.75rem; color: var(--text-muted); line-height: 1.5;">
+                <i class="fas fa-info-circle"></i> <strong>Nota:</strong> O modo "Brasil Municipal" carrega 5.570 cidades. Pode levar alguns segundos.<br><br>
+                Municípios extintos ou fundidos em anos antigos podem não aparecer no mapa atual (2022), mas seus votos estão contabilizados na lista lateral.
+            </div>
+        </div>
+    </aside>
+
+    <div id="map"></div>
+
+    <!-- BARRA DIREITA: RESULTADOS -->
+    <aside class="sidebar sidebar-right">
+        <div class="header">
+            <h2 id="regionName">Brasil</h2>
+            <div style="font-size: 0.8rem; color: var(--accent-blue);" id="regionType">Nacional</div>
+        </div>
+
+        <div style="padding: 15px; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border-color);">
+            <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted);">Votos Totais (Ativos)</div>
+            <div id="totalVotesVal" style="font-size: 1.4rem; font-weight: 800; color: white;">-</div>
+        </div>
+
+        <div class="controls" id="resultsContainer">
+            <!-- LISTA DE CANDIDATOS -->
+        </div>
+    </aside>
+
+    <div class="map-controls">
+        <div class="map-btn" onclick="app.map.zoomIn()">+</div>
+        <div class="map-btn" onclick="app.map.zoomOut()">-</div>
+    </div>
+
+    <!-- LEGENDA -->
+    <div class="legend">
+        <div style="font-size: 0.8rem; margin-bottom: 8px; font-weight: 700; color: white;">
+            Percentual do Vencedor
+        </div>
+        <div class="legend-grid" id="legendColors"></div>
+        <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:#aaa; margin-top:5px;">
+            <span>0%</span><span>50%</span><span>100%</span>
+        </div>
+    </div>
+</div>
+
+<script>
+const CONFIG = {
+    colors: {
+        'PT': '#E12525', 'PL': '#0056A8', 'PSB': '#E12525', 'PDT': '#F58220', 
+        'UNIÃO': '#0056A8', 'PSDB': '#009EE3', 'MDB': '#008000', 'PSD': '#FAA21B',
+        'PP': '#0066CC', 'NOVO': '#F58220', 'REPUBLICANOS': '#0066CC',
+        'SOLIDARIEDADE': '#F58220', 'PATRIOTA': '#FFD700', 'PCdoB': '#FF0000',
+        'PV': '#00FF00', 'CIDADANIA': '#FFA500', 'AVANTE': '#800080',
+        'PRONA': '#006400', 'PFL': '#0056A8', 'PMDB': '#008000',
+        'OUTROS': '#666666', 'DEFAULT': '#555555'
+    }
+};
+
+const app = {
+    map: null,
+    layers: { brazil: null, cities: null },
+    data: { full: null, current: null, names: {} },
+    state: {
+        view: 'states', // 'states' ou 'all_cities'
+        selectedId: null,
+        selectedName: "Brasil",
+        ignored: new Set(),
+        customColors: JSON.parse(localStorage.getItem('v13_colors') || '{}')
+    },
+
+    init: () => {
+        app.map = L.map('map', {
+            center: [-15, -50], zoom: 4, zoomControl: false,
+            preferCanvas: true, background: '#151515'
+        });
+        
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            opacity: 0.4
+        }).addTo(app.map);
+
+        // Legenda com contraste (Cores Sólidas, sem branco excessivo)
+        const legendDiv = document.getElementById('legendColors');
+        for(let i=0; i<10; i++) {
+            const el = document.createElement('div');
+            el.className = 'legend-item';
+            // Exemplo cinza para legenda
+            el.style.background = app.getContrastColor('#888888', (i*10)+5); 
+            legendDiv.appendChild(el);
+        }
+
+        app.loadBrazilLayer(); // Carrega base de estados inicial
+        app.loadData();
+    },
+
+    // --- NOVA LÓGICA DE CORES (CONTRASTE ALTO) ---
+    // Em vez de misturar com branco, mudamos a luminosidade mantendo saturação
+    getContrastColor: (hex, pct) => {
+        const step = Math.floor(pct / 10); // 0 a 9
+        // Step 0 (0-10%): Opacidade/Luminosidade 0.2
+        // Step 9 (90%+): Opacidade/Luminosidade 1.0
+        const intensity = 0.25 + (step * 0.083); // Vai de 0.25 a ~1.0
+        
+        // Converte Hex para RGB
+        let c = hex.substring(1).split('');
+        if(c.length==3) c= [c[0], c[0], c[1], c[1], c[2], c[2]];
+        c = '0x'+c.join('');
+        const r = (c>>16)&255, g = (c>>8)&255, b = c&255;
+        
+        // Aplica "escuridão" baseada no step, mas mantendo a cor viva
+        // Para simular "menos votos = mais escuro/transparente" contra o fundo preto
+        return `rgba(${r}, ${g}, ${b}, ${intensity})`;
+    },
+
+    loadData: async () => {
+        const loader = document.getElementById('loader');
+        loader.classList.remove('hidden');
+        app.state.ignored.clear();
+        
+        const year = document.getElementById('yearSelect').value;
+        const role = document.getElementById('roleSelect').value;
+        const turn = document.getElementById('turnSelect').value;
+        const viewMode = document.getElementById('viewModeSelect').value;
+
+        try {
+            const res = await fetch(`data/${year}_${role}.json`);
+            if(!res.ok) throw new Error("Dados não encontrados para este ano/cargo.");
+            const json = await res.json();
+            
+            if(!json[turn]) {
+                alert("Turno não disponível.");
+                app.data.current = null;
+            } else {
+                app.data.full = json;
+                app.data.current = json[turn];
+                app.data.names = json[turn].meta_nomes || {}; // Carrega nomes reais
+                
+                // Decide qual mapa carregar
+                if (viewMode === 'all_cities') {
+                    await app.loadAllMunicipalities();
+                } else {
+                    app.resetMapToStates();
+                }
+                
+                app.refreshUI();
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Erro: " + e.message);
+        } finally {
+            loader.classList.add('hidden');
+        }
+    },
+
+    loadAllMunicipalities: async () => {
+        // Carrega malha simplificada do Brasil inteiro (GeoJSON ~5MB se simplificado)
+        // Usando API do IBGE (pode ser lento, ideal seria arquivo local)
+        const loader = document.getElementById('loader');
+        loader.querySelector('h3').textContent = "Carregando 5.570 Cidades...";
+        loader.classList.remove('hidden');
+
+        try {
+            if(app.layers.cities) app.map.removeLayer(app.layers.cities);
+            if(app.layers.brazil) app.map.removeLayer(app.layers.brazil);
+
+            // Carregando por partes (Regiões) ou arquivo único otimizado seria melhor.
+            // Aqui usamos um arquivo simplificado do GitHub para performance
+            const url = "https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json";
+            
+            const res = await fetch(url);
+            const data = await res.json();
+
+            app.layers.cities = L.geoJSON(data, {
+                style: (f) => app.getStyle(f, 'municipios'),
+                onEachFeature: (f, layer) => {
+                    // ID no GeoJSON pode variar, normalizar
+                    const id = f.properties.id || f.properties.codarea;
+                    // Nome vem do GeoJSON ou do Metadata de Votos
+                    const name = app.data.names[id] || f.properties.name || f.properties.description;
+                    
+                    layer.on('click', (e) => {
+                        L.DomEvent.stopPropagation(e);
+                        app.state.selectedId = id;
+                        app.state.selectedName = name;
+                        app.refreshUI();
+                    });
+                    app.bindTooltip(layer, id, 'municipios', name);
+                }
+            }).addTo(app.map);
+            
+            app.state.view = 'all_cities';
+            app.map.fitBounds(app.layers.cities.getBounds());
+
+        } catch(e) {
+            alert("Erro ao carregar malha municipal completa.");
+        } finally {
+             loader.classList.add('hidden');
+        }
+    },
+
+    resetMapToStates: () => {
+        if(app.layers.cities) app.map.removeLayer(app.layers.cities);
+        app.loadBrazilLayer();
+        app.state.view = 'states';
+        app.state.selectedId = null;
+        app.state.selectedName = "Brasil";
+        app.map.setView([-15, -50], 4);
+    },
+
+    loadBrazilLayer: async () => {
+        if(app.layers.brazil) {
+            app.layers.brazil.addTo(app.map);
+            app.layers.brazil.setStyle((f) => app.getStyle(f, 'estados'));
+            return;
+        }
+
+        const res = await fetch('https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson');
+        const data = await res.json();
+        const ufMap = {'AC':'12','AL':'27','AM':'13','AP':'16','BA':'29','CE':'23','DF':'53','ES':'32','GO':'52','MA':'21','MG':'31','MS':'50','MT':'51','PA':'15','PB':'25','PE':'26','PI':'22','PR':'41','RJ':'33','RN':'24','RO':'11','RR':'14','RS':'43','SC':'42','SE':'28','SP':'35','TO':'17'};
+        
+        data.features.forEach(f => f.properties.id = ufMap[f.properties.sigla]);
+
+        app.layers.brazil = L.geoJSON(data, {
+            style: (f) => app.getStyle(f, 'estados'),
+            onEachFeature: (f, l) => {
+                l.on('click', () => {
+                    if(app.state.view === 'states') {
+                        // Carregar cidades DESTE estado
+                        app.loadStateCities(f.properties.id, f.properties.name);
+                    }
+                });
+                app.bindTooltip(l, f.properties.id, 'estados', f.properties.name);
+            }
+        }).addTo(app.map);
+    },
+
+    loadStateCities: async (ufId, ufName) => {
+        // Carrega cidades apenas do estado clicado (comportamento original)
+        const loader = document.getElementById('loader');
+        loader.classList.remove('hidden');
+        
+        try {
+            const url = `https://servicodados.ibge.gov.br/api/v3/malhas/estados/${ufId}?formato=application/vnd.geo+json&qualidade=minima&intrarregiao=municipio`;
+            const res = await fetch(url);
+            const data = await res.json();
+
+            if(app.layers.cities) app.map.removeLayer(app.layers.cities);
+            if(app.layers.brazil) app.map.removeLayer(app.layers.brazil);
+
+            app.layers.cities = L.geoJSON(data, {
+                style: (f) => app.getStyle(f, 'municipios'),
+                onEachFeature: (f, l) => {
+                    const id = f.properties.codarea;
+                    // Tenta pegar nome do metadata de votos, senão do geojson
+                    const name = app.data.names[id] || f.properties.name; 
+                    
+                    l.on('click', (e) => {
+                        L.DomEvent.stopPropagation(e);
+                        app.state.selectedId = id;
+                        app.state.selectedName = name;
+                        app.refreshUI();
+                    });
+                    app.bindTooltip(l, id, 'municipios', name);
+                }
+            }).addTo(app.map);
+            
+            app.map.fitBounds(app.layers.cities.getBounds());
+            app.state.selectedId = ufId; // Seleciona o estado como contexto
+            app.state.selectedName = ufName;
+            app.refreshUI();
+
+        } catch(e) { console.error(e); } 
+        finally { loader.classList.add('hidden'); }
+    },
+
+    refreshUI: () => {
+        if(app.layers.brazil) app.layers.brazil.setStyle((f) => app.getStyle(f, 'estados'));
+        if(app.layers.cities) app.layers.cities.setStyle((f) => app.getStyle(f, 'municipios'));
+        app.updateSidebarRight();
+    },
+
+    updateSidebarRight: () => {
+        const container = document.getElementById('resultsContainer');
+        const titleEl = document.getElementById('regionName');
+        const totalEl = document.getElementById('totalVotesVal');
+        
+        container.innerHTML = '';
+        
+        // Define o título da região (NOME REAL, não ID)
+        titleEl.textContent = app.state.selectedName;
+
+        // Coleta dados
+        let rawVotes = {};
+        
+        // Se nada selecionado ou Visão Brasil -> Agregado Nacional
+        if (!app.state.selectedId && app.state.view !== 'all_cities') {
+             if(app.data.current) {
+                Object.values(app.data.current.estados).forEach(st => {
+                    Object.entries(st).forEach(([c, v]) => rawVotes[c] = (rawVotes[c]||0)+v);
+                });
+             }
+        } 
+        // Se selecionado
+        else if (app.state.selectedId) {
+            // Verifica se é Estado ou Município
+            const scope = (app.state.selectedId.length === 2) ? 'estados' : 'municipios';
+            rawVotes = app.data.current[scope][app.state.selectedId] || {};
+        }
+
+        // Calcula stats
+        const allCands = new Set([...Object.keys(rawVotes), ...app.state.ignored]);
+        const cleanVotes = {};
+        allCands.forEach(c => cleanVotes[c] = rawVotes[c] || 0);
+
+        const stats = app.recalcStats(cleanVotes);
+
+        if(!stats) {
+            totalEl.textContent = "0";
+            container.innerHTML = '<div style="color:#666;text-align:center;">Sem dados para esta região</div>';
+            return;
+        }
+
+        totalEl.textContent = stats.total.toLocaleString('pt-BR');
+
+        stats.ranking.forEach(r => {
+            const { name, party } = app.parseCandKey(r.cand);
+            const color = app.getCandColor(party);
+            const isIgnored = r.ignored;
+
+            const div = document.createElement('div');
+            div.className = `cand-row ${isIgnored ? 'disabled' : ''}`;
+            div.innerHTML = `
+                <div class="cand-check ${isIgnored ? '' : 'checked'}"></div>
+                <div class="cand-color" style="background:${color}"></div>
+                <div class="cand-info">
+                    <div class="cand-head">
+                        <span>${name}</span>
+                        <span style="color:${color}">${isIgnored ? '--' : r.pct.toFixed(2)+'%'}</span>
+                    </div>
+                    <div class="cand-sub">
+                        <span>${party}</span>
+                        <span>${isIgnored ? (r.orig||0).toLocaleString() : r.votes.toLocaleString()}</span>
+                    </div>
+                    ${!isIgnored ? `<div class="progress-bar"><div class="progress-fill" style="width:${r.pct}%; background:${color}"></div></div>` : ''}
+                </div>
+            `;
+            
+            div.querySelector('.cand-check').onclick = () => {
+                if(app.state.ignored.has(r.cand)) app.state.ignored.delete(r.cand);
+                else app.state.ignored.add(r.cand);
+                app.refreshUI();
+            };
+            
+            div.querySelector('.cand-color').onclick = (e) => {
+                e.stopPropagation();
+                app.openColorPicker(party, color, e.target);
+            };
+
+            container.appendChild(div);
+        });
+    },
+
+    recalcStats: (votes) => {
+        let total = 0, max = -1, winner = null;
+        let rank = [];
+        Object.entries(votes).forEach(([c, v]) => {
+            if(!app.state.ignored.has(c)) {
+                total += v;
+                if(v > max) { max = v; winner = c; }
+                rank.push({ cand: c, votes: v, pct: 0 });
+            } else {
+                rank.push({ cand: c, votes: 0, pct: 0, ignored: true, orig: v });
+            }
+        });
+        
+        if(total === 0 && rank.filter(x=>!x.ignored).length === 0) return null;
+        
+        rank.forEach(r => { if(!r.ignored) r.pct = (r.votes/total)*100; });
+        rank.sort((a,b) => (b.ignored?-1:b.votes) - (a.ignored?-1:a.votes));
+        
+        return { total, winner, pct: winner ? (max/total)*100 : 0, ranking: rank };
+    },
+
+    getStyle: (feature, scope) => {
+        if(!app.data.current) return { fillColor: '#111', weight: 1, color: '#222' };
+        
+        // ID normalizado
+        const id = feature.properties.id || feature.properties.codarea; 
+        
+        const raw = app.data.current[scope][id];
+        const stats = app.recalcStats(raw || {});
+
+        if (!stats || !stats.winner) {
+            // Sem dados (cinza escuro)
+            return { fillColor: '#1a1a1a', weight: 0.5, color: '#000', fillOpacity: 1 };
+        }
+
+        const { party } = app.parseCandKey(stats.winner);
+        const color = app.getContrastColor(app.getCandColor(party), stats.pct);
+
+        return {
+            fillColor: color,
+            weight: scope === 'estados' ? 1 : 0.2, // Linhas mais finas para municípios
+            color: '#000',
+            fillOpacity: 1
+        };
+    },
+
+    bindTooltip: (layer, id, scope, name) => {
+        layer.bindTooltip(() => {
+            const raw = app.data.current[scope][id];
+            const stats = app.recalcStats(raw || {});
+            
+            if(!stats) return `<div class="custom-tooltip"><div class="tt-head">${name}</div><div class="tt-body">Sem dados</div></div>`;
+            
+            const { name: wName, party } = app.parseCandKey(stats.winner);
+            const color = app.getCandColor(party);
+            
+            return `
+                <div class="custom-tooltip">
+                    <div class="tt-head">${name}</div>
+                    <div class="tt-body">
+                        <div style="font-size:0.75rem; color:#aaa">Vencedor</div>
+                        <div style="color:${color}; font-weight:800; font-size:1rem;">${wName}</div>
+                        <div style="margin-top:4px;">
+                            ${stats.pct.toFixed(1)}% <span style="font-size:0.8rem; opacity:0.7">(${stats.ranking[0].votes.toLocaleString()})</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }, { sticky: true, direction: 'top' });
+    },
+
+    parseCandKey: (k) => {
+        const m = k.match(/(.*?)\s*\((.*?)\)/);
+        return m ? { name: m[1], party: m[2] } : { name: k, party: 'DEFAULT' };
+    },
+
+    getCandColor: (p) => app.state.customColors[p] || CONFIG.colors[p] || CONFIG.colors['DEFAULT'],
+
+    openColorPicker: (p, def, el) => {
+        const pickr = Pickr.create({
+            el: el, theme: 'nano', default: def,
+            swatches: Object.values(CONFIG.colors).slice(0, 8),
+            components: { preview: true, hue: true, interaction: { save: true } }
+        });
+        pickr.on('save', (c) => {
+            app.state.customColors[p] = c.toHEXA().toString();
+            localStorage.setItem('v13_colors', JSON.stringify(app.state.customColors));
+            el.style.background = c.toHEXA().toString();
+            app.refreshUI();
+            pickr.destroyAndRemove();
+        });
+    }
+};
+
+document.addEventListener('DOMContentLoaded', app.init);
+</script>
+</body>
+</html>
