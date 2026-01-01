@@ -3,143 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador Eleições 2026</title>
+    <title>Simulador 2026 - Otimizado</title>
     
-    <!-- Leaflet & Bibliotecas -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
     <style>
-        /* TEMA "WAR ROOM" */
-        :root {
-            --bg: #050505;
-            --panel: #111;
-            --text: #eee;
-            --border: #333;
-            --pt-color: #c4122d; /* Vermelho PT */
-            --pl-color: #002f6c; /* Azul PL */
-        }
-
-        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; overflow: hidden; }
+        /* CSS OTIMIZADO PARA PERFORMANCE */
+        :root { --bg: #050505; --panel: #111; --text: #eee; --pt: #c4122d; --pl: #002f6c; }
+        body { margin:0; font-family:'Inter', sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; overflow:hidden; }
         
-        /* SIDEBAR DE CONTROLE */
-        .sidebar {
-            width: 380px; background: var(--panel); border-right: 1px solid var(--border);
-            display: flex; flex-direction: column; z-index: 1000;
-            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
-        }
-
-        .header { padding: 25px; border-bottom: 1px solid var(--border); background: #000; }
-        h1 { margin: 0; font-size: 1.4rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
-        .subtitle { font-size: 0.8rem; color: #777; margin-top: 5px; }
-
-        /* PAINEL DE SIMULAÇÃO */
-        .sim-panel { padding: 25px; flex: 1; overflow-y: auto; }
+        #map { flex:1; background:#0a0a0a; z-index:1; }
         
-        .score-board {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 30px; background: #1a1a1a; padding: 20px; border-radius: 12px; border: 1px solid #333;
-        }
+        .sidebar { width:360px; background:var(--panel); border-right:1px solid #333; display:flex; flex-direction:column; z-index:1000; box-shadow:5px 0 20px #000; }
+        .header { padding:20px; background:#000; border-bottom:1px solid #333; }
+        .header h1 { margin:0; font-size:1.2rem; letter-spacing:1px; }
         
-        .candidate { text-align: center; width: 45%; }
-        .cand-name { font-size: 0.9rem; font-weight: 600; margin-bottom: 5px; display: block; }
-        .cand-pct { font-size: 2rem; font-weight: 900; display: block; }
+        .controls { padding:20px; flex:1; overflow-y:auto; }
         
-        /* SLIDER CUSTOMIZADO */
-        .slider-container { margin-bottom: 40px; position: relative; }
-        input[type=range] {
-            width: 100%; -webkit-appearance: none; background: transparent; cursor: pointer;
-        }
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%; height: 8px; border-radius: 4px;
-            background: linear-gradient(90deg, var(--pl-color) 0%, #444 50%, var(--pt-color) 100%);
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 28px; width: 28px; border-radius: 50%;
-            background: #fff; margin-top: -10px; box-shadow: 0 0 15px rgba(0,0,0,0.8); border: 2px solid #000;
-        }
+        /* PLACAR */
+        .scoreboard { display:flex; justify-content:space-between; margin-bottom:30px; background:#1a1a1a; padding:15px; border-radius:8px; border:1px solid #333; }
+        .cand-score { text-align:center; }
+        .big-pct { font-size:1.8rem; font-weight:800; display:block; }
+        .cand-label { font-size:0.8rem; font-weight:600; color:#888; }
+        
+        /* SLIDER */
+        input[type=range] { width:100%; cursor:pointer; margin:20px 0; }
+        
+        /* LEGENDA */
+        .legend { position:absolute; bottom:20px; right:20px; background:#000; padding:10px; border:1px solid #333; border-radius:6px; z-index:999; width:200px; }
+        .grad-bar { height:10px; width:100%; background:linear-gradient(90deg, #fff, var(--pt)); margin-top:5px; border-radius:2px; }
+        .labels-leg { display:flex; justify-content:space-between; font-size:0.6rem; color:#888; }
 
-        /* RESULTADOS RÁPIDOS */
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
-        .stat-box { background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333; text-align: center; }
-        .stat-val { font-size: 1.2rem; font-weight: 700; display: block; }
-        .stat-label { font-size: 0.7rem; color: #888; text-transform: uppercase; }
-
-        /* MAPA */
-        #map { flex: 1; background: #0a0a0a; }
-
-        /* LOADING */
-        #loader {
-            position: absolute; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000;
-            display: flex; align-items: center; justify-content: center; flex-direction: column;
-        }
-        .progress-bar { width: 300px; height: 4px; background: #333; margin-top: 15px; border-radius: 2px; }
-        .progress-fill { height: 100%; width: 0%; background: #fff; transition: width 0.2s; }
-
-        /* TOOLTIP & LEGENDA */
-        .map-tooltip { background: rgba(0,0,0,0.9); border: 1px solid #444; color: #fff; padding: 10px; border-radius: 6px; }
-        .legend {
-            position: absolute; bottom: 30px; right: 30px; z-index: 999;
-            background: #000; padding: 15px; border: 1px solid #333; border-radius: 8px; width: 250px;
-        }
-        .grad-bar { height: 10px; width: 100%; background: linear-gradient(90deg, var(--pl-color), #222, var(--pt-color)); margin: 10px 0; border-radius: 5px; }
-        .leg-labels { display: flex; justify-content: space-between; font-size: 0.7rem; color: #aaa; }
+        /* LOADER */
+        #loader { position:absolute; inset:0; background:rgba(0,0,0,0.95); z-index:2000; display:flex; align-items:center; justify-content:center; }
     </style>
 </head>
 <body>
 
-<div id="loader">
-    <h2 style="font-weight: 300;">CARREGANDO DADOS DE 2022...</h2>
-    <div class="progress-bar"><div class="progress-fill" id="loadBar"></div></div>
-</div>
+<div id="loader"><h2 id="loadText">CARREGANDO SIMULADOR...</h2></div>
 
 <aside class="sidebar">
     <div class="header">
         <h1>Simulador 2026</h1>
-        <div class="subtitle">Baseado na Geografia Eleitoral de 2022</div>
+        <div style="font-size:0.7rem; color:#666; margin-top:5px">Base: <span id="baseOrigin">...</span></div>
     </div>
 
-    <div class="sim-panel">
-        <div style="text-align: center; font-size: 0.8rem; color: #888; margin-bottom: 10px;">
-            RESULTADO NACIONAL PROJETADO
-        </div>
-
-        <div class="score-board">
-            <div class="candidate">
-                <span class="cand-name" style="color:var(--pl-color)">DIREITA</span>
-                <span class="cand-pct" id="displayPL">49.1%</span>
+    <div class="controls">
+        <!-- PLACAR -->
+        <div class="scoreboard">
+            <div class="cand-score">
+                <span class="cand-label" style="color:var(--pl)">DIREITA</span>
+                <span class="big-pct" id="txtPl">49.1%</span>
             </div>
-            <div style="font-size: 1.5rem; color: #444;">VS</div>
-            <div class="candidate">
-                <span class="cand-name" style="color:var(--pt-color)">ESQUERDA</span>
-                <span class="cand-pct" id="displayPT">50.9%</span>
+            <div class="cand-score">
+                <span class="cand-label" style="color:var(--pt)">ESQUERDA</span>
+                <span class="big-pct" id="txtPt">50.9%</span>
             </div>
         </div>
 
-        <div class="slider-container">
-            <input type="range" id="swingSlider" min="35" max="65" step="0.1" value="50.90">
-            <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:#666; margin-top:10px;">
-                <span>Vitória Direita</span>
-                <span>Empate</span>
-                <span>Vitória Esquerda</span>
+        <label style="font-size:0.8rem; color:#888; text-transform:uppercase;">Intenção de Voto Nacional (Esq)</label>
+        <input type="range" id="simSlider" min="30" max="70" step="0.1">
+        
+        <div style="margin-top:20px; padding:15px; background:#1a1a1a; border-radius:6px; font-size:0.8rem;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                <span>Cidades Esquerda:</span>
+                <strong id="countPt" style="color:var(--pt)">0</strong>
             </div>
-        </div>
-
-        <div class="stats-grid">
-            <div class="stat-box">
-                <span class="stat-val" id="countCitiesPT">0</span>
-                <span class="stat-label">Cidades Esq.</span>
+            <div style="display:flex; justify-content:space-between;">
+                <span>Cidades Direita:</span>
+                <strong id="countPl" style="color:var(--pl)">0</strong>
             </div>
-            <div class="stat-box">
-                <span class="stat-val" id="countCitiesPL">0</span>
-                <span class="stat-label">Cidades Dir.</span>
-            </div>
-        </div>
-
-        <div style="margin-top: 30px; font-size: 0.8rem; color: #666; line-height: 1.6; border-top: 1px solid #222; padding-top: 20px;">
-            <strong>Metodologia (Swing):</strong> O simulador aplica uma variação uniforme sobre os resultados reais de 2022. Se a esquerda cresce 2% no nacional, ela cresce 2% em cada um dos 5.570 municípios proporcionalmente.
         </div>
     </div>
 </aside>
@@ -147,12 +82,16 @@
 <div id="map"></div>
 
 <div class="legend">
-    <div style="font-size:0.7rem; font-weight:700; color:#fff; text-align:center">INTENSIDADE DA VITÓRIA</div>
-    <div class="grad-bar"></div>
-    <div class="leg-labels">
-        <span>+ Direita</span>
-        <span>Empate</span>
-        <span>+ Esquerda</span>
+    <div style="font-size:0.7rem; font-weight:700; color:#fff; text-align:center">INTENSIDADE (VENCEDOR)</div>
+    <div style="display:flex; gap:5px; margin-top:5px">
+        <div style="flex:1">
+            <div style="height:8px; background:linear-gradient(90deg, #fff, var(--pl));"></div>
+            <div style="font-size:0.6rem; color:#888; text-align:center">Direita</div>
+        </div>
+        <div style="flex:1">
+            <div style="height:8px; background:linear-gradient(90deg, #fff, var(--pt));"></div>
+            <div style="font-size:0.6rem; color:#888; text-align:center">Esquerda</div>
+        </div>
     </div>
 </div>
 
@@ -160,216 +99,158 @@
 const app = {
     map: null,
     geoLayer: null,
-    baseData: {}, // Dados originais 2022 { ibge: { pt_pct: 0.55, total: 1000 } }
-    names: {},    // Nomes das cidades
-    nationalBasePT: 0, // 50.9% em 2022
-    
+    data: null, // cenario_base_2026.json
+    basePct: 0, // Ponto de partida (Ex: 0.509)
+
     init: async () => {
-        app.map = L.map('map', {center: [-15, -50], zoom: 4, zoomControl: false, background:'#0a0a0a'});
+        app.map = L.map('map', {center: [-15, -50], zoom: 4, zoomControl: false, background:'#0a0a0a', preferCanvas: true});
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {opacity: 0.3}).addTo(app.map);
         
-        // Evento do Slider
-        document.getElementById('swingSlider').addEventListener('input', (e) => {
-            app.updateSimulation(parseFloat(e.target.value));
-        });
-
-        await app.loadData();
+        document.getElementById('simSlider').addEventListener('input', (e) => app.simulate(parseFloat(e.target.value)));
+        
+        await app.loadFiles();
     },
 
-    loadData: async () => {
-        const bar = document.getElementById('loadBar');
-        
+    loadFiles: async () => {
         try {
-            // 1. Carregar Malha Municipal (Simplificada do GitHub)
-            bar.style.width = '30%';
+            // 1. Carregar Malha
+            document.getElementById('loadText').innerText = "BAIXANDO MAPA...";
             const geoRes = await fetch('https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json');
             const geoJson = await geoRes.json();
-            
-            // 2. Carregar Dados Reais 2022 (Do seu arquivo gerado antes)
-            bar.style.width = '60%';
-            const dataRes = await fetch('data/2022_president.json'); // Caminho importante!
-            const rawData = await dataRes.json();
-            
-            // 3. Processar Dados (Extrair Baseline)
-            bar.style.width = '80%';
-            app.processBaseline(rawData);
-            
-            // 4. Renderizar Mapa
-            bar.style.width = '95%';
-            app.geoLayer = L.geoJSON(geoJson, {
-                style: app.getStyle,
-                onEachFeature: (f, l) => {
-                    // Normaliza ID (alguns geojsons usam id, outros codarea)
-                    f.id = f.properties.id || f.properties.codarea;
-                    l.bindTooltip(() => app.getTooltipContent(f.id), {sticky: true, className: 'map-tooltip'});
-                }
-            }).addTo(app.map);
-            
-            // Atualiza UI inicial
-            app.updateSimulation(app.nationalBasePT * 100);
-            document.getElementById('swingSlider').value = (app.nationalBasePT * 100).toFixed(2);
-            
-            setTimeout(() => document.getElementById('loader').classList.add('hidden'), 500);
 
-        } catch(e) {
+            // 2. Carregar Dados Processados
+            document.getElementById('loadText').innerText = "CALIBRANDO MODELO...";
+            const dataRes = await fetch('cenario_base_2026.json');
+            app.data = await dataRes.json();
+
+            // Configurar Base
+            app.basePct = app.data.meta.base_nacional;
+            document.getElementById('baseOrigin').innerText = app.data.meta.origem;
+            
+            // Configurar Slider Inicial
+            const startVal = (app.basePct * 100).toFixed(1);
+            document.getElementById('simSlider').value = startVal;
+
+            // Renderizar Mapa
+            app.renderMap(geoJson);
+            
+            // Primeira Simulação
+            app.simulate(parseFloat(startVal));
+            
+            document.getElementById('loader').classList.add('hidden');
+
+        } catch (e) {
+            alert("Erro: Gere o arquivo 'cenario_base_2026.json' com o script Python primeiro!");
             console.error(e);
-            alert("Erro ao carregar dados. Verifique se 'data/2022_president.json' existe.");
         }
     },
 
-    processBaseline: (json) => {
-        // Pega dados do 2º Turno
-        const turno2 = json['2'];
-        if (!turno2) throw new Error("Sem dados de 2º turno");
-
-        let totalPT = 0;
-        let totalValidos = 0;
-
-        // Itera sobre municípios
-        Object.entries(turno2.municipios).forEach(([ibge, votos]) => {
-            // Identifica chaves (Lula/Bolsonaro podem variar a string dependendo do script que gerou)
-            // Procura chaves que contenham "LULA" ou "13" e "BOLSONARO" ou "22"
-            let vPT = 0, vPL = 0;
-            
-            Object.entries(votos).forEach(([candName, numVotos]) => {
-                const upper = candName.toUpperCase();
-                if (upper.includes('LULA') || upper.includes('(PT)') || upper.includes('13')) vPT += numVotos;
-                else if (upper.includes('BOLSONARO') || upper.includes('(PL)') || upper.includes('22')) vPL += numVotos;
-            });
-
-            const totalMun = vPT + vPL;
-            
-            if (totalMun > 0) {
-                app.baseData[ibge] = {
-                    pctPT: vPT / totalMun,
-                    total: totalMun
-                };
-                totalPT += vPT;
-                totalValidos += totalMun;
+    renderMap: (geoJson) => {
+        app.geoLayer = L.geoJSON(geoJson, {
+            style: { fillColor: '#333', weight: 0.5, color: '#000', fillOpacity: 1 }, // Estilo base
+            onEachFeature: (f, l) => {
+                // Tenta achar ID (codarea ou id)
+                const id = (f.properties.id || f.properties.codarea).toString();
+                f.ibge = id; // Salva para acesso rápido
+                
+                l.bindTooltip(() => app.getTooltip(f.ibge), {sticky: true, direction: 'top'});
             }
-        });
-        
-        // Carrega Nomes
-        app.names = turno2.meta_nomes || {};
-
-        // Calcula média nacional real de 2022
-        app.nationalBasePT = totalPT / totalValidos; // Deve dar ~0.509
+        }).addTo(app.map);
     },
 
-    updateSimulation: (targetPtPct) => {
-        // targetPtPct vem do slider (ex: 52.0)
-        const targetDecimal = targetPtPct / 100;
-        
-        // Swing: Diferença entre o cenário desejado e o real de 2022
-        const swing = targetDecimal - app.nationalBasePT;
+    simulate: (targetPtPct) => {
+        // Swing = Diferença entre o cenário desejado e a base de 2022
+        const swing = (targetPtPct / 100) - app.basePct;
         
         // Atualiza textos
-        document.getElementById('displayPT').textContent = targetPtPct.toFixed(1) + '%';
-        document.getElementById('displayPL').textContent = (100 - targetPtPct).toFixed(1) + '%';
-        
-        // Contadores
-        let winsPT = 0, winsPL = 0;
+        document.getElementById('txtPt').innerText = targetPtPct.toFixed(1) + '%';
+        document.getElementById('txtPl').innerText = (100 - targetPtPct).toFixed(1) + '%';
 
-        // Atualiza cores do mapa
+        let cPt = 0, cPl = 0;
+
+        // Loop otimizado sobre as camadas do mapa
         app.geoLayer.eachLayer(layer => {
-            const id = layer.feature.id;
-            const base = app.baseData[id];
-            
-            if (base) {
-                // Aplica o Swing: %Nova = %Base2022 + SwingNacional
-                let newPctPT = base.pctPT + swing;
+            const id = layer.feature.ibge;
+            const cityData = app.data.dados[id]; // [pct_esq_2022, total_votos]
+
+            if (cityData) {
+                const baseCityPct = cityData[0];
+                
+                // Aplica Swing Uniforme
+                let newPct = baseCityPct + swing;
                 // Limita entre 0 e 1
-                newPctPT = Math.max(0, Math.min(1, newPctPT));
+                newPct = newPct > 1 ? 1 : (newPct < 0 ? 0 : newPct);
                 
+                // Salva estado simulado na feature para o tooltip
+                layer.feature.simPct = newPct;
+
                 // Contagem
-                if (newPctPT > 0.5) winsPT++; else winsPL++;
-                
-                // Define cor
+                if (newPct > 0.5) cPt++; else cPl++;
+
+                // Define Cor
                 layer.setStyle({
-                    fillColor: app.getColor(newPctPT),
+                    fillColor: app.getColor(newPct),
                     fillOpacity: 1,
                     weight: 0.5,
-                    color: '#000'
+                    color: '#000' // Contorno preto solicitado
                 });
-                
-                // Guarda valor simulado na feature para o tooltip usar
-                layer.feature.simPctPT = newPctPT;
-            } else {
-                layer.setStyle({fillColor: '#333', weight:0});
             }
         });
 
-        document.getElementById('countCitiesPT').textContent = winsPT.toLocaleString();
-        document.getElementById('countCitiesPL').textContent = winsPL.toLocaleString();
+        document.getElementById('countPt').innerText = cPt.toLocaleString();
+        document.getElementById('countPl').innerText = cPl.toLocaleString();
     },
 
-    getColor: (pctPT) => {
-        // Escala Divergente: Azul (0) -> Preto/Cinza (0.5) -> Vermelho (1)
-        // Mas queremos ALTO CONTRASTE e Brilho
-        
-        if (pctPT > 0.5) {
-            // Lado ESQUERDA (Vermelho)
-            // Intensidade vai de 0 (50%) a 1 (100%)
-            const intensity = (pctPT - 0.5) * 2; 
-            // Interpola entre Cinza Escuro (#333) e Vermelho Vivo (#c4122d)
-            return app.interpolateColor('#444444', '#ff0000', intensity);
+    // Lógica de Cor: Branco (0.5) -> Cor Pura (1.0 ou 0.0)
+    getColor: (pct) => {
+        if (pct > 0.5) {
+            // ESQUERDA (0.5 a 1.0) -> Branco a Vermelho
+            // Normaliza 0.5-1.0 para 0-1
+            const intensity = (pct - 0.5) * 2;
+            return app.mixWhite('#c4122d', intensity); // Vermelho
         } else {
-            // Lado DIREITA (Azul)
-            // Intensidade vai de 0 (50%) a 1 (0%)
-            const intensity = (0.5 - pctPT) * 2;
-            // Interpola entre Cinza Escuro (#333) e Azul Vivo (#002f6c)
-            return app.interpolateColor('#444444', '#0044ff', intensity);
+            // DIREITA (0.5 a 0.0) -> Branco a Azul
+            const intensity = (0.5 - pct) * 2;
+            return app.mixWhite('#002f6c', intensity); // Azul
         }
     },
 
-    interpolateColor: (c1, c2, factor) => {
-        // Função auxiliar simples para misturar cores hex
-        const hex = (x) => parseInt(x.replace('#',''), 16);
-        const r1 = (hex(c1) >> 16) & 255;
-        const g1 = (hex(c1) >> 8) & 255;
-        const b1 = hex(c1) & 255;
-        
-        const r2 = (hex(c2) >> 16) & 255;
-        const g2 = (hex(c2) >> 8) & 255;
-        const b2 = hex(c2) & 255;
-        
-        const r = Math.round(r1 + (r2 - r1) * factor);
-        const g = Math.round(g1 + (g2 - g1) * factor);
-        const b = Math.round(b1 + (b2 - b1) * factor);
-        
-        return `rgb(${r},${g},${b})`;
+    // Mistura Branco com Cor baseada na intensidade (0=Branco, 1=Cor)
+    mixWhite: (hex, intensity) => {
+        // Converte hex para int
+        const n = parseInt(hex.replace('#',''), 16);
+        const r = (n >> 16) & 255;
+        const g = (n >> 8) & 255;
+        const b = n & 255;
+
+        // Mistura: 255 (Branco) -> r (Cor)
+        // Se intensity 1: usa r. Se intensity 0: usa 255.
+        const nr = Math.round(255 + (r - 255) * intensity);
+        const ng = Math.round(255 + (g - 255) * intensity);
+        const nb = Math.round(255 + (b - 255) * intensity);
+
+        return `rgb(${nr},${ng},${nb})`;
     },
 
-    getTooltipContent: (id) => {
-        const base = app.baseData[id];
-        const name = app.data.names[id] || id;
+    getTooltip: (id) => {
+        const name = app.data.nomes[id] || id;
+        const simPct = app.geoLayer.getLayers().find(l => l.feature.ibge == id)?.feature?.simPct;
         
-        if (!base) return `${name}: Sem dados`;
-        
-        // Pega valor simulado (salvo durante updateSimulation) ou base
-        // Precisamos acessar a layer, mas aqui no tooltip function é difícil.
-        // Recalculamos rápido baseado no estado atual
-        const currentSwing = (app.state?.targetPt || 50.9) / 100 - app.nationalBasePT;
-        let simPct = base.pctPT + currentSwing;
-        simPct = Math.max(0, Math.min(1, simPct));
-        
-        const winner = simPct > 0.5 ? "ESQUERDA" : "DIREITA";
-        const pctWin = simPct > 0.5 ? simPct : (1 - simPct);
-        const color = simPct > 0.5 ? 'var(--pt-color)' : 'var(--pl-color)';
+        if (simPct === undefined) return name;
 
-        return `
-            <div style="font-weight:800; border-bottom:1px solid #555; margin-bottom:5px">${name}</div>
-            Vencedor: <strong style="color:${color}">${winner}</strong><br>
-            Votos: ${(pctWin*100).toFixed(1)}%
-        `;
+        const winner = simPct > 0.5 ? "ESQUERDA" : "DIREITA";
+        const color = simPct > 0.5 ? "var(--pt)" : "var(--pl)";
+        const val = simPct > 0.5 ? simPct : (1 - simPct);
+
+        return `<div style="background:#000; color:#fff; padding:5px; border:1px solid #444; border-radius:4px;">
+            <strong>${name}</strong><br>
+            Vence: <span style="color:${color}; font-weight:800">${winner}</span><br>
+            Votos: ${(val*100).toFixed(1)}%
+        </div>`;
     }
 };
 
-// Inicia
-// Estado inicial para simulação (targetPt)
-app.state = { targetPt: 50.9 };
 document.addEventListener('DOMContentLoaded', app.init);
-
 </script>
 </body>
 </html>
