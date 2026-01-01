@@ -63,7 +63,7 @@
             background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
 
-        /* Toggle Button Style (New but matches design) */
+        /* Toggle Button Style */
         .mode-toggle {
             display: flex; background: #050505; border: 1px solid #333;
             border-radius: 8px; margin-top: 15px; overflow: hidden;
@@ -259,15 +259,20 @@
         <!-- CONTROLES SIMULAÇÃO -->
         <div class="controls" id="simControls" style="display: none;">
             <div style="font-size: 0.75rem; color: #888; text-align: center; margin-bottom: 20px;">
-                Ajuste os percentuais. O mapa reagirá realisticamente à herança política de cada região.
+                Ajuste os percentuais. Clique em "GERAR SIMULAÇÃO" para processar o mapa.
             </div>
 
             <div id="slidersContainer"></div>
             
-            <div style="margin-top:20px; padding:10px; background:#1a1a1a; border-radius:8px; text-align:center;">
+            <div style="margin-top:10px; padding:10px; background:#1a1a1a; border-radius:8px; text-align:center;">
                 <label style="font-size:0.6rem; color:#666;">SOMA TOTAL</label>
                 <div id="totalSimVal" style="font-size:1.4rem; font-weight:800; color:#4ade80;">100%</div>
             </div>
+
+            <!-- BOTÃO ADICIONADO CONFORME PEDIDO -->
+            <button class="btn-primary" onclick="app.loadSimulationBase()" style="margin-top: 20px;">
+                <i class="fas fa-magic"></i> GERAR SIMULAÇÃO
+            </button>
         </div>
     </aside>
 
@@ -392,15 +397,18 @@ const app = {
         document.getElementById('historyControls').style.display = mode === 'history' ? 'block' : 'none';
         document.getElementById('simControls').style.display = mode === 'simulation' ? 'block' : 'none';
 
-        if(mode === 'simulation') {
-            app.loadSimulationBase();
-        } else {
+        // Quando muda para simulação, não carrega automaticamente.
+        // O usuário deve clicar em GERAR SIMULAÇÃO.
+        // Mas se já tiver dados, mostra eles.
+        if(mode === 'simulation' && app.data.simBase) {
+            app.updateSimulation();
+        } else if (mode === 'history') {
             app.loadData();
         }
     },
 
     // ============================================
-    // LÓGICA DE SIMULAÇÃO (Sem Mapas Cinzas!)
+    // LÓGICA DE SIMULAÇÃO
     // ============================================
     renderSliders: () => {
         const c = document.getElementById('slidersContainer');
@@ -431,25 +439,27 @@ const app = {
         const totEl = document.getElementById('totalSimVal');
         totEl.innerText = total + "%";
         totEl.style.color = total === 100 ? '#4ade80' : '#facc15';
-
-        if(app.simTimer) clearTimeout(app.simTimer);
-        app.simTimer = setTimeout(app.updateSimulation, 50);
+        
+        // Removido o update automático. Agora é só pelo botão.
     },
 
     loadSimulationBase: async () => {
         const loader = document.getElementById('loader');
         loader.classList.remove('hidden');
         try {
+            // Só carrega o JSON base se ainda não tiver carregado
             if(!app.data.simBase) {
                 const res = await fetch('data/2026_base.json');
-                if(!res.ok) throw new Error("Base simulada não encontrada.");
+                if(!res.ok) throw new Error("Arquivo 'dados_processados/2026_base.json' não encontrado. Gere o arquivo Python primeiro.");
                 const json = await res.json();
                 app.data.simBase = json['1']; // Formato padrão
                 app.data.names = json['1'].meta_nomes || {};
             }
+            // Depois de garantir que tem a base, calcula e renderiza
             app.updateSimulation();
         } catch(e) { 
-            console.error(e); alert("Erro ao carregar simulação. Gere o arquivo Python primeiro."); 
+            console.error(e); 
+            alert("Erro: " + e.message); 
         } finally { loader.classList.add('hidden'); }
     },
 
@@ -474,6 +484,7 @@ const app = {
         const multipliers = {};
         CONFIG.simCandidates.forEach(c => {
             const currentPct = (baseTotals[c.name] / grandTotal) * 100;
+            // Se o candidato não existir na base, multiplicador é 0 (ou precisa de fallback)
             multipliers[c.name] = currentPct > 0 ? (c.val / currentPct) : 0;
         });
 
@@ -487,8 +498,11 @@ const app = {
                 const novos = {};
                 for(let candKey in votos) {
                     const name = candKey.split(' (')[0];
-                    const mult = multipliers[name] !== undefined ? multipliers[name] : 1;
-                    novos[candKey] = Math.floor(votos[candKey] * mult);
+                    const mult = multipliers[name] !== undefined ? multipliers[name] : 0; // Default 0 se não encontrar slider
+                    
+                    // Se o multiplicador for 0 (ex: Outros), zera para limpar o mapa
+                    const novosVotos = Math.floor(votos[candKey] * mult);
+                    if (novosVotos > 0) novos[candKey] = novosVotos;
                 }
                 dest[k] = novos;
             }
