@@ -3,543 +3,516 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlas Simulator 2026 - High Fidelity</title>
+    <title>Atlas Simulador 2026 - Ultimate</title>
     
-    <!-- Dependências -->
+    <!-- Bibliotecas -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Color Picker -->
     <link href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
 
     <style>
         :root {
-            --bg: #0f1115; --panel: #161b22; --border: #252b36;
-            --accent: #2f81f7; --text: #f0f6fc; --text-dim: #8b949e;
+            --bg-dark: #0a0c10;
+            --bg-panel: #14181f;
+            --border: #2a303b;
+            --accent: #3b82f6;
+            --text-main: #ffffff;
+            --text-muted: #9ca3af;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; outline: none; }
-        body { background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; outline: none; }
+        body { background: var(--bg-dark); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
 
         /* LAYOUT */
-        aside { width: 380px; background: var(--panel); display: flex; flex-direction: column; border-right: 1px solid var(--border); z-index: 20; box-shadow: 2px 0 10px rgba(0,0,0,0.5); }
-        .sidebar-right { border-left: 1px solid var(--border); border-right: none; width: 400px; }
-        #map-container { flex: 1; position: relative; background: #050505; }
+        aside { width: 380px; background: var(--bg-panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 20; box-shadow: 5px 0 20px rgba(0,0,0,0.5); }
+        .sidebar-right { border-left: 1px solid var(--border); border-right: none; width: 420px; }
+        #map-wrapper { flex: 1; position: relative; background: #050505; }
         #map { width: 100%; height: 100%; z-index: 1; }
 
-        /* HEADER & TABS */
-        .header { padding: 15px 20px; border-bottom: 1px solid var(--border); background: linear-gradient(to bottom, #1c2128, #161b22); }
-        .logo { font-size: 1.1rem; font-weight: 900; letter-spacing: -0.5px; color: white; display: flex; align-items: center; gap: 8px; }
-        .logo span { color: var(--accent); }
-        .tabs { display: flex; gap: 5px; margin-top: 15px; background: rgba(0,0,0,0.3); padding: 3px; border-radius: 6px; }
-        .tab { flex: 1; text-align: center; padding: 8px; font-size: 0.75rem; font-weight: 700; cursor: pointer; border-radius: 4px; color: var(--text-dim); transition: 0.2s; }
-        .tab.active { background: var(--accent); color: white; }
-        .tab:hover:not(.active) { background: rgba(255,255,255,0.05); color: white; }
+        /* HEADER */
+        .header { padding: 20px; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, #14181f 0%, #0f1218 100%); }
+        .brand { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
+        .brand span { color: var(--accent); }
 
-        /* SCROLL AREAS */
-        .scroll-y { flex: 1; overflow-y: auto; padding: 20px; }
-        .scroll-y::-webkit-scrollbar { width: 6px; }
-        .scroll-y::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+        /* TABS */
+        .tabs { display: flex; gap: 5px; margin-top: 15px; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 8px; }
+        .tab { flex: 1; text-align: center; padding: 10px; font-size: 0.75rem; font-weight: 700; cursor: pointer; border-radius: 6px; color: var(--text-muted); transition: 0.2s; }
+        .tab.active { background: var(--accent); color: white; box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3); }
 
-        /* CANDIDATE CARDS */
-        .cand-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); padding: 12px; border-radius: 8px; margin-bottom: 10px; transition: 0.2s; }
-        .cand-card:hover { border-color: #444; background: rgba(255,255,255,0.04); }
-        .cc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-        .cc-info { display: flex; align-items: center; gap: 8px; }
-        .cc-color { width: 14px; height: 14px; border-radius: 3px; cursor: pointer; border: 1px solid rgba(255,255,255,0.3); }
-        .cc-name { font-weight: 700; font-size: 0.9rem; }
-        .cc-party { font-size: 0.7rem; color: var(--text-dim); }
-        .cc-val { font-family: monospace; font-weight: 700; color: var(--accent); }
+        /* CONTROLS AREA */
+        .controls { padding: 20px; overflow-y: auto; flex: 1; }
+        
+        /* CANDIDATE ROW */
+        .cand-row { background: rgba(255,255,255,0.02); border: 1px solid var(--border); padding: 12px; border-radius: 8px; margin-bottom: 12px; transition: 0.2s; }
+        .cand-row:hover { border-color: #444; background: rgba(255,255,255,0.04); }
+        
+        .cand-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .cand-info { display: flex; align-items: center; gap: 10px; }
+        .color-dot { width: 18px; height: 18px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(255,255,255,0.3); }
+        .cand-name { font-weight: 700; font-size: 0.9rem; }
+        .cand-party { font-size: 0.75rem; color: var(--text-muted); }
+        
+        .cand-input { width: 60px; background: #0a0c10; border: 1px solid var(--border); color: var(--accent); font-weight: 700; text-align: center; padding: 6px; border-radius: 6px; font-size: 0.9rem; }
+        .cand-input:focus { border-color: var(--accent); }
+
+        input[type=range] { width: 100%; -webkit-appearance: none; background: transparent; height: 6px; cursor: pointer; margin-top: 5px; }
+        input[type=range]::-webkit-slider-runnable-track { background: #333; height: 4px; border-radius: 2px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; background: white; border-radius: 50%; margin-top: -6px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
 
         /* BUTTONS */
-        .btn { width: 100%; padding: 12px; border-radius: 6px; font-weight: 700; cursor: pointer; border: 1px solid transparent; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.85rem; transition: 0.2s; }
-        .btn-primary { background: var(--accent); color: white; box-shadow: 0 4px 12px rgba(47, 129, 247, 0.2); }
-        .btn-primary:hover { filter: brightness(1.1); }
-        .btn-sec { background: transparent; border-color: var(--border); color: var(--text-dim); margin-top: 10px; }
-        .btn-sec:hover { border-color: var(--text); color: var(--text); }
-        
-        .map-toggles { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 400; display: flex; gap: 10px; }
-        .map-btn { background: var(--panel); border: 1px solid var(--border); color: white; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: 600; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        .map-btn.active { background: var(--accent); border-color: var(--accent); }
+        .btn { width: 100%; padding: 14px; border-radius: 8px; font-weight: 700; cursor: pointer; border: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem; transition: 0.2s; margin-top: 10px; }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        .btn-sec { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+        .btn-sec:hover { border-color: white; color: white; }
+
+        /* MAP TOGGLES */
+        .map-controls { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 500; background: rgba(20,24,31,0.9); padding: 5px; border-radius: 30px; border: 1px solid var(--border); backdrop-filter: blur(10px); }
+        .map-toggle { padding: 8px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: 0.2s; }
+        .map-toggle.active { background: var(--accent); color: white; }
 
         /* LEGEND */
-        .legend-box { position: absolute; bottom: 30px; left: 30px; background: var(--panel); padding: 15px; border-radius: 8px; border: 1px solid var(--border); z-index: 400; width: 220px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .l-title { font-size: 0.7rem; font-weight: 800; color: var(--text-dim); text-transform: uppercase; margin-bottom: 8px; }
-        .l-grid { display: flex; gap: 1px; height: 12px; border-radius: 3px; overflow: hidden; margin-bottom: 5px; }
-        .l-step { flex: 1; opacity: 0.8; }
-        .l-labels { display: flex; justify-content: space-between; font-size: 0.65rem; color: #888; }
+        .legend { position: absolute; bottom: 30px; left: 30px; background: var(--bg-panel); padding: 15px; border-radius: 10px; border: 1px solid var(--border); width: 220px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); z-index: 400; }
+        .leg-title { font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; }
+        .leg-bar { display: flex; height: 12px; border-radius: 4px; overflow: hidden; margin-bottom: 5px; }
+        .leg-seg { flex: 1; opacity: 0.9; }
+        .leg-labels { display: flex; justify-content: space-between; font-size: 0.65rem; color: #666; }
 
         /* MODAL */
-        .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        .modal { width: 850px; max-height: 90vh; background: #121418; border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; }
-        .m-head { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .m-body { padding: 25px; overflow-y: auto; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal { width: 900px; max-height: 90vh; background: #11141a; border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+        .modal-head { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 25px; overflow-y: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
         
-        /* TRANSFER MATRIX */
-        .matrix-grid { display: grid; gap: 15px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-        .matrix-group { background: rgba(255,255,255,0.02); padding: 15px; border-radius: 8px; border: 1px solid var(--border); }
-        .mg-title { font-size: 0.8rem; font-weight: 700; margin-bottom: 10px; color: var(--accent); display: flex; align-items: center; gap: 5px; }
-        .mg-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.8rem; }
-        .mg-input { width: 55px; background: #050505; border: 1px solid #333; color: white; padding: 4px; border-radius: 4px; text-align: center; }
+        .state-box { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 6px; border: 1px solid var(--border); }
+        .state-name { font-size: 0.8rem; font-weight: 800; color: var(--text-muted); margin-bottom: 8px; border-bottom: 1px solid #333; padding-bottom: 4px; }
+        .st-input-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 0.75rem; }
+        .st-input { width: 45px; background: black; border: 1px solid #333; color: white; padding: 2px; text-align: center; border-radius: 4px; }
+
+        /* RESULTS PANEL */
+        .res-header { margin-bottom: 20px; }
+        .res-title { font-size: 1.4rem; font-weight: 800; }
+        .res-row { margin-bottom: 15px; }
+        .res-meta { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.9rem; font-weight: 700; }
+        .prog-track { height: 8px; background: #222; border-radius: 4px; overflow: hidden; }
+        .prog-fill { height: 100%; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
 
         /* LOADER */
-        #loader { position: absolute; inset: 0; background: #0f1115; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .spinner { width: 40px; height: 40px; border: 3px solid #333; border-top-color: var(--accent); border-radius: 50%; animation: spin 1s infinite linear; margin-bottom: 15px; }
+        #loader { position: absolute; inset: 0; background: #0a0c10; z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
+        .spinner { width: 50px; height: 50px; border: 4px solid #333; border-top-color: var(--accent); border-radius: 50%; animation: spin 1s infinite linear; margin-bottom: 20px; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-<!-- LOADER -->
 <div id="loader">
     <div class="spinner"></div>
-    <div style="font-size:0.9rem; font-weight:600; color:#888;">Gerando Malha Eleitoral (5570 Municípios)...</div>
+    <div style="font-weight:700; color:#888;">PROCESSANDO MALHA MUNICIPAL (5.570 CIDADES)...</div>
 </div>
 
-<!-- MODAL DE TRANSFERÊNCIA -->
-<div class="modal-bg" id="configModal">
+<!-- MODAL FORÇA REGIONAL -->
+<div class="modal-overlay" id="regionalModal">
     <div class="modal">
-        <div class="m-head">
-            <h3>Matriz de Transferência de Votos</h3>
+        <div class="modal-head">
+            <h3>Força Regional (Multiplicadores)</h3>
             <button onclick="app.toggleModal(false)" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
         </div>
-        <div class="m-body">
-            <div id="matrix-t1" style="display:block;">
-                <div style="margin-bottom:15px; color:#aaa; font-size:0.85rem;">
-                    Defina a origem dos votos de 2026 com base no eleitorado de 2022. 
-                    <br>Ex: Quantos % dos eleitores de <b>Lula (2022)</b> votarão em cada candidato agora?
-                </div>
-                <div class="matrix-grid" id="matrixContainerT1"></div>
-            </div>
-            <div id="matrix-t2" style="display:none;">
-                <div style="margin-bottom:15px; color:#aaa; font-size:0.85rem;">
-                    Defina para onde vão os votos dos candidatos eliminados no 1º Turno.
-                </div>
-                <div class="matrix-grid" id="matrixContainerT2"></div>
-            </div>
+        <div style="padding:10px 25px; font-size:0.8rem; color:#888;">
+            Ajuste a força de cada candidato por estado. 1.0 = Normal. 2.0 = Dobro da força.
         </div>
+        <div class="modal-body" id="statesGrid"></div>
         <div style="padding:20px; border-top:1px solid var(--border); text-align:right;">
-            <button class="btn btn-primary" style="width:auto; display:inline-flex;" onclick="app.applyTransfers()">Aplicar e Simular</button>
+            <button class="btn btn-primary" style="width:auto; display:inline-flex;" onclick="app.saveRegional()">APLICAR E SIMULAR</button>
         </div>
     </div>
 </div>
 
-<!-- SIDEBAR ESQUERDA -->
 <aside>
     <div class="header">
-        <div class="logo"><i class="fas fa-chart-pie"></i> ATLAS <span>V25</span></div>
+        <div class="brand"><i class="fas fa-globe-americas"></i> ATLAS <span>ULTIMATE</span></div>
         <div class="tabs">
-            <div class="tab active" id="btn-t1" onclick="app.setTurn(1)">1º TURNO</div>
-            <div class="tab" id="btn-t2" onclick="app.setTurn(2)">2º TURNO</div>
+            <div class="tab active" id="tab1" onclick="app.setTurn(1)">1º TURNO</div>
+            <div class="tab" id="tab2" onclick="app.setTurn(2)">2º TURNO</div>
         </div>
     </div>
 
-    <div class="scroll-y">
+    <div class="controls">
         <!-- T2 SELECTORS -->
-        <div id="t2-controls" style="display:none; margin-bottom:20px; padding:10px; background:rgba(255,255,255,0.03); border-radius:8px;">
-            <label style="font-size:0.7rem; color:#888; font-weight:700;">FINALISTAS</label>
+        <div id="t2-config" style="display:none; margin-bottom:20px; background:rgba(255,255,255,0.03); padding:10px; border-radius:8px;">
+            <label style="font-size:0.7rem; color:#888; font-weight:700;">CENÁRIO DE 2º TURNO</label>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:5px;">
-                <select id="sel-c1" onchange="app.updateT2()" style="width:100%; padding:8px; background:#050505; color:white; border:1px solid #333; border-radius:4px;"></select>
-                <select id="sel-c2" onchange="app.updateT2()" style="width:100%; padding:8px; background:#050505; color:white; border:1px solid #333; border-radius:4px;"></select>
+                <select id="sel-c1" onchange="app.updateT2()" style="width:100%; padding:8px; background:black; color:white; border:1px solid #333; border-radius:4px;"></select>
+                <select id="sel-c2" onchange="app.updateT2()" style="width:100%; padding:8px; background:black; color:white; border:1px solid #333; border-radius:4px;"></select>
             </div>
         </div>
 
-        <div id="cand-list"></div>
+        <div id="candList"></div>
 
         <button class="btn btn-sec" onclick="app.toggleModal(true)">
-            <i class="fas fa-exchange-alt"></i> Configurar Transferências
+            <i class="fas fa-map-marked-alt"></i> AJUSTAR FORÇA REGIONAL
         </button>
         
-        <div style="margin-top:20px; padding:15px; border-top:1px solid var(--border); text-align:center;">
-             <div style="font-size:0.7rem; color:#666;">TOTAL DE VOTOS</div>
-             <div id="total-sum" style="font-size:1.5rem; font-weight:800; color:var(--accent);">100%</div>
+        <div style="margin-top:20px; text-align:center; padding:15px; border-top:1px solid var(--border);">
+            <div style="font-size:0.7rem; color:#666;">TOTAL DA INTENÇÃO DE VOTO</div>
+            <div id="totalSum" style="font-size:1.6rem; font-weight:900; color:var(--accent);">100%</div>
         </div>
     </div>
 </aside>
 
-<!-- MAPA -->
-<div id="map-container">
-    <div class="map-toggles">
-        <div class="map-btn active" id="view-br-mun" onclick="app.setView('br-mun')">Brasil (Mun)</div>
-        <div class="map-btn" id="view-states" onclick="app.setView('states')">Estados</div>
+<div id="map-wrapper">
+    <div class="map-controls">
+        <div class="map-toggle active" id="view-mun" onclick="app.setView('mun')">MUNICÍPIOS (BR)</div>
+        <div class="map-toggle" id="view-uf" onclick="app.setView('uf')">ESTADOS</div>
     </div>
-    
+
     <div id="map"></div>
 
-    <div class="legend-box">
-        <div class="l-title">Dominância do Vencedor</div>
-        <div class="l-grid" id="legend-colors">
-            <!-- JS generates -->
-        </div>
-        <div class="l-labels">
-            <span>+Competitivo</span>
-            <span>+Hegemônico</span>
+    <div class="legend">
+        <div class="leg-title">Intensidade (Vencedor)</div>
+        <div class="leg-bar" id="leg-colors"></div>
+        <div class="leg-labels">
+            <span>Competitivo</span>
+            <span>Hegemônico</span>
         </div>
     </div>
 </div>
 
-<!-- SIDEBAR DIREITA (RESULTADOS) -->
 <aside class="sidebar-right">
     <div class="header">
-        <div class="logo">RESULTADOS <span id="res-scope" style="font-size:0.7rem; margin-left:auto; color:#666; background:#050505; padding:2px 6px; border-radius:4px;">NACIONAL</span></div>
+        <div class="brand">RESULTADOS</div>
     </div>
-    <div class="scroll-y" id="results-area"></div>
+    <div class="controls" id="resultsArea"></div>
 </aside>
 
 <script>
 // =============================================================================
-// DADOS BASE 2022 (SIMPLIFICADO POR ESTADO PARA GERAÇÃO DA MALHA)
+// DADOS DE BASE 2022 (PARA GEOGRAFIA VEROSSÍMIL)
 // =============================================================================
-// L = Lula, B = Bolsonaro, O = Outros/Nulos/Brancos (Residual)
-const BASE_2022 = {
-    '12': {l: 29.3, b: 70.7}, '27': {l: 58.7, b: 41.3}, '13': {l: 51.1, b: 48.9},
-    '16': {l: 45.1, b: 54.9}, '29': {l: 72.1, b: 27.9}, '23': {l: 69.9, b: 30.1},
-    '53': {l: 41.2, b: 58.8}, '32': {l: 41.9, b: 58.1}, '52': {l: 41.3, b: 58.7},
-    '21': {l: 71.1, b: 28.9}, '31': {l: 50.2, b: 49.8}, '50': {l: 40.5, b: 59.5},
-    '51': {l: 34.9, b: 65.1}, '15': {l: 52.1, b: 47.9}, '25': {l: 66.6, b: 33.4},
-    '26': {l: 66.9, b: 33.1}, '22': {l: 76.8, b: 23.2}, '41': {l: 37.6, b: 62.4},
-    '33': {l: 43.5, b: 56.5}, '24': {l: 65.1, b: 34.9}, '11': {l: 29.4, b: 70.6},
-    '14': {l: 24.0, b: 76.0}, '43': {l: 43.7, b: 56.3}, '42': {l: 30.7, b: 69.3},
-    '28': {l: 67.2, b: 32.8}, '35': {l: 44.7, b: 55.3}, '17': {l: 51.3, b: 48.7}
+// Definimos o perfil de cada estado: [Voto Esquerda%, Voto Direita%]
+// O algoritmo aplicará ruído municipal para criar o "mosaico" realista.
+const BASE_PROFILE = {
+    '12': {l: 29, r: 71}, // AC
+    '27': {l: 59, r: 41}, // AL
+    '13': {l: 51, r: 49}, // AM
+    '16': {l: 45, r: 55}, // AP
+    '29': {l: 72, r: 28}, // BA (Forte PT)
+    '23': {l: 70, r: 30}, // CE (Forte PT)
+    '53': {l: 41, r: 59}, // DF
+    '32': {l: 42, r: 58}, // ES
+    '52': {l: 41, r: 59}, // GO
+    '21': {l: 71, r: 29}, // MA
+    '31': {l: 50, r: 50}, // MG (Swing State Perfeito)
+    '50': {l: 40, r: 60}, // MS
+    '51': {l: 35, r: 65}, // MT
+    '15': {l: 52, r: 48}, // PA
+    '25': {l: 67, r: 33}, // PB
+    '26': {l: 67, r: 33}, // PE
+    '22': {l: 77, r: 23}, // PI (Fortissimo PT)
+    '41': {l: 37, r: 63}, // PR
+    '33': {l: 43, r: 57}, // RJ
+    '24': {l: 65, r: 35}, // RN
+    '11': {l: 29, r: 71}, // RO
+    '14': {l: 24, r: 76}, // RR (Fortissimo Direita)
+    '43': {l: 43, r: 57}, // RS
+    '42': {l: 30, r: 70}, // SC (Forte Direita)
+    '28': {l: 67, r: 33}, // SE
+    '35': {l: 45, r: 55}, // SP
+    '17': {l: 51, r: 49}  // TO
 };
 
+const STATES_LIST = [
+    {id:'12',n:'Acre'},{id:'27',n:'Alagoas'},{id:'13',n:'Amazonas'},{id:'16',n:'Amapá'},
+    {id:'29',n:'Bahia'},{id:'23',n:'Ceará'},{id:'53',n:'Distrito Federal'},{id:'32',n:'Espírito Santo'},
+    {id:'52',n:'Goiás'},{id:'21',n:'Maranhão'},{id:'31',n:'Minas Gerais'},{id:'50',n:'Mato Grosso do Sul'},
+    {id:'51',n:'Mato Grosso'},{id:'15',n:'Pará'},{id:'25',n:'Paraíba'},{id:'26',n:'Pernambuco'},
+    {id:'22',n:'Piauí'},{id:'41',n:'Paraná'},{id:'33',n:'Rio de Janeiro'},{id:'24',n:'Rio Grande do Norte'},
+    {id:'11',n:'Rondônia'},{id:'14',n:'Roraima'},{id:'43',n:'Rio Grande do Sul'},{id:'42',n:'Santa Catarina'},
+    {id:'28',n:'Sergipe'},{id:'35',n:'São Paulo'},{id:'17',n:'Tocantins'}
+];
+
+// Lista Inicial Solicitada
 const INITIAL_CANDS = [
-    { id: 'LULA', name: 'Lula da Silva', party: 'PT', color: '#E12525', val: 40 },
-    { id: 'FLAVIO', name: 'Flávio Bolsonaro', party: 'PL', color: '#0e2f73', val: 30 },
-    { id: 'TARCISIO', name: 'Tarcísio Freitas', party: 'REP', color: '#2684FF', val: 10 },
-    { id: 'CIRO', name: 'Ciro Gomes', party: 'PDT', color: '#9333EA', val: 5 },
-    { id: 'CAIADO', name: 'Ronaldo Caiado', party: 'UNIÃO', color: '#0EA5E9', val: 5 },
-    { id: 'ZEMA', name: 'Romeu Zema', party: 'NOVO', color: '#F97316', val: 5 },
-    { id: 'RENAN', name: 'Renan Santos', party: 'MISSÃO', color: '#EAB308', val: 5 }
+    { id: 'LULA', name: 'Lula da Silva', party: 'PT', color: '#E12525', t1: 35, t2: 45, align: 'L' },
+    { id: 'FLAVIO', name: 'Flávio Bolsonaro', party: 'PL', color: '#1a418a', t1: 25, t2: 40, align: 'R' },
+    { id: 'CAIADO', name: 'Ronaldo Caiado', party: 'UNIÃO', color: '#0EA5E9', t1: 8, t2: 0, align: 'R' },
+    { id: 'RATINHO', name: 'Ratinho Jr', party: 'PSD', color: '#109176', t1: 6, t2: 0, align: 'R' },
+    { id: 'RENAN', name: 'Renan Santos', party: 'MISSÃO', color: '#EAB308', t1: 4, t2: 0, align: 'C' },
+    { id: 'ZEMA', name: 'Romeu Zema', party: 'NOVO', color: '#F97316', t1: 7, t2: 0, align: 'R' },
+    { id: 'CIRO', name: 'Ciro Gomes', party: 'PDT', color: '#9333EA', t1: 5, t2: 0, align: 'L' },
+    { id: 'ALDO', name: 'Aldo Rebelo', party: 'MDB', color: '#006400', t1: 2, t2: 0, align: 'C' }
 ];
 
 const app = {
     map: null,
-    layers: { states: null, muns: null },
-    data: { geo: null, simResults: {} },
+    layers: { mun: null, uf: null },
+    data: { geo: null, ufs: null, sim: {} },
     state: {
         turn: 1,
-        view: 'br-mun', // 'br-mun', 'states', 'single-state'
-        activeState: null,
-        candidates: JSON.parse(JSON.stringify(INITIAL_CANDS)),
-        t2_cands: ['LULA', 'FLAVIO'],
-        // MATRIZES DE TRANSFERÊNCIA
-        // T1: Origem 2022 -> Destino 2026. Chaves: L22 (Lula), B22 (Bolso), O22 (Outros)
-        matrixT1: {}, 
-        // T2: Origem T1 -> Destino T2.
-        matrixT2: {}
+        view: 'mun',
+        cands: JSON.parse(JSON.stringify(INITIAL_CANDS)),
+        t2_pair: ['LULA', 'FLAVIO'],
+        multipliers: {} // { turn: { candId: { stateId: val } } }
     },
 
     init: async () => {
-        app.initMatrixT1();
-        
-        // Setup Map
-        app.map = L.map('map', { 
-            center: [-15, -55], zoom: 4, 
-            zoomControl: false, attributionControl: false,
-            preferCanvas: true // CRUCIAL para performance com 5570 polígonos
+        // Init Multipliers Structure
+        [1, 2].forEach(t => {
+            app.state.multipliers[t] = {};
+            app.state.cands.forEach(c => {
+                app.state.multipliers[t][c.id] = {};
+                STATES_LIST.forEach(s => app.state.multipliers[t][c.id][s.id] = 1.0);
+            });
         });
+
+        // Setup Map
+        app.map = L.map('map', { center: [-15, -55], zoom: 4, zoomControl: false, preferCanvas: true });
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { opacity: 1 }).addTo(app.map);
 
-        // Fetch Data
         try {
-            // Malha Municipal Otimizada
-            const res = await fetch('https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json');
-            const data = await res.json();
+            // Load Heavy GeoJSON
+            const [munRes, ufRes] = await Promise.all([
+                fetch('https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json'),
+                fetch('https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson')
+            ]);
             
-            // Pré-processamento: Atribuir perfil de votação 2022 a cada município
-            // Para criar realismo, adicionamos "Ruído" (Noise) baseado no ID da cidade
-            // Isso simula diferença Capital x Interior x Cidades Vizinhas
-            data.features.forEach(f => {
-                const idStr = f.properties.id.toString();
-                const ufId = idStr.substring(0, 2);
-                const base = BASE_2022[ufId] || {l:50, b:50};
-                
-                // Deterministic noise (-10% a +10%)
-                const seed = (parseInt(idStr) * 9301 + 49297) % 1000;
-                const noise = (seed / 1000) * 20 - 10; 
+            const munData = await munRes.json();
+            const ufData = await ufRes.json();
 
-                // Salva "Perfil Genético" do município
-                f.properties.perfil22 = {
-                    lula: Math.max(0, Math.min(100, base.l + noise)),
-                    bolso: Math.max(0, Math.min(100, base.b - noise)),
-                    // Residual assume-se neutro/nulo/branco ~5-10% na realidade, 
-                    // aqui simplificamos para soma 100 baseada em L e B ponderados
+            // Fix UF IDs
+            const ufMap = {}; STATES_LIST.forEach(s => ufMap[s.n] = s.id); // Simple mapping by name, data source uses sigla mostly but lets map sigla manually if needed.
+            // Map Sigla from UF data
+            const siglaMap = {'AC':'12','AL':'27','AM':'13','AP':'16','BA':'29','CE':'23','DF':'53','ES':'32','GO':'52','MA':'21','MG':'31','MS':'50','MT':'51','PA':'15','PB':'25','PE':'26','PI':'22','PR':'41','RJ':'33','RN':'24','RO':'11','RR':'14','RS':'43','SC':'42','SE':'28','SP':'35','TO':'17'};
+            ufData.features.forEach(f => f.properties.id = siglaMap[f.properties.sigla]);
+
+            // PRE-PROCESS GEOGRAPHY (The "Verossímil" Engine)
+            // Assign a "Political DNA" to each municipality based on its state and a random seed
+            munData.features.forEach(f => {
+                const id = f.properties.id.toString();
+                const ufId = id.substring(0, 2);
+                const base = BASE_PROFILE[ufId] || {l:50, r:50};
+
+                // Deterministic Noise (Pseudo-random based on ID)
+                // Creates variance within state (+/- 15%)
+                const seed = (parseInt(id) * 12345) % 100; 
+                const noise = (seed - 50) * 0.3; // -15 to +15
+
+                f.properties.dna = {
+                    l: Math.max(10, Math.min(90, base.l + noise)),
+                    r: Math.max(10, Math.min(90, base.r - noise))
                 };
-                // Normaliza para garantir 100% (L+B apenas como proxy de polarização)
-                const tot = f.properties.perfil22.lula + f.properties.perfil22.bolso;
-                f.properties.perfil22.lula = (f.properties.perfil22.lula / tot) * 100;
-                f.properties.perfil22.bolso = (f.properties.perfil22.bolso / tot) * 100;
             });
 
-            app.data.geo = data;
-            
-            // Estados (para zoom e view states)
-            const resStates = await fetch('https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson');
-            const stData = await resStates.json();
-            // Map IDs
-            const ufMap = {'AC':'12','AL':'27','AM':'13','AP':'16','BA':'29','CE':'23','DF':'53','ES':'32','GO':'52','MA':'21','MG':'31','MS':'50','MT':'51','PA':'15','PB':'25','PE':'26','PI':'22','PR':'41','RJ':'33','RN':'24','RO':'11','RR':'14','RS':'43','SC':'42','SE':'28','SP':'35','TO':'17'};
-            stData.features.forEach(f => f.properties.id = ufMap[f.properties.sigla]);
-            app.data.states = stData;
+            app.data.geo = munData;
+            app.data.ufs = ufData;
+
+            document.getElementById('loader').style.opacity = 0;
+            setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
 
             app.renderUI();
             app.runSimulation();
-            
-            document.getElementById('loader').style.display = 'none';
 
         } catch (e) {
+            alert("Erro ao carregar dados geográficos.");
             console.error(e);
-            alert("Erro ao carregar dados. Verifique a conexão.");
         }
     },
 
     // =========================================================================
-    // LÓGICA DE TRANSFERÊNCIA (O CORAÇÃO DO SIMULADOR)
+    // CORE SIMULATION LOGIC
     // =========================================================================
-    initMatrixT1: () => {
-        // Inicializa matriz padrão baseada em "Afinidade Ideológica"
-        // L22 -> Esquerda, B22 -> Direita
-        app.state.candidates.forEach(c => {
-            const isLeft = ['LULA', 'CIRO'].includes(c.id);
-            const isRight = ['FLAVIO', 'CAIADO', 'ZEMA', 'TARCISIO'].includes(c.id);
-            const isCenter = ['RENAN'].includes(c.id);
-
-            app.state.matrixT1[c.id] = {
-                l22: isLeft ? (c.id==='LULA'?0.8:0.1) : (isCenter?0.1:0.01),
-                b22: isRight ? (c.id==='FLAVIO'?0.6:0.1) : (isCenter?0.1:0.01)
-            };
-        });
-        // Normaliza para o usuário ajustar depois
-    },
-
     runSimulation: () => {
-        const results = {}; // { cityId: { votes: {}, winner: id, total: 100 } }
-        const activeCands = app.getActiveCandidates();
-        
-        // 1. Calcular Votos por Município
+        const t = app.state.turn;
+        const activeCands = app.getActiveCands();
+        const results = {}; // { cityId: { winner: id, max: pct } }
+
+        // Calculate Municipality Results
         app.data.geo.features.forEach(f => {
-            const pid = f.properties.id;
-            const p22 = f.properties.perfil22; // {lula: %, bolso: %}
-            
-            let cityVotes = {};
-            let totalWeight = 0;
+            const id = f.properties.id;
+            const ufId = id.toString().substring(0, 2);
+            const dna = f.properties.dna; // {l: %, r: %}
+
+            let votes = {};
+            let totalW = 0;
 
             activeCands.forEach(c => {
-                let rawScore = 0;
-                
-                if (app.state.turn === 1) {
-                    // Lógica T1: Ancestralidade 2022
-                    // Voto = (BaseLula * TransferL) + (BaseBolso * TransferB)
-                    const mat = app.state.matrixT1[c.id];
-                    // Usamos slider do candidato como "Energia da Campanha" (Multiplicador Global)
-                    const campaignFactor = c.val / 10; // Fator arbitrário para escalar
-                    
-                    rawScore = (p22.lula * mat.l22) + (p22.bolso * mat.b22);
-                    rawScore *= campaignFactor;
-                    
-                } else {
-                    // Lógica T2: Transferência dos Eliminados
-                    // Se o candidato já estava no T1, mantém sua base T1 + transferências
-                    // Para simplificar: Recalculamos T1 para essa cidade e aplicamos matriz T2
-                    // Esta lógica exigiria dois passos. 
-                    // Simplificação Robusta:
-                    // Voto = Perfil22 * MatrizT2_Direta (Calculada dinamicamente)
-                    // Ou seja, definimos quem herda L22 e B22 neste cenário
-                    
-                    // Pega configuração da Matriz T2 (que define migração de Ciro, Tarcisio etc)
-                    // Mas como não salvamos resultado T1 na memória persistente pra usar de input,
-                    // Vamos usar uma aproximação baseada nos sliders do T1 (que representam a força nacional)
-                    
-                    // Vamos usar uma "Afinidade Derivada":
-                    // Se é Lula vs Flavio: Lula herda Esquerda + % Centro. Flavio herda Direita + % Centro.
-                    // Isso é controlado pelos sliders do T2 que funcionam como "Capacidade de atrair o eleitorado"
-                    
-                    const isLeft = ['LULA','CIRO'].includes(c.id);
-                    // Bias geográfico simples para T2
-                    const affinity = isLeft ? p22.lula : p22.bolso;
-                    rawScore = affinity * c.val;
-                }
+                // 1. BASE: Alignment with Geography
+                // Left candidates grab from dna.l, Right from dna.r, Center splits
+                let geoScore = 0;
+                if (c.align === 'L') geoScore = dna.l;
+                else if (c.align === 'R') geoScore = dna.r;
+                else geoScore = 50; // Center neutral
 
-                cityVotes[c.id] = rawScore;
-                totalWeight += rawScore;
+                // 2. INPUT: User Slider (National Strength)
+                // Slider acts as "Campaign Energy". 
+                // Formula: GeoScore * (Slider / Normalizer)
+                // Simplified: Base * UserStrength
+                let raw = geoScore * c.val;
+
+                // 3. REGIONAL: Multiplier
+                const mult = app.state.multipliers[t][c.id][ufId] || 1.0;
+                raw *= mult;
+
+                votes[c.id] = raw;
+                totalW += raw;
             });
 
-            // Normalização e Vencedor
+            // Normalize & Find Winner
             let max = -1, winner = null;
             activeCands.forEach(c => {
-                const pct = totalWeight > 0 ? (cityVotes[c.id] / totalWeight) * 100 : 0;
-                cityVotes[c.id] = pct;
-                if(pct > max) { max = pct; winner = c.id; }
+                const pct = totalW > 0 ? (votes[c.id] / totalW) * 100 : 0;
+                if (pct > max) { max = pct; winner = c.id; }
             });
 
-            results[pid] = { votes: cityVotes, winner: winner, max: max };
+            results[id] = { w: winner, m: max };
         });
 
-        app.data.simResults = results;
+        app.data.sim = results;
         app.renderMap();
         app.renderResults();
     },
 
     // =========================================================================
-    // RENDERIZAÇÃO DO MAPA
+    // RENDER MAP
     // =========================================================================
     renderMap: () => {
-        if(app.layers.muns) app.map.removeLayer(app.layers.muns);
-        if(app.layers.states) app.map.removeLayer(app.layers.states);
+        if(app.layers.mun) app.map.removeLayer(app.layers.mun);
+        if(app.layers.uf) app.map.removeLayer(app.layers.uf);
 
-        const isStateView = app.state.view === 'states';
-        const activeCands = app.getActiveCandidates();
+        const isMun = app.state.view === 'mun';
+        const cands = app.getActiveCands();
+        const getCand = (id) => cands.find(c => c.id === id);
 
-        // Style Function
-        const getStyle = (feature, isStateLyr) => {
-            let res, winnerId, maxPct;
-            
-            if (isStateLyr) {
-                // Agregar votos do estado (Média simples das cidades para demo rápida)
-                // O ideal seria ponderar por população, mas não temos pop no geojson simples
-                // Vamos usar a cor do "Vencedor Estadual Calculado"
-                // Hack: Usar o ID do estado para simular, já que temos BASE_2022 por estado
-                // Mas precisamos dos dados agregados.
-                
-                // Agregação Real-time
-                const ufId = feature.properties.id;
-                let stVotes = {}; let count = 0;
-                app.data.geo.features.forEach(f => {
-                    if(f.properties.id.toString().startsWith(ufId)){
-                        const r = app.data.simResults[f.properties.id];
-                        if(r) {
-                            activeCands.forEach(c => stVotes[c.id] = (stVotes[c.id]||0) + r.votes[c.id]);
-                            count++;
-                        }
-                    }
+        const getStyle = (id, isState) => {
+            let winId, pct;
+
+            if (isState) {
+                // Aggregation Hack: Use base profile + multipliers to simulate state winner color
+                // Ideally we sum up city results, but for speed we estimate
+                const ufId = id;
+                let scores = {}; let tot = 0;
+                cands.forEach(c => {
+                    const base = (c.align==='L' ? BASE_PROFILE[ufId].l : (c.align==='R' ? BASE_PROFILE[ufId].r : 50));
+                    const v = base * c.val * (app.state.multipliers[app.state.turn][c.id][ufId]||1);
+                    scores[c.id] = v; tot += v;
                 });
-                
-                let sMax = -1, sWin = null;
-                activeCands.forEach(c => {
-                    const avg = stVotes[c.id] / count;
-                    if(avg > sMax) { sMax = avg; sWin = c.id; }
+                let max = -1;
+                cands.forEach(c => {
+                    let p = (scores[c.id]/tot)*100;
+                    if(p>max){max=p; winId=c.id;}
                 });
-                winnerId = sWin; maxPct = sMax;
-
+                pct = max;
             } else {
-                res = app.data.simResults[feature.properties.id];
-                if(!res) return {fillColor:'#333', stroke:false};
-                winnerId = res.winner; maxPct = res.max;
+                const r = app.data.sim[id];
+                if(!r) return {fillColor:'#222', weight:0};
+                winId = r.w; pct = r.m;
             }
 
-            const winner = activeCands.find(c => c.id === winnerId);
-            if(!winner) return { fillColor:'#222', weight:0 };
+            const c = getCand(winId);
+            if(!c) return {fillColor:'#222', weight:0};
 
-            // Cor Sólida com "Degraus" (Buckets)
-            // Atlas Style: 50-55, 55-60, 60-70, 70-80, 80+
-            let opacity = 1;
-            // Para criar os degraus, misturamos com branco ou preto ou alteramos a saturação
-            // Aqui vamos usar uma função de mix de cor simples
-            
-            let shade = 0; // 0 = Cor Pura
-            if(maxPct < 30) shade = 0.8;       // Muito fraco (multipolar)
-            else if(maxPct < 40) shade = 0.6;
-            else if(maxPct < 50) shade = 0.4;
-            else if(maxPct < 55) shade = 0.3;
-            else if(maxPct < 60) shade = 0.2;
-            else if(maxPct < 70) shade = 0.1;
-            else shade = 0; // Forte
+            // High-Res Gradient (Atlas Style: Solid + Darkness)
+            // Steps: <30, <40, <50, <60, >60
+            let shade = 0;
+            if(pct < 35) shade = 0.7; // Very Weak (Multipolar)
+            else if(pct < 45) shade = 0.5;
+            else if(pct < 50) shade = 0.3;
+            else if(pct < 55) shade = 0.2; // Competitive
+            else if(pct < 65) shade = 0.1;
+            else shade = 0; // Strong
 
-            // Se for T2, a escala sobe (50% é empate)
+            // In Turn 2, 50 is the floor
             if(app.state.turn === 2) {
-                if(maxPct < 52) shade = 0.6;
-                else if(maxPct < 55) shade = 0.4;
-                else if(maxPct < 60) shade = 0.2;
+                if(pct < 52) shade = 0.5;
+                else if(pct < 55) shade = 0.3;
+                else if(pct < 60) shade = 0.15;
                 else shade = 0;
             }
 
             return {
-                fillColor: app.mixWhite(winner.color, shade),
+                fillColor: app.mixBlack(c.color, shade),
                 fillOpacity: 1,
-                color: isStateLyr ? '#fff' : 'rgba(0,0,0,0.15)', // Bordas
-                weight: isStateLyr ? 1.2 : 0.3
+                color: isState ? '#fff' : 'rgba(0,0,0,0.1)',
+                weight: isState ? 1 : 0.3
             };
         };
 
-        if (isStateView) {
-            app.layers.states = L.geoJSON(app.data.states, {
-                style: (f) => getStyle(f, true),
+        if (isMun) {
+            app.layers.mun = L.geoJSON(app.data.geo, {
+                style: (f) => getStyle(f.properties.id, false),
                 onEachFeature: (f, l) => {
-                    l.bindTooltip(f.properties.name, {sticky:true, direction:'top'});
-                    l.on('click', () => {
-                        // Zoom in state
-                        app.map.fitBounds(l.getBounds());
-                    });
+                    const r = app.data.sim[f.properties.id];
+                    if(r) {
+                        const w = getCand(r.w);
+                        l.bindTooltip(`<b>${f.properties.name}</b><br>${w.name}: ${r.m.toFixed(1)}%`, {sticky:true});
+                    }
                 }
             }).addTo(app.map);
         } else {
-            // Municipal View (Heavy)
-            app.layers.muns = L.geoJSON(app.data.geo, {
-                style: (f) => getStyle(f, false),
+            app.layers.uf = L.geoJSON(app.data.ufs, {
+                style: (f) => getStyle(f.properties.id, true),
                 onEachFeature: (f, l) => {
-                    // Detailed Tooltip
-                    l.on('mouseover', (e) => {
-                        const r = app.data.simResults[f.properties.id];
-                        if(!r) return;
-                        const sorted = activeCands.map(c=>({name:c.name, color:c.color, v:r.votes[c.id]})).sort((a,b)=>b.v-a.v);
-                        
-                        let html = `<div style="font-weight:700; border-bottom:1px solid #444; margin-bottom:5px;">${f.properties.name}</div>`;
-                        sorted.forEach(c => {
-                            html += `<div style="display:flex; justify-content:space-between; font-size:0.8rem;">
-                                <span style="color:${c.color}">${c.name}</span>
-                                <span>${c.v.toFixed(1)}%</span>
-                            </div>`;
-                        });
-                        l.bindTooltip(html, {sticky:true, className:'custom-tt'}).openTooltip();
-                    });
+                    l.bindTooltip(`<b>${f.properties.name}</b>`, {sticky:true});
+                    l.on('click', () => app.map.fitBounds(l.getBounds()));
                 }
             }).addTo(app.map);
         }
     },
 
-    mixWhite: (hex, ratio) => {
-        // Mistura cor com branco para criar tintas (tints)
-        const r = parseInt(hex.substring(1,3), 16);
-        const g = parseInt(hex.substring(3,5), 16);
-        const b = parseInt(hex.substring(5,7), 16);
+    mixBlack: (hex, ratio) => {
+        // Darkens color for "Weak" support (Atlas Logic: Weak = Darker/Muddy, Strong = Pure Neon)
+        // OR: Lighten for weak? Atlas usually uses Saturation. 
+        // Let's use simple Mix with Black for depth.
+        // Actually, user requested "Degrade de cores igual site original".
+        // Let's mix with #1a1a1a (background) to fade out.
+        const r = parseInt(hex.slice(1,3), 16);
+        const g = parseInt(hex.slice(3,5), 16);
+        const b = parseInt(hex.slice(5,7), 16);
         
-        const nr = Math.round(r + (255 - r) * ratio);
-        const ng = Math.round(g + (255 - g) * ratio);
-        const nb = Math.round(b + (255 - b) * ratio);
+        // Mix with #222
+        const tr = Math.round(r * (1-ratio) + 34 * ratio);
+        const tg = Math.round(g * (1-ratio) + 34 * ratio);
+        const tb = Math.round(b * (1-ratio) + 34 * ratio);
         
-        return `rgb(${nr},${ng},${nb})`;
+        return `rgb(${tr},${tg},${tb})`;
     },
 
     // =========================================================================
-    // UI & EVENTS
+    // UI HANDLERS
     // =========================================================================
     renderUI: () => {
-        const div = document.getElementById('cand-list');
+        const div = document.getElementById('candList');
         div.innerHTML = '';
-        const cands = app.getActiveCandidates();
+        const cands = app.getActiveCands();
         let total = 0;
 
         cands.forEach(c => {
-            total += parseInt(c.val);
+            total += c.val;
             const el = document.createElement('div');
-            el.className = 'cand-card';
+            el.className = 'cand-row';
             el.innerHTML = `
-                <div class="cc-head">
-                    <div class="cc-info">
-                        <div class="cc-color" style="background:${c.color}" id="cp-${c.id}"></div>
+                <div class="cand-top">
+                    <div class="cand-info">
+                        <div class="color-dot" style="background:${c.color}" id="cp-${c.id}"></div>
                         <div>
-                            <div class="cc-name">${c.name}</div>
-                            <div class="cc-party">${c.party}</div>
+                            <div class="cand-name">${c.name}</div>
+                            <div class="cand-party">${c.party}</div>
                         </div>
                     </div>
-                    <div class="cc-val">${c.val}%</div>
+                    <input type="number" class="cand-input" value="${c.val}" onchange="app.upVal('${c.id}', this.value)">
                 </div>
-                <input type="range" min="0" max="100" value="${c.val}" 
-                       oninput="app.updateVal('${c.id}', this.value)" style="width:100%; cursor:pointer;">
+                <input type="range" min="0" max="100" value="${c.val}" oninput="app.upVal('${c.id}', this.value)">
             `;
             div.appendChild(el);
-            
-            // Color Picker
+
             setTimeout(() => {
                 const p = Pickr.create({
                     el: `#cp-${c.id}`, theme: 'nano', default: c.color,
@@ -547,59 +520,73 @@ const app = {
                 });
                 p.on('save', (col) => {
                     c.color = col.toHEXA().toString();
-                    el.querySelector('.cc-color').style.background = c.color;
+                    el.querySelector('.color-dot').style.background = c.color;
                     app.runSimulation();
                 });
             }, 0);
         });
 
-        document.getElementById('total-sum').innerText = total + "%";
-        
-        // Update Legends
-        const lDiv = document.getElementById('legend-colors');
-        lDiv.innerHTML = '';
-        const winner = cands.reduce((prev, curr) => (prev.val > curr.val) ? prev : curr);
-        for(let i=0.8; i>=0; i-=0.2) {
-            const step = document.createElement('div');
-            step.className = 'l-step';
-            step.style.background = app.mixWhite(winner.color, i);
-            lDiv.appendChild(step);
-        }
+        const sumEl = document.getElementById('totalSum');
+        sumEl.innerText = total + "%";
+        sumEl.style.color = (total > 99 && total < 101) ? '#4ade80' : '#f87171';
 
-        // T2 Selectors
+        // T2 Config
         if(app.state.turn === 2) {
             const s1 = document.getElementById('sel-c1');
             const s2 = document.getElementById('sel-c2');
-            const opts = app.state.candidates.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-            if(s1.innerHTML === '') { s1.innerHTML=opts; s2.innerHTML=opts; s1.value=app.state.t2_cands[0]; s2.value=app.state.t2_cands[1]; }
+            if(s1.options.length === 0) {
+                const ops = app.state.cands.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                s1.innerHTML = ops; s2.innerHTML = ops;
+                s1.value = app.state.t2_pair[0]; s2.value = app.state.t2_pair[1];
+            }
         }
+        
+        // Legends
+        const lBar = document.getElementById('leg-colors');
+        lBar.innerHTML = '';
+        const win = cands.reduce((p, c) => (p.val > c.val ? p : c));
+        [0.7, 0.5, 0.3, 0.1, 0].forEach(r => {
+            const d = document.createElement('div');
+            d.className = 'leg-seg';
+            d.style.background = app.mixBlack(win.color, r);
+            lBar.appendChild(d);
+        });
     },
 
-    updateVal: (id, v) => {
-        const c = app.state.candidates.find(x => x.id === id);
-        c.val = parseInt(v);
-        app.renderUI();
+    upVal: (id, v) => {
+        const val = parseInt(v) || 0;
+        const c = app.state.cands.find(x => x.id === id);
+        if(app.state.turn === 1) c.t1 = val;
+        else c.t2 = val;
+        
+        // Update View Model
+        app.getActiveCands().find(x=>x.id===id).val = val; 
+        
+        app.renderUI(); // Re-render numbers
         app.runSimulation();
     },
 
-    getActiveCandidates: () => {
-        if(app.state.turn === 1) return app.state.candidates;
-        return app.state.candidates.filter(c => app.state.t2_cands.includes(c.id));
+    getActiveCands: () => {
+        if(app.state.turn === 1) {
+            return app.state.cands.map(c => ({...c, val: c.t1}));
+        } else {
+            return app.state.cands
+                .filter(c => app.state.t2_pair.includes(c.id))
+                .map(c => ({...c, val: c.t2}));
+        }
     },
 
     setTurn: (t) => {
         app.state.turn = t;
-        document.getElementById('btn-t1').className = t===1?'tab active':'tab';
-        document.getElementById('btn-t2').className = t===2?'tab active':'tab';
-        document.getElementById('t2-controls').style.display = t===2?'block':'none';
-        document.getElementById('matrix-t1').style.display = t===1?'block':'none';
-        document.getElementById('matrix-t2').style.display = t===2?'block':'none';
+        document.getElementById('tab1').className = t===1?'tab active':'tab';
+        document.getElementById('tab2').className = t===2?'tab active':'tab';
+        document.getElementById('t2-config').style.display = t===2?'block':'none';
         app.renderUI();
         app.runSimulation();
     },
 
     updateT2: () => {
-        app.state.t2_cands = [
+        app.state.t2_pair = [
             document.getElementById('sel-c1').value,
             document.getElementById('sel-c2').value
         ];
@@ -609,86 +596,76 @@ const app = {
 
     setView: (v) => {
         app.state.view = v;
-        document.querySelectorAll('.map-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(v==='br-mun'?'view-br-mun':'view-states').classList.add('active');
+        document.getElementById('view-mun').className = v==='mun'?'map-toggle active':'map-toggle';
+        document.getElementById('view-uf').className = v==='uf'?'map-toggle active':'map-toggle';
         app.renderMap();
     },
 
     renderResults: () => {
-        const div = document.getElementById('results-area');
-        const cands = app.getActiveCandidates();
-        // Calculate National Weighted Average
-        // Since GeoJSON doesn't have pop, we sum raw % * 1 (Simple)
-        // OR better: use the slider values as the "National Result" truth 
-        // and map only shows distribution.
+        const box = document.getElementById('resultsArea');
+        const cands = app.getActiveCands().sort((a,b) => b.val - a.val);
         
-        // Let's use the sliders for the Results Panel to match user expectation
-        const sorted = [...cands].sort((a,b) => b.val - a.val);
+        // Use National Average (Inputs) as the summary results
+        let html = `<div class="res-header"><div class="res-title">BRASIL</div><div style="font-size:0.8rem; color:#888;">PROJEÇÃO NACIONAL</div></div>`;
         
-        let html = '';
-        sorted.forEach(c => {
+        cands.forEach(c => {
             html += `
-                <div style="margin-bottom:15px;">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-weight:700;">
+                <div class="res-row">
+                    <div class="res-meta">
                         <span>${c.name}</span>
-                        <span>${c.val}%</span>
+                        <span style="color:${c.color}">${c.val}%</span>
                     </div>
-                    <div style="height:8px; background:#222; border-radius:4px; overflow:hidden;">
-                        <div style="height:100%; width:${c.val}%; background:${c.color}; transition:width 0.5s;"></div>
+                    <div class="prog-track">
+                        <div class="prog-fill" style="width:${c.val}%; background:${c.color}"></div>
                     </div>
                 </div>
             `;
         });
-        div.innerHTML = html;
+        box.innerHTML = html;
     },
 
     // =========================================================================
-    // MODAL & TRANSFER MATRIX UI
+    // MODAL REGIONAL
     // =========================================================================
     toggleModal: (show) => {
-        document.getElementById('configModal').style.display = show ? 'flex' : 'none';
-        if(show) app.renderMatrixInputs();
+        document.getElementById('regionalModal').style.display = show ? 'flex' : 'none';
+        if(show) app.renderRegionalGrid();
     },
 
-    renderMatrixInputs: () => {
-        const cT1 = document.getElementById('matrixContainerT1');
-        cT1.innerHTML = '';
-        
-        // T1: 2022 -> 2026
-        // Colunas: Lula 2022, Bolsonaro 2022
-        app.state.candidates.forEach(c => {
-            const m = app.state.matrixT1[c.id];
-            cT1.innerHTML += `
-                <div class="matrix-group">
-                    <div class="mg-title"><div style="width:10px;height:10px;background:${c.color}"></div> ${c.name}</div>
-                    <div class="mg-row">
-                        <span>Recebe de Lula (22):</span>
-                        <input type="number" step="0.1" class="mg-input i-l22" value="${m.l22}" data-id="${c.id}">
+    renderRegionalGrid: () => {
+        const grid = document.getElementById('statesGrid');
+        grid.innerHTML = '';
+        const t = app.state.turn;
+        const cands = app.getActiveCands();
+
+        STATES_LIST.forEach(s => {
+            const box = document.createElement('div');
+            box.className = 'state-box';
+            let rows = '';
+            cands.forEach(c => {
+                const val = app.state.multipliers[t][c.id][s.id];
+                rows += `
+                    <div class="st-input-row">
+                        <span style="color:${c.color}">${c.name}</span>
+                        <input class="st-input i-reg" type="number" step="0.1" value="${val}" data-cid="${c.id}" data-sid="${s.id}">
                     </div>
-                    <div class="mg-row">
-                        <span>Recebe de Bolso (22):</span>
-                        <input type="number" step="0.1" class="mg-input i-b22" value="${m.b22}" data-id="${c.id}">
-                    </div>
-                </div>
-            `;
+                `;
+            });
+            box.innerHTML = `<div class="state-name">${s.n}</div>${rows}`;
+            grid.appendChild(box);
         });
     },
 
-    applyTransfers: () => {
-        // Save Matrix
-        document.querySelectorAll('.i-l22').forEach(i => {
-            app.state.matrixT1[i.dataset.id].l22 = parseFloat(i.value);
+    saveRegional: () => {
+        const t = app.state.turn;
+        document.querySelectorAll('.i-reg').forEach(inp => {
+            app.state.multipliers[t][inp.dataset.cid][inp.dataset.sid] = parseFloat(inp.value);
         });
-        document.querySelectorAll('.i-b22').forEach(i => {
-            app.state.matrixT1[i.dataset.id].b22 = parseFloat(i.value);
-        });
-        
         app.toggleModal(false);
         app.runSimulation();
     }
 };
 
-// Start
 app.init();
 </script>
 </body>
