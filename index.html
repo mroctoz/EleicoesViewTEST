@@ -185,6 +185,58 @@
             border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* NOVO: ESTILO PARA SELEÇÃO DE SEGUNDO TURNO */
+        .second-round-box {
+            background: rgba(59, 130, 246, 0.05);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .second-round-title {
+            color: #3b82f6;
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .candidate-select-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .candidate-select-box.selected {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: #3b82f6;
+        }
+        .select-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #555;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .select-checkbox.checked {
+            background: #3b82f6;
+            border-color: #3b82f6;
+        }
+        .select-checkbox.checked::after {
+            content: '✓';
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -202,6 +254,7 @@
             <div class="mode-tabs">
                 <div class="mode-tab active" id="tabHist" onclick="app.setMode('history')">HISTÓRICO</div>
                 <div class="mode-tab" id="tabSim" onclick="app.setMode('simulation')">SIMULAÇÃO 2026</div>
+                <div class="mode-tab" id="tabSecond" onclick="app.setMode('second_round')">2º TURNO</div>
             </div>
         </div>
         
@@ -236,41 +289,21 @@
             <button class="btn-primary" onclick="app.loadData()">CARREGAR MAPA</button>
         </div>
 
-        <!-- CONTROLES SIMULAÇÃO -->
+        <!-- CONTROLES SIMULAÇÃO (1º TURNO) -->
         <div class="controls" id="simControls" style="display: none;">
             <div style="font-size: 0.75rem; color: #888; text-align: center; margin-bottom: 20px;">
-                Os votos são redistribuídos com base na geografia de 2022 e normalizados pelo total fixo abaixo.
-            </div>
-
-            <!-- ADIÇÃO 1: Seletor de turno para simulação -->
-            <div class="control-group">
-                <label>TURNO DA SIMULAÇÃO</label>
-                <select id="simTurnSelect" onchange="app.adjustForTurn()">
-                    <option value="1">1º Turno</option>
-                    <option value="2">2º Turno</option>
-                </select>
+                Ajuste os percentuais para o 1º turno de 2026.
             </div>
 
             <div id="slidersContainer"></div>
             
-            <!-- ADIÇÃO 2: Slider de bônus regional -->
-            <div class="sim-slider-box" style="border: 1px solid #3b82f6; background: rgba(59, 130, 246, 0.1);">
-                <div class="sim-head">
-                    <span style="color: #3b82f6">Bônus Regional (1º Turno)</span>
-                    <span id="regionalBonusVal">40%</span>
-                </div>
-                <div class="sim-sub">Intensidade da vantagem local</div>
-                <input type="range" min="0" max="100" value="40" 
-                       id="regionalBonusSlider" oninput="app.onRegionalBonusChange(this)">
-            </div>
-
             <div style="margin-top:15px; padding:12px; background:#151a23; border-radius:8px; text-align:center; border: 1px solid #333;">
                 <label style="font-size:0.65rem; margin-bottom: 0;">PERCENTUAL TOTAL</label>
                 <div id="totalSimVal" style="font-size:1.3rem; font-weight:800; color:#4ade80;">100%</div>
             </div>
 
             <button id="btnSimulate" class="btn-primary" onclick="app.runSimulation()" style="margin-top: 20px;">
-                <i class="fas fa-magic"></i> GERAR SIMULAÇÃO
+                <i class="fas fa-magic"></i> GERAR SIMULAÇÃO 1º TURNO
             </button>
             
             <!-- Input Total Votos -->
@@ -279,6 +312,64 @@
                 <input type="number" id="simTotalInput" value="121274352" 
                        style="width:100%; padding:10px; background:#050505; border:1px solid #333; color:#4ade80; border-radius:6px; font-family:inherit; font-weight:700;">
             </div>
+        </div>
+
+        <!-- CONTROLES 2º TURNO -->
+        <div class="controls" id="secondControls" style="display: none;">
+            <div style="font-size: 0.75rem; color: #888; text-align: center; margin-bottom: 20px;">
+                Selecione 2 candidatos para o 2º turno. Os votos dos outros serão redistribuídos.
+            </div>
+
+            <!-- Seleção de candidatos -->
+            <div class="second-round-box">
+                <div class="second-round-title">
+                    <i class="fas fa-check-double"></i> SELECIONE 2 CANDIDATOS
+                </div>
+                <div id="candidateSelection"></div>
+                <div id="selectedCandidatesInfo" style="margin-top: 10px; font-size: 0.8rem; color: #94a3b8; display: none;">
+                    Selecionados: <span id="selectedNames"></span>
+                </div>
+            </div>
+
+            <!-- Configuração da transferência -->
+            <div class="second-round-box">
+                <div class="second-round-title">
+                    <i class="fas fa-exchange-alt"></i> TRANSFERÊNCIA DE VOTOS
+                </div>
+                <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 10px;">
+                    Como os votos dos outros candidatos serão redistribuídos:
+                </div>
+                <div class="control-group">
+                    <label>MODO DE TRANSFERÊNCIA</label>
+                    <select id="transferMode" onchange="app.updateTransferDescription()">
+                        <option value="proportional">Proporcional (mantém proporção entre os 2)</option>
+                        <option value="regional">Regional (favorece líderes locais)</option>
+                        <option value="party_based">Por partido (PT vs Direita)</option>
+                        <option value="manual">Manual (definir abaixo)</option>
+                    </select>
+                </div>
+
+                <!-- Configurações manuais (aparece apenas se manual for selecionado) -->
+                <div id="manualTransferSettings" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <div class="control-group">
+                        <label>% para o primeiro candidato</label>
+                        <input type="range" min="0" max="100" value="50" id="transferToFirst">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.7rem;">
+                            <span>0%</span>
+                            <span id="transferToFirstValue">50%</span>
+                            <span>100%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="transferDescription" style="font-size: 0.7rem; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 4px; margin-top: 10px;">
+                    Os votos serão redistribuídos proporcionalmente entre os dois candidatos selecionados.
+                </div>
+            </div>
+
+            <button id="btnSecondRound" class="btn-primary" onclick="app.runSecondRound()" style="margin-top: 20px;" disabled>
+                <i class="fas fa-flag-checkered"></i> GERAR SIMULAÇÃO 2º TURNO
+            </button>
         </div>
     </aside>
 
@@ -323,43 +414,90 @@
 // CONFIGURAÇÃO DE PESOS
 // =============================================================================
 const CONFIG_PESOS = {
-    rules: [
-        { src: 'LULA', dest: 'LULA', ratio: 0.9, regionBonus: {'15': 0.9} }, // Nordeste/Norte
-        { src: 'LULA', dest: 'LULA', ratio: 0.9, regionBonus: {'23': 0.9} }, // Nordeste/Norte
-        { src: 'LULA', dest: 'LULA', ratio: 0.9, regionBonus: {'21': 0.9} }, // Nordeste/Norte
-        { src: 'LULA', dest: 'LULA', ratio: 0.9, regionBonus: {'12': 0.9} }, // Nordeste/Norte
-        { src: 'LULA', dest: 'LULA', ratio: 0.9, regionBonus: {'14': 0.9} }, // Nordeste/Norte
+    // Configuração para o 1º turno - líderes estaduais têm vantagem
+    firstRound: [
+        { src: 'LULA', dest: 'LULA', ratio: 0.9, regionBonus: {'15': 0.9, '23': 0.9, '21': 0.9, '12': 0.9, '14': 0.9} },
+        { src: 'LULA', dest: 'LULA', ratio: 0.9, regionBonus: {'31': 0.7, '52': 0.7, '41': 0.7} },
 
         { src: 'JAIR', dest: 'FLAVIO', ratio: 0.9, regionBonus: {'33': 1.3} }, // RJ
-        { src: 'JAIR', dest: 'CAIADO', ratio: 0.9, regionBonus: {'52': 4} }, // GO
-        { src: 'JAIR', dest: 'RATINHO', ratio: 0.7, regionBonus: {'41': 4} }, // PR
+        { src: 'JAIR', dest: 'CAIADO', ratio: 0.9, regionBonus: {'52': 1.5, '50': 1.5} }, // GO, MS
+        { src: 'JAIR', dest: 'RATINHO', ratio: 0.7, regionBonus: {'41': 1.5} }, // PR
         { src: 'JAIR', dest: 'RENAN', ratio: 0.2, regionBonus: {'42': 1.2} }, // SC
-        { src: 'JAIR', dest: 'ZEMA', ratio: 0.8, regionBonus: {'31': 4} }, // MG
-        { src: 'CAIADO', dest: 'CAIADO', ratio: 1, regionBonus: {'50': 1.6} }, // MS
-        { src: 'FELIPE', dest: 'ZEMA', ratio: 0.9, regionBonus: {'31': 2} }, // MG
+        { src: 'JAIR', dest: 'ZEMA', ratio: 0.8, regionBonus: {'31': 1.5} }, // MG
 
-        { src: 'JAIR', dest: 'RATINHO', ratio: 1, regionBonus: {'31': 0.2} },
-        { src: 'JAIR', dest: 'RATINHO', ratio: 1, regionBonus: {'52': 0.2} },
+        { src: 'FELIPE', dest: 'ZEMA', ratio: 0.9, regionBonus: {'31': 1.5} }, // MG
+        { src: 'CAIADO', dest: 'CAIADO', ratio: 1, regionBonus: {'52': 1.6, '50': 1.6} },
 
-        { src: 'JAIR', dest: 'CAIADO', ratio: 1, regionBonus: {'31': 0.2} },
-        { src: 'JAIR', dest: 'CAIADO', ratio: 1, regionBonus: {'41': 0.2} },
+        // Transferências entre líderes regionais (coalisões)
+        { src: 'CAIADO', dest: 'ZEMA', ratio: 1, regionBonus: {'31': 2} },
+        { src: 'RATINHO', dest: 'ZEMA', ratio: 1, regionBonus: {'31': 2} },
+        { src: 'ZEMA', dest: 'RATINHO', ratio: 1, regionBonus: {'41': 2} },
+        { src: 'CAIADO', dest: 'RATINHO', ratio: 1, regionBonus: {'41': 2} },
+        { src: 'ZEMA', dest: 'CAIADO', ratio: 1, regionBonus: {'52': 2} },
+        { src: 'RATINHO', dest: 'CAIADO', ratio: 1, regionBonus: {'52': 2} },
 
-        { src: 'JAIR', dest: 'ZEMA', ratio: 1, regionBonus: {'41': 0.2} },
-        { src: 'JAIR', dest: 'ZEMA', ratio: 1, regionBonus: {'52': 0.2} },
+        { src: 'JAIR', dest: 'FLAVIO', ratio: 1, regionBonus: {'31': 0.5, '41': 0.5, '52': 0.5} },
+        { src: 'JAIR', dest: 'RATINHO', ratio: 1, regionBonus: {'31': 0.1, '52': 0.1} },
+        { src: 'JAIR', dest: 'CAIADO', ratio: 1, regionBonus: {'31': 0.1, '41': 0.1} },
+        { src: 'JAIR', dest: 'ZEMA', ratio: 1, regionBonus: {'41': 0.1, '52': 0.1} },
 
-        { src: 'RENAN', dest: 'RENAN', ratio: 1, regionBonus: {'51': 1.1} }, // MT
-        { src: 'RENAN', dest: 'RENAN', ratio: 1, regionBonus: {'17': 0.8} }, // TO
-        { src: 'RENAN', dest: 'RENAN', ratio: 1, regionBonus: {'16': 0.7} }, // AP
-        { src: 'RENAN', dest: 'RENAN', ratio: 1, regionBonus: {'14': 0.7} }, // RR
+        { src: 'RENAN', dest: 'RENAN', ratio: 1, regionBonus: {'51': 1.1, '17': 0.8, '16': 0.7, '14': 0.7} },
         { src: 'FELIPE', dest: 'RENAN', ratio: 0.9, regionBonus: {} },
 
-        { src: 'CIRO', dest: 'RENAN', ratio: 0.1, regionBonus: {'35': 1.2} }, // SP
+        { src: 'CIRO', dest: 'RENAN', ratio: 0.1, regionBonus: {'35': 1.2} },
         { src: 'CIRO', dest: 'RATINHO', ratio: 0.1, regionBonus: {} },
-        { src: 'CIRO', dest: 'CIRO', ratio: 0.8, regionBonus: {'23': 1.0} }, // CE
+        { src: 'CIRO', dest: 'CIRO', ratio: 0.8, regionBonus: {'23': 1.0} },
 
         { src: 'TEBET', dest: 'ALDO', ratio: 0.5, regionBonus: {} },
         { src: 'TEBET', dest: 'RATINHO', ratio: 0.5, regionBonus: {} }
-    ]
+    ],
+    
+    // Configuração para o 2º turno - transferência mais polarizada
+    secondRound: [
+        // Lula vs qualquer um da direita
+        { src: 'FLAVIO', dest: 'LULA', ratio: 0.1, regionBonus: {} },
+        { src: 'FLAVIO', dest: 'FLAVIO', ratio: 0.9, regionBonus: {} },
+        
+        { src: 'CAIADO', dest: 'LULA', ratio: 0.15, regionBonus: {} },
+        { src: 'CAIADO', dest: 'CAIADO', ratio: 0.85, regionBonus: {} },
+        
+        { src: 'ZEMA', dest: 'LULA', ratio: 0.2, regionBonus: {} },
+        { src: 'ZEMA', dest: 'ZEMA', ratio: 0.8, regionBonus: {} },
+        
+        { src: 'RATINHO', dest: 'LULA', ratio: 0.15, regionBonus: {} },
+        { src: 'RATINHO', dest: 'RATINHO', ratio: 0.85, regionBonus: {} },
+        
+        { src: 'RENAN', dest: 'LULA', ratio: 0.3, regionBonus: {} },
+        { src: 'RENAN', dest: 'RENAN', ratio: 0.7, regionBonus: {} },
+        
+        { src: 'CIRO', dest: 'LULA', ratio: 0.6, regionBonus: {} },
+        { src: 'CIRO', dest: 'CIRO', ratio: 0.4, regionBonus: {} },
+        
+        { src: 'ALDO', dest: 'LULA', ratio: 0.8, regionBonus: {} },
+        { src: 'ALDO', dest: 'ALDO', ratio: 0.2, regionBonus: {} },
+        
+        // Se não for Lula vs outro, assume transferência proporcional
+        { src: 'LULA', dest: 'LULA', ratio: 0.95, regionBonus: {} },
+        { src: 'LULA', dest: 'OTHER', ratio: 0.05, regionBonus: {} }
+    ],
+    
+    // Configurações regionais específicas para 2º turno
+    regionalTransfers: {
+        // Se Lula vs qualquer da direita
+        'LULA_FLAVIO': {
+            '33': { 'FLAVIO': 0.8, 'LULA': 0.2 }, // RJ favorece Flávio
+            '31': { 'FLAVIO': 0.4, 'LULA': 0.6 }, // MG mais equilibrado
+            '41': { 'FLAVIO': 0.6, 'LULA': 0.4 }, // PR
+            '52': { 'FLAVIO': 0.7, 'LULA': 0.3 }, // GO
+            '35': { 'FLAVIO': 0.5, 'LULA': 0.5 }  // SP
+        },
+        // Se Caiado vs outro da direita
+        'CAIADO_FLAVIO': {
+            '52': { 'CAIADO': 0.9, 'FLAVIO': 0.1 }, // GO fortíssimo Caiado
+            '50': { 'CAIADO': 0.8, 'FLAVIO': 0.2 }, // MS
+            '33': { 'CAIADO': 0.2, 'FLAVIO': 0.8 }  // RJ fortíssimo Flávio
+        }
+    }
 };
 
 const CONFIG = {
@@ -401,7 +539,13 @@ const GRADIENT_SCHEME = [
 const app = {
     map: null,
     layers: { brazil: null, cities: null },
-    data: { full: null, current: null, names: {}, geoJsonCache: null },
+    data: { 
+        full: null, 
+        current: null, 
+        names: {}, 
+        geoJsonCache: null,
+        firstRoundResults: null // Armazena resultados do 1º turno
+    },
     state: { 
         mode: 'history', 
         view: 'states', 
@@ -409,43 +553,8 @@ const app = {
         selectedName: "Brasil", 
         ignored: new Set(), 
         customColors: JSON.parse(localStorage.getItem('v25_colors') || '{}'),
-        regionalBonus: 0.4 // ADIÇÃO: Valor padrão para bônus regional (40%)
-    },
-
-    // ADIÇÃO 1: Nova função para controlar bônus regional
-    onRegionalBonusChange: function(el) {
-        const val = parseInt(el.value);
-        document.getElementById('regionalBonusVal').innerText = val + "%";
-        app.state.regionalBonus = val / 100; // Converte para decimal (0.4)
-    },
-
-    // ADIÇÃO 2: Função para ajustar simulação conforme turno
-    adjustForTurn: function() {
-        const turn = document.getElementById('simTurnSelect').value;
-        const bonusSlider = document.getElementById('regionalBonusSlider');
-        
-        // Ajusta automaticamente o bônus regional
-        if (turn === '1') {
-            bonusSlider.value = 40; // 40% no 1º turno
-            app.onRegionalBonusChange(bonusSlider);
-        } else {
-            bonusSlider.value = 20; // 20% no 2º turno
-            app.onRegionalBonusChange(bonusSlider);
-            
-            // Ajusta sliders para maior polarização no 2º turno
-            CONFIG.simCandidates.forEach((cand) => {
-                if (['LULA', 'FLAVIO'].includes(cand.id)) {
-                    // Aumenta principais candidatos
-                    cand.val = Math.min(cand.val + 10, 60);
-                } else if (['CAIADO', 'ZEMA', 'RATINHO', 'RENAN'].includes(cand.id)) {
-                    // Reduz candidatos estaduais no 2º turno
-                    cand.val = Math.max(cand.val - 5, 1);
-                }
-            });
-            
-            // Atualiza a exibição dos sliders
-            app.renderSliders();
-        }
+        secondRoundCandidates: [], // Array com 2 candidatos selecionados
+        transferMode: 'proportional'
     },
 
     init: () => {
@@ -466,24 +575,45 @@ const app = {
         });
 
         app.renderSliders();
+        app.renderCandidateSelection();
         app.loadData();
+        
+        // Configurar eventos para transferência manual
+        document.getElementById('transferToFirst').addEventListener('input', function() {
+            document.getElementById('transferToFirstValue').textContent = this.value + '%';
+        });
     },
 
     setMode: (mode) => {
         app.state.mode = mode;
         document.getElementById('tabHist').className = `mode-tab ${mode==='history'?'active':''}`;
         document.getElementById('tabSim').className = `mode-tab ${mode==='simulation'?'active':''}`;
+        document.getElementById('tabSecond').className = `mode-tab ${mode==='second_round'?'active':''}`;
         document.getElementById('historyControls').style.display = mode==='history'?'block':'none';
         document.getElementById('simControls').style.display = mode==='simulation'?'block':'none';
+        document.getElementById('secondControls').style.display = mode==='second_round'?'block':'none';
         
-        // Recarregar se voltar pro histórico
-        if(mode === 'history') app.loadData();
+        if(mode === 'history') {
+            app.loadData();
+        } else if(mode === 'second_round') {
+            // Se tiver dados do 1º turno, habilita a seleção
+            if(app.data.firstRoundResults) {
+                app.updateTransferDescription();
+            } else {
+                alert("Gere primeiro uma simulação do 1º turno antes de configurar o 2º turno.");
+            }
+        }
     },
 
     handleViewChange: () => {
         app.state.view = document.getElementById('viewModeSelect').value;
         if(app.state.mode === 'history') app.loadData();
-        else if (app.data.current) app.runSimulation();
+        else if (app.data.current) {
+            if(app.state.mode === 'simulation') app.runSimulation();
+            else if(app.state.mode === 'second_round' && app.state.secondRoundCandidates.length === 2) {
+                app.runSecondRound();
+            }
+        }
     },
 
     renderSliders: () => {
@@ -505,6 +635,97 @@ const app = {
         });
     },
 
+    renderCandidateSelection: () => {
+        const container = document.getElementById('candidateSelection');
+        container.innerHTML = '';
+        
+        CONFIG.simCandidates.forEach(cand => {
+            const div = document.createElement('div');
+            div.className = 'candidate-select-box';
+            div.innerHTML = `
+                <div class="select-checkbox" data-id="${cand.id}"></div>
+                <div style="width: 20px; height: 20px; border-radius: 4px; background: ${cand.color};"></div>
+                <div style="flex: 1;">
+                    <div style="font-weight: 700; font-size: 0.85rem;">${cand.name}</div>
+                    <div style="font-size: 0.7rem; color: #94a3b8;">${cand.party}</div>
+                </div>
+            `;
+            
+            div.querySelector('.select-checkbox').addEventListener('click', function() {
+                const candidateId = this.dataset.id;
+                app.toggleCandidateSelection(candidateId, this);
+            });
+            
+            container.appendChild(div);
+        });
+    },
+
+    toggleCandidateSelection: (candidateId, checkboxElement) => {
+        const index = app.state.secondRoundCandidates.indexOf(candidateId);
+        const box = checkboxElement.closest('.candidate-select-box');
+        
+        if(index === -1) {
+            // Adicionar candidato (máximo 2)
+            if(app.state.secondRoundCandidates.length >= 2) {
+                alert('Selecione no máximo 2 candidatos para o 2º turno.');
+                return;
+            }
+            app.state.secondRoundCandidates.push(candidateId);
+            checkboxElement.classList.add('checked');
+            box.classList.add('selected');
+        } else {
+            // Remover candidato
+            app.state.secondRoundCandidates.splice(index, 1);
+            checkboxElement.classList.remove('checked');
+            box.classList.remove('selected');
+        }
+        
+        // Atualizar UI
+        app.updateSelectedCandidatesInfo();
+        
+        // Habilitar/desabilitar botão
+        const btn = document.getElementById('btnSecondRound');
+        btn.disabled = app.state.secondRoundCandidates.length !== 2;
+    },
+
+    updateSelectedCandidatesInfo: () => {
+        const infoDiv = document.getElementById('selectedCandidatesInfo');
+        const namesSpan = document.getElementById('selectedNames');
+        
+        if(app.state.secondRoundCandidates.length > 0) {
+            const names = app.state.secondRoundCandidates.map(id => {
+                const cand = CONFIG.simCandidates.find(c => c.id === id);
+                return cand ? cand.name : id;
+            }).join(' vs ');
+            
+            namesSpan.textContent = names;
+            infoDiv.style.display = 'block';
+        } else {
+            infoDiv.style.display = 'none';
+        }
+    },
+
+    updateTransferDescription: () => {
+        const mode = document.getElementById('transferMode').value;
+        app.state.transferMode = mode;
+        
+        const descDiv = document.getElementById('transferDescription');
+        const manualDiv = document.getElementById('manualTransferSettings');
+        
+        // Mostrar/ocultar configurações manuais
+        manualDiv.style.display = mode === 'manual' ? 'block' : 'none';
+        
+        // Atualizar descrição
+        const descriptions = {
+            proportional: 'Os votos dos outros candidatos serão redistribuídos proporcionalmente entre os dois selecionados, mantendo a mesma proporção que tinham no 1º turno.',
+            regional: 'Os votos serão redistribuídos considerando a força regional dos candidatos. Líderes estaduais terão vantagem em seus estados.',
+            party_based: 'Transferência baseada em alinhamento partidário: votos de esquerda vão para Lula, votos de direita vão para o candidato de direita.',
+            manual: 'Defina manualmente a porcentagem de votos que vai para o primeiro candidato selecionado.'
+        };
+        
+        descDiv.textContent = descriptions[mode] || descriptions.proportional;
+    },
+
     onSliderChange: (el) => {
         const idx = el.dataset.idx;
         const val = parseInt(el.value);
@@ -516,11 +737,6 @@ const app = {
         totEl.style.color = total === 100 ? '#4ade80' : '#facc15';
     },
 
-    // =========================================================================
-    // LÓGICA DE DADOS (INCLUINDO A CORREÇÃO app.loadData)
-    // =========================================================================
-    
-    // Função loadData adicionada aqui para corrigir o TypeError
     loadData: async () => {
         const loader = document.getElementById('loader');
         loader.classList.remove('hidden');
@@ -532,15 +748,6 @@ const app = {
         app.state.view = document.getElementById('viewModeSelect').value;
 
         try {
-            // Pré-carrega 2022 se necessário para simulação
-            if (!app.data.full || !app.data.full['1']) {
-                const res22 = await fetch('data/2022_president.json');
-                if(res22.ok) {
-                    app.data.full = await res22.json();
-                    app.data.names = app.data.full['1'].meta_nomes || {};
-                }
-            }
-
             if (app.state.mode === 'history') {
                 const res = await fetch(`data/${year}_${role}.json`);
                 if(!res.ok) throw new Error("Dados não encontrados.");
@@ -563,12 +770,15 @@ const app = {
         }
     },
 
+    // =========================================================================
+    // SIMULAÇÃO DO 1º TURNO (COM VANTAGEM REGIONAL)
+    // =========================================================================
     runSimulation: async () => {
         const loader = document.getElementById('loader');
         const btn = document.getElementById('btnSimulate');
         
         loader.classList.remove('hidden');
-        document.getElementById('loaderMsg').innerText = "Processando...";
+        document.getElementById('loaderMsg').innerText = "Processando 1º Turno...";
         btn.innerText = "CALCULANDO...";
         app.state.ignored.clear();
 
@@ -582,7 +792,7 @@ const app = {
                     app.data.names = app.data.full['1'].meta_nomes || {};
                 }
 
-                // 2. GARANTE O MAPA CORRETO
+                // 2. Garante o mapa correto
                 if(app.state.view === 'all_cities') {
                     await app.loadAllMunicipalities(); 
                 } else {
@@ -593,7 +803,7 @@ const app = {
                 const nationalTotals = {}; 
                 const baseMap = {};
 
-                // Passo A: Herança
+                // Passo A: Herança com vantagem regional (1º turno)
                 for (let ibge in sourceMuns) {
                     const srcVotes = sourceMuns[ibge];
                     const uf = ibge.substring(0, 2);
@@ -602,7 +812,7 @@ const app = {
                     for (let key22 in srcVotes) {
                         const votes = srcVotes[key22];
                         const keyUpper = key22.toUpperCase();
-                        CONFIG_PESOS.rules.forEach(rule => {
+                        CONFIG_PESOS.firstRound.forEach(rule => {
                             if (keyUpper.includes(rule.src)) {
                                 const bonus = rule.regionBonus[uf] || 1.0;
                                 const transfer = Math.floor(votes * rule.ratio * bonus);
@@ -616,11 +826,11 @@ const app = {
                     baseMap[ibge] = newVotes;
                 }
 
-                // Passo B: Sliders
+                // Passo B: Ajuste pelos sliders
                 const grandTotal = Object.values(nationalTotals).reduce((a,b)=>a+b, 0);
                 const multipliers = {};
                 
-                // ADIÇÃO 3: Bônus para líderes estaduais
+                // ADIÇÃO: Vantagem regional para líderes estaduais no 1º turno
                 const stateLeadersBonus = {
                     'FLAVIO': ['33'],  // RJ
                     'CAIADO': ['52', '50'], // GO, MS
@@ -632,11 +842,10 @@ const app = {
                 CONFIG.simCandidates.forEach(c => {
                     let baseVal = nationalTotals[c.id] || 0;
                     
-                    // ADIÇÃO 4: Aplica bônus regional se for líder estadual
+                    // Aplica bônus regional para líderes estaduais (apenas 1º turno)
                     if (stateLeadersBonus[c.id]) {
                         let stateBonusTotal = 0;
                         
-                        // Calcula votos apenas nos estados de influência
                         for (let ibge in baseMap) {
                             const uf = ibge.substring(0, 2);
                             if (stateLeadersBonus[c.id].includes(uf)) {
@@ -644,9 +853,9 @@ const app = {
                             }
                         }
                         
-                        // Aplica bônus regional
+                        // Bônus de 30% para líderes em seus estados no 1º turno
                         if (stateBonusTotal > 0) {
-                            const bonus = stateBonusTotal * app.state.regionalBonus;
+                            const bonus = stateBonusTotal * 0.3;
                             baseVal += bonus;
                         }
                     }
@@ -655,18 +864,7 @@ const app = {
                     multipliers[c.id] = pct > 0 ? (c.val / pct) : 0;
                 });
 
-                // ADIÇÃO 5: Reduz transferência no segundo turno para líderes estaduais
-                const simTurn = document.getElementById('simTurnSelect').value;
-                if (simTurn === '2') {
-                    // Reduz a vantagem regional no segundo turno
-                    Object.keys(stateLeadersBonus).forEach(leader => {
-                        if (multipliers[leader] > 1.5) {
-                            multipliers[leader] = Math.min(multipliers[leader], 1.5);
-                        }
-                    });
-                }
-
-                // Passo C: Aplicação & NORMALIZAÇÃO POR TARGET INPUT
+                // Passo C: Aplicação e normalização
                 const userTargetTotal = parseInt(document.getElementById('simTotalInput').value) || 123000000;
                 const finalMuns = {};
                 const finalStates = {};
@@ -716,9 +914,12 @@ const app = {
                     }
                 }
 
-                app.data.current = { municipios: finalMuns, estados: finalStates };
+                // Salva resultados do 1º turno
+                app.data.firstRoundResults = { municipios: finalMuns, estados: finalStates };
+                app.data.current = app.data.firstRoundResults;
+                
                 app.refreshUI();
-                btn.innerHTML = '<i class="fas fa-magic"></i> GERAR SIMULAÇÃO';
+                btn.innerHTML = '<i class="fas fa-magic"></i> GERAR SIMULAÇÃO 1º TURNO';
 
             } catch(e) {
                 console.error(e);
@@ -731,7 +932,194 @@ const app = {
     },
 
     // =========================================================================
-    // MAPA & CACHE
+    // SIMULAÇÃO DO 2º TURNO
+    // =========================================================================
+    runSecondRound: async () => {
+        if(app.state.secondRoundCandidates.length !== 2) {
+            alert('Selecione exatamente 2 candidatos para o 2º turno.');
+            return;
+        }
+
+        if(!app.data.firstRoundResults) {
+            alert('Gere primeiro uma simulação do 1º turno.');
+            return;
+        }
+
+        const loader = document.getElementById('loader');
+        const btn = document.getElementById('btnSecondRound');
+        
+        loader.classList.remove('hidden');
+        document.getElementById('loaderMsg').innerText = "Processando 2º Turno...";
+        btn.innerText = "CALCULANDO...";
+        app.state.ignored.clear();
+
+        setTimeout(() => {
+            try {
+                const candidate1 = app.state.secondRoundCandidates[0];
+                const candidate2 = app.state.secondRoundCandidates[1];
+                const cand1Data = CONFIG.simCandidates.find(c => c.id === candidate1);
+                const cand2Data = CONFIG.simCandidates.find(c => c.id === candidate2);
+                
+                if(!cand1Data || !cand2Data) {
+                    throw new Error("Candidatos não encontrados na configuração.");
+                }
+
+                const transferMode = app.state.transferMode;
+                const firstRoundData = app.data.firstRoundResults;
+                
+                // Prepara dados para 2º turno
+                const secondRoundMuns = {};
+                const secondRoundStates = {};
+                
+                // Para cada município
+                for(let ibge in firstRoundData.municipios) {
+                    const munVotes = firstRoundData.municipios[ibge];
+                    const uf = ibge.substring(0, 2);
+                    
+                    // Encontra votos dos dois candidatos selecionados
+                    let votes1 = 0;
+                    let votes2 = 0;
+                    let otherVotes = 0;
+                    
+                    // Soma votos de todos os candidatos
+                    Object.keys(munVotes).forEach(key => {
+                        const { name } = app.parseCandKey(key);
+                        const cand = CONFIG.simCandidates.find(c => c.name === name);
+                        
+                        if(cand) {
+                            if(cand.id === candidate1) {
+                                votes1 += munVotes[key];
+                            } else if(cand.id === candidate2) {
+                                votes2 += munVotes[key];
+                            } else {
+                                otherVotes += munVotes[key];
+                            }
+                        }
+                    });
+                    
+                    // Redistribui votos dos outros candidatos
+                    if(otherVotes > 0) {
+                        let transferTo1 = 0;
+                        let transferTo2 = 0;
+                        
+                        switch(transferMode) {
+                            case 'proportional':
+                                // Proporcional aos votos atuais
+                                const totalSelected = votes1 + votes2;
+                                if(totalSelected > 0) {
+                                    transferTo1 = Math.round(otherVotes * (votes1 / totalSelected));
+                                    transferTo2 = otherVotes - transferTo1;
+                                } else {
+                                    // Divide igualmente se nenhum tiver votos
+                                    transferTo1 = Math.round(otherVotes / 2);
+                                    transferTo2 = otherVotes - transferTo1;
+                                }
+                                break;
+                                
+                            case 'regional':
+                                // Considera força regional
+                                const regionalKey = `${candidate1}_${candidate2}`;
+                                let regionalTransfer1 = 0.5;
+                                let regionalTransfer2 = 0.5;
+                                
+                                // Verifica se há configuração regional específica
+                                if(CONFIG_PESOS.regionalTransfers[regionalKey] && 
+                                   CONFIG_PESOS.regionalTransfers[regionalKey][uf]) {
+                                    regionalTransfer1 = CONFIG_PESOS.regionalTransfers[regionalKey][uf][candidate1] || 0.5;
+                                    regionalTransfer2 = CONFIG_PESOS.regionalTransfers[regionalKey][uf][candidate2] || 0.5;
+                                }
+                                
+                                transferTo1 = Math.round(otherVotes * regionalTransfer1);
+                                transferTo2 = otherVotes - transferTo1;
+                                break;
+                                
+                            case 'party_based':
+                                // Baseado em alinhamento partidário
+                                const leftParties = ['PT', 'PSB', 'PCdoB', 'PSOL'];
+                                const rightParties = ['PL', 'UNIÃO', 'PSD', 'NOVO', 'PP', 'REPUBLICANOS'];
+                                
+                                // Se um for de esquerda e outro de direita
+                                if(leftParties.includes(cand1Data.party) && rightParties.includes(cand2Data.party)) {
+                                    // Líderes regionais mantêm mais votos em seus estados
+                                    if(['FLAVIO', 'CAIADO', 'ZEMA', 'RATINHO'].includes(candidate1)) {
+                                        transferTo1 = Math.round(otherVotes * 0.7);
+                                        transferTo2 = otherVotes - transferTo1;
+                                    } else if(['FLAVIO', 'CAIADO', 'ZEMA', 'RATINHO'].includes(candidate2)) {
+                                        transferTo2 = Math.round(otherVotes * 0.7);
+                                        transferTo1 = otherVotes - transferTo2;
+                                    } else {
+                                        // Distribuição padrão
+                                        transferTo1 = Math.round(otherVotes * 0.4);
+                                        transferTo2 = otherVotes - transferTo1;
+                                    }
+                                } else {
+                                    // Se forem da mesma orientação, divide proporcionalmente
+                                    const total = votes1 + votes2;
+                                    if(total > 0) {
+                                        transferTo1 = Math.round(otherVotes * (votes1 / total));
+                                        transferTo2 = otherVotes - transferTo1;
+                                    } else {
+                                        transferTo1 = Math.round(otherVotes / 2);
+                                        transferTo2 = otherVotes - transferTo1;
+                                    }
+                                }
+                                break;
+                                
+                            case 'manual':
+                                const manualPercent = parseInt(document.getElementById('transferToFirst').value) / 100;
+                                transferTo1 = Math.round(otherVotes * manualPercent);
+                                transferTo2 = otherVotes - transferTo1;
+                                break;
+                                
+                            default:
+                                transferTo1 = Math.round(otherVotes / 2);
+                                transferTo2 = otherVotes - transferTo1;
+                        }
+                        
+                        votes1 += transferTo1;
+                        votes2 += transferTo2;
+                    }
+                    
+                    // Cria novo objeto de votos apenas com os 2 candidatos
+                    const newVotes = {};
+                    newVotes[`${cand1Data.name} (${cand1Data.party})`] = votes1;
+                    newVotes[`${cand2Data.name} (${cand2Data.party})`] = votes2;
+                    
+                    secondRoundMuns[ibge] = newVotes;
+                    
+                    // Agrega para estado
+                    if(!secondRoundStates[uf]) secondRoundStates[uf] = {};
+                    secondRoundStates[uf][`${cand1Data.name} (${cand1Data.party})`] = 
+                        (secondRoundStates[uf][`${cand1Data.name} (${cand1Data.party})`] || 0) + votes1;
+                    secondRoundStates[uf][`${cand2Data.name} (${cand2Data.party})`] = 
+                        (secondRoundStates[uf][`${cand2Data.name} (${cand2Data.party})`] || 0) + votes2;
+                }
+                
+                // Atualiza dados atuais
+                app.data.current = {
+                    municipios: secondRoundMuns,
+                    estados: secondRoundStates
+                };
+                
+                app.refreshUI();
+                btn.innerHTML = '<i class="fas fa-flag-checkered"></i> GERAR SIMULAÇÃO 2º TURNO';
+                
+                // Atualiza título na barra direita
+                document.getElementById('regionName').textContent = 
+                    `${cand1Data.name} vs ${cand2Data.name} - 2º Turno`;
+
+            } catch(e) {
+                console.error(e);
+                alert("Erro ao processar 2º turno: " + e.message);
+                btn.innerHTML = 'TENTAR NOVAMENTE';
+            } finally {
+                loader.classList.add('hidden');
+            }
+        }, 100);
+    },
+
+    // =========================================================================
+    // FUNÇÕES DE MAPA E UI (mantidas do código original)
     // =========================================================================
     fetchGeoJsonCache: async () => {
         if (app.data.geoJsonCache) return app.data.geoJsonCache;
@@ -812,35 +1200,25 @@ const app = {
         const loader = document.getElementById('loader');
         loader.classList.remove('hidden');
 
-        // --- CORREÇÃO NUCLEAR ---
-        // Varre todas as camadas do mapa. Se for GeoJSON (tem setStyle), remove.
-        // Isso garante que não sobre nenhum "fantasma" do Brasil ou de outros mapas.
         app.map.eachLayer((layer) => {
-            // Não removemos o TileLayer (o mapa mundi escuro de fundo)
-            // Identificamos camadas de polígono/GeoJSON pela presença da função setStyle
             if (layer.setStyle && layer !== app.layers.cities) {
                 app.map.removeLayer(layer);
             }
         });
         
-        // Limpa a referência da camada de cidades para evitar conflitos
         if (app.layers.cities) {
             app.map.removeLayer(app.layers.cities);
             app.layers.cities = null;
         }
-        // -------------------------
 
         try {
-            // Carrega os dados (isso pode demorar um pouco, por isso limpamos o mapa antes)
             const fullData = await app.fetchGeoJsonCache();
             
-            // Filtra apenas os municípios do estado selecionado
             const stateFeatures = fullData.features.filter(f => {
                 const cod = f.properties.id || f.properties.codarea;
                 return cod && cod.toString().startsWith(ufId);
             });
 
-            // Cria a nova camada
             app.layers.cities = L.geoJSON({ type: "FeatureCollection", features: stateFeatures }, {
                 smoothFactor: 0.3,
                 style: (f) => app.getStyle(f, 'municipios'),
@@ -855,24 +1233,17 @@ const app = {
                 }
             }).addTo(app.map);
             
-            // Ajusta o zoom para o estado
             app.map.fitBounds(app.layers.cities.getBounds());
-            
-            // Atualiza a barra lateral
             app.selectRegion(ufId, ufName);
 
         } catch(e) { 
             console.error("Erro ao carregar cidades:", e);
-            // Se der erro, volta para o mapa do Brasil
             app.resetMapToStates();
         } finally { 
             loader.classList.add('hidden'); 
         }
     },
 
-    // =========================================================================
-    // RESTO DO CORE DO APP
-    // =========================================================================
     getGradientConfig: (pct) => {
         let config = GRADIENT_SCHEME[0];
         for (let i = 0; i < GRADIENT_SCHEME.length; i++) {
@@ -914,16 +1285,12 @@ const app = {
         app.state.selectedName = "Brasil";
         document.getElementById('btnBack').style.display = 'none';
 
-        // CORREÇÃO: Se estiver no modo 'states', remove o mapa do estado específico
-        // e recarrega o mapa do Brasil inteiro.
         if(app.state.view === 'states') {
             if(app.layers.cities) app.map.removeLayer(app.layers.cities);
             app.loadBrazilLayer();
         }
 
-        // Reseta o zoom e a posição da câmera para o Brasil
         app.map.setView([-15, -50], 4);
-        
         app.updateSidebarRight();
     },
 
@@ -940,8 +1307,19 @@ const app = {
         const subEl = document.getElementById('regionType');
         
         container.innerHTML = '';
-        titleEl.textContent = app.state.selectedName;
-        subEl.innerText = app.state.selectedId ? (app.state.selectedId.length === 2 ? "Estado" : "Município") : "Nacional";
+        
+        // Ajusta título se for 2º turno
+        if(app.state.mode === 'second_round' && app.state.secondRoundCandidates.length === 2) {
+            const cand1 = CONFIG.simCandidates.find(c => c.id === app.state.secondRoundCandidates[0]);
+            const cand2 = CONFIG.simCandidates.find(c => c.id === app.state.secondRoundCandidates[1]);
+            if(cand1 && cand2) {
+                titleEl.textContent = `${cand1.name} vs ${cand2.name}`;
+                subEl.innerText = "2º Turno Simulado";
+            }
+        } else {
+            titleEl.textContent = app.state.selectedName;
+            subEl.innerText = app.state.selectedId ? (app.state.selectedId.length === 2 ? "Estado" : "Município") : "Nacional";
+        }
 
         let rawVotes = {};
         if (!app.data.current) return;
