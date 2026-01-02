@@ -350,7 +350,6 @@ const STATES = [
 ];
 
 const CONFIG = {
-    // AQUI VOCÊ EDITA A INTENÇÃO DE VOTOS INICIAL (val)
     candidates: [
         { id: 'LULA',    name: 'Lula',             party: 'PT',     val: 35, color: '#E12525' },
         { id: 'FLAVIO',  name: 'Flávio Bolsonaro', party: 'PL',     val: 28, color: '#5756d6' },
@@ -361,7 +360,6 @@ const CONFIG = {
         { id: 'CIRO',    name: 'Ciro Gomes',       party: 'PDT',    val: 4,  color: '#003399' },
         { id: 'ALDO',    name: 'Aldo Rebelo',      party: 'DC',     val: 2,  color: '#006400' }
     ],
-    // Esquema de Cores (Não precisa mexer)
     scheme: [
         { min: 0,  mix: '#ffffff', ratio: 0.85, ref: '#E6E6E6' },
         { min: 20, mix: '#ffffff', ratio: 0.85, ref: '#E6E6E6' },
@@ -394,9 +392,6 @@ const app = {
         t2_mults: {}
     },
 
-    // =========================================================================
-    // 2. INICIALIZAÇÃO (AQUI QUE VOCÊ CONFIGURA A LÓGICA MANUAL)
-    // =========================================================================
     init: async () => {
         app.map = L.map('map', {
             center: [-15, -50], zoom: 4, zoomControl: false,
@@ -404,24 +399,15 @@ const app = {
         });
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { opacity: 0.4 }).addTo(app.map);
 
-        // Carrega valores iniciais dos sliders
         CONFIG.candidates.forEach(c => app.state.t1_polls[c.id] = c.val);
         
-        // ---------------------------------------------------------------------
-        // ÁREA DE PERSONALIZAÇÃO MANUAL - COMECE A EDITAR AQUI
-        // ---------------------------------------------------------------------
-
-        // A. CONFIGURANDO A MATRIZ DE HERANÇA (Quem herda de 2022)
-        // Primeiro, criamos as entradas vazias para evitar erros
+        // --- CONFIGURAÇÃO MANUAL DA HERANÇA ---
         ['LULA','JAIR','CIRO','SIMONE'].forEach(src => {
             app.state.t1_matrix[src] = {};
-            // Zera todos por padrão
             CONFIG.candidates.forEach(dest => app.state.t1_matrix[src][dest.id] = 0);
         });
 
-        // AGORA DEFINIMOS OS VALORES (A soma idealmente deve dar perto de 1.0 ou 100%)
-        
-        // 1. Herança do JAIR (Bolsonaro)
+        // Configuração Manual da Matriz
         app.state.t1_matrix['JAIR']['FLAVIO']  = 0.65; // 65% vai pro Flávio
         app.state.t1_matrix['JAIR']['CAIADO']  = 0.15; // 15% vai pro Caiado
         app.state.t1_matrix['JAIR']['ZEMA']    = 0.10; // 10% vai pro Zema
@@ -444,18 +430,12 @@ const app = {
         app.state.t1_matrix['SIMONE']['ALDO']   = 0.10;
 
 
-        // B. CONFIGURANDO MULTIPLICADORES ESTADUAIS (Força Regional)
-        // IMPORTANTE: Use o CÓDIGO IBGE do estado (ex: MG é '31', GO é '52')
-        // Lista rápida: MG:31, SP:35, RJ:33, GO:52, PR:41, RS:43, BA:29, CE:23
-
-        // Função auxiliar para evitar erro de "undefined"
+        // --- CONFIGURAÇÃO MANUAL DE MULTIPLICADORES ---
         const setMult = (ufId, candId, valor) => {
             if(!app.state.t1_mults[ufId]) app.state.t1_mults[ufId] = {};
             app.state.t1_mults[ufId][candId] = valor;
         };
 
-        // --- DEFINA AS REGRAS AQUI ---
-        
         // Ronaldo Caiado (Rei de Goiás)
         setMult('52', 'CAIADO', 2.5); // Multiplica votos por 4x em Goiás
         setMult('52', 'ZEMA', 0.3);
@@ -489,11 +469,7 @@ const app = {
         setMult('23', 'LULA', 0.9); // BA
         setMult('21', 'LULA', 0.9); // PE
 
-        // ---------------------------------------------------------------------
-        // FIM DA ÁREA DE PERSONALIZAÇÃO
-        // ---------------------------------------------------------------------
-
-        app.renderLegend();
+        app.renderLegend(); // A função agora existe!
         app.renderUI();
         await app.loadData();
     },
@@ -668,7 +644,7 @@ const app = {
     },
 
     // =========================================================================
-    // LÓGICA DE SIMULAÇÃO (CORE)
+    // LÓGICA DE SIMULAÇÃO
     // =========================================================================
     runSimulation: () => {
         if(!app.data.base22) return;
@@ -1028,6 +1004,20 @@ const app = {
         if(app.layers.cities) app.layers.cities.setStyle((f) => app.getStyle(f, 'municipios'));
     },
 
+    // AQUI ESTAVA FALTANDO A FUNÇÃO NO CÓDIGO ANTERIOR!
+    renderLegend: () => {
+        const el = document.getElementById('legendColors');
+        el.innerHTML = '';
+        CONFIG.scheme.forEach(s => {
+            if(s.min >= 20) {
+                const d = document.createElement('div');
+                d.className = 'legend-item';
+                d.style.background = s.ref;
+                el.appendChild(d);
+            }
+        });
+    },
+
     renderUI: () => {
         const c = document.getElementById('slidersT1');
         c.innerHTML = '';
@@ -1140,7 +1130,6 @@ const app = {
         }
         
         app.map.setView([-15, -50], 4);
-        
         document.getElementById('viewModeSelect').value = 'states';
         app.state.view = 'states';
 
