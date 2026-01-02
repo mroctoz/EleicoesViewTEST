@@ -330,24 +330,38 @@
 
 <script>
 // =============================================================================
-// CONFIGURAÇÕES & DADOS ORIGINAIS
+// 1. CONFIGURAÇÕES GERAIS E CANDIDATOS
 // =============================================================================
 const STATES = [
-    {sigla:'AC', nome:'Acre', id:'12'}, {sigla:'AL', nome:'Alagoas', id:'27'}, {sigla:'AP', nome:'Amapá', id:'16'}, {sigla:'AM', nome:'Amazonas', id:'13'}, {sigla:'BA', nome:'Bahia', id:'29'}, {sigla:'CE', nome:'Ceará', id:'23'}, {sigla:'DF', nome:'Distrito Federal', id:'53'}, {sigla:'ES', nome:'Espírito Santo', id:'32'}, {sigla:'GO', nome:'Goiás', id:'52'}, {sigla:'MA', nome:'Maranhão', id:'21'}, {sigla:'MT', nome:'Mato Grosso', id:'51'}, {sigla:'MS', nome:'Mato Grosso do Sul', id:'50'}, {sigla:'MG', nome:'Minas Gerais', id:'31'}, {sigla:'PA', nome:'Pará', id:'15'}, {sigla:'PB', nome:'Paraíba', id:'25'}, {sigla:'PR', nome:'Paraná', id:'41'}, {sigla:'PE', nome:'Pernambuco', id:'26'}, {sigla:'PI', nome:'Piauí', id:'22'}, {sigla:'RJ', nome:'Rio de Janeiro', id:'33'}, {sigla:'RN', nome:'Rio Grande do Norte', id:'24'}, {sigla:'RS', nome:'Rio Grande do Sul', id:'43'}, {sigla:'RO', nome:'Rondônia', id:'11'}, {sigla:'RR', nome:'Roraima', id:'14'}, {sigla:'SC', nome:'Santa Catarina', id:'42'}, {sigla:'SP', nome:'São Paulo', id:'35'}, {sigla:'SE', nome:'Sergipe', id:'28'}, {sigla:'TO', nome:'Tocantins', id:'17'}
+    {sigla:'AC', nome:'Acre', id:'12'}, {sigla:'AL', nome:'Alagoas', id:'27'}, 
+    {sigla:'AP', nome:'Amapá', id:'16'}, {sigla:'AM', nome:'Amazonas', id:'13'}, 
+    {sigla:'BA', nome:'Bahia', id:'29'}, {sigla:'CE', nome:'Ceará', id:'23'}, 
+    {sigla:'DF', nome:'Distrito Federal', id:'53'}, {sigla:'ES', nome:'Espírito Santo', id:'32'}, 
+    {sigla:'GO', nome:'Goiás', id:'52'}, {sigla:'MA', nome:'Maranhão', id:'21'}, 
+    {sigla:'MT', nome:'Mato Grosso', id:'51'}, {sigla:'MS', nome:'Mato Grosso do Sul', id:'50'}, 
+    {sigla:'MG', nome:'Minas Gerais', id:'31'}, {sigla:'PA', nome:'Pará', id:'15'}, 
+    {sigla:'PB', nome:'Paraíba', id:'25'}, {sigla:'PR', nome:'Paraná', id:'41'}, 
+    {sigla:'PE', nome:'Pernambuco', id:'26'}, {sigla:'PI', nome:'Piauí', id:'22'}, 
+    {sigla:'RJ', nome:'Rio de Janeiro', id:'33'}, {sigla:'RN', nome:'Rio Grande do Norte', id:'24'}, 
+    {sigla:'RS', nome:'Rio Grande do Sul', id:'43'}, {sigla:'RO', nome:'Rondônia', id:'11'}, 
+    {sigla:'RR', nome:'Roraima', id:'14'}, {sigla:'SC', nome:'Santa Catarina', id:'42'}, 
+    {sigla:'SP', nome:'São Paulo', id:'35'}, {sigla:'SE', nome:'Sergipe', id:'28'}, 
+    {sigla:'TO', nome:'Tocantins', id:'17'}
 ];
 
 const CONFIG = {
+    // AQUI VOCÊ EDITA A INTENÇÃO DE VOTOS INICIAL (val)
     candidates: [
-        { id: 'LULA',    name: 'Lula',             party: 'PT',     val: 45, color: '#E12525' },
-        { id: 'FLAVIO',  name: 'Flávio Bolsonaro', party: 'PL',     val: 30, color: '#5756d6' },
-        { id: 'RENAN',   name: 'Renan Santos',     party: 'MISSÃO', val: 3,  color: '#D4AF37' },
+        { id: 'LULA',    name: 'Lula',             party: 'PT',     val: 35, color: '#E12525' },
+        { id: 'FLAVIO',  name: 'Flávio Bolsonaro', party: 'PL',     val: 28, color: '#5756d6' },
+        { id: 'RENAN',   name: 'Renan Santos',     party: 'MISSÃO', val: 4,  color: '#D4AF37' },
         { id: 'CAIADO',  name: 'Ronaldo Caiado',   party: 'UNIÃO',  val: 8,  color: '#009EE3' },
         { id: 'ZEMA',    name: 'Romeu Zema',       party: 'NOVO',   val: 7,  color: '#F58220' },
-        { id: 'RATINHO', name: 'Ratinho Jr',       party: 'PSD',    val: 4,  color: '#FAA21B' },
-        { id: 'CIRO',    name: 'Ciro Gomes',       party: 'PDT',    val: 2,  color: '#003399' },
-        { id: 'ALDO',    name: 'Aldo Rebelo',      party: 'DC',     val: 1,  color: '#006400' }
+        { id: 'RATINHO', name: 'Ratinho Jr',       party: 'PSD',    val: 6,  color: '#FAA21B' },
+        { id: 'CIRO',    name: 'Ciro Gomes',       party: 'PDT',    val: 4,  color: '#003399' },
+        { id: 'ALDO',    name: 'Aldo Rebelo',      party: 'DC',     val: 2,  color: '#006400' }
     ],
-    // FAIXAS DE DEGRADÊ ORIGINAIS (Preto/Branco mix)
+    // Esquema de Cores (Não precisa mexer)
     scheme: [
         { min: 0,  mix: '#ffffff', ratio: 0.85, ref: '#E6E6E6' },
         { min: 20, mix: '#ffffff', ratio: 0.85, ref: '#E6E6E6' },
@@ -371,17 +385,18 @@ const app = {
         view: 'states',
         selectedId: null,
         selectedName: "Brasil",
-        
         t1_polls: {},     
         t1_matrix: {},    
         t1_mults: {},     
-
         t2_finalists: [], 
         t2_polls: {},     
         t2_migr: {},      
         t2_mults: {}
     },
 
+    // =========================================================================
+    // 2. INICIALIZAÇÃO (AQUI QUE VOCÊ CONFIGURA A LÓGICA MANUAL)
+    // =========================================================================
     init: async () => {
         app.map = L.map('map', {
             center: [-15, -50], zoom: 4, zoomControl: false,
@@ -389,77 +404,94 @@ const app = {
         });
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { opacity: 0.4 }).addTo(app.map);
 
-        // Inicializa Estado
+        // Carrega valores iniciais dos sliders
         CONFIG.candidates.forEach(c => app.state.t1_polls[c.id] = c.val);
         
-// --- CONFIGURAÇÃO MANUAL DA HERANÇA (2022 -> 2026) ---
-// Inicializa a matriz vazia
-['LULA','JAIR','CIRO','SIMONE'].forEach(src => app.state.t1_matrix[src] = {});
+        // ---------------------------------------------------------------------
+        // ÁREA DE PERSONALIZAÇÃO MANUAL - COMECE A EDITAR AQUI
+        // ---------------------------------------------------------------------
 
-// Agora defina manualmente (Valores entre 0.0 e 1.0)
+        // A. CONFIGURANDO A MATRIZ DE HERANÇA (Quem herda de 2022)
+        // Primeiro, criamos as entradas vazias para evitar erros
+        ['LULA','JAIR','CIRO','SIMONE'].forEach(src => {
+            app.state.t1_matrix[src] = {};
+            // Zera todos por padrão
+            CONFIG.candidates.forEach(dest => app.state.t1_matrix[src][dest.id] = 0);
+        });
 
-// 1. Quem herda votos do BOLSONARO ('JAIR')?
-app.state.t1_matrix['JAIR']['FLAVIO']  = 0.80; //
-app.state.t1_matrix['JAIR']['CAIADO']  = 0.15; //
-app.state.t1_matrix['JAIR']['ZEMA']    = 0.15; //
-app.state.t1_matrix['JAIR']['RATINHO'] = 0.10; //
-app.state.t1_matrix['JAIR']['RENAN'] = 0.05; //
-// O restante (5%) se perde ou dilui
+        // AGORA DEFINIMOS OS VALORES (A soma idealmente deve dar perto de 1.0 ou 100%)
+        
+        // 1. Herança do JAIR (Bolsonaro)
+        app.state.t1_matrix['JAIR']['FLAVIO']  = 0.65; // 65% vai pro Flávio
+        app.state.t1_matrix['JAIR']['CAIADO']  = 0.15; // 15% vai pro Caiado
+        app.state.t1_matrix['JAIR']['ZEMA']    = 0.10; // 10% vai pro Zema
+        app.state.t1_matrix['JAIR']['RATINHO'] = 0.05; // 5% vai pro Ratinho
+        app.state.t1_matrix['JAIR']['RENAN'] = 0.05;
+        
+        // 2. Herança do LULA
+        app.state.t1_matrix['LULA']['LULA']    = 0.90; // 90% fica com Lula
+        app.state.t1_matrix['LULA']['CIRO']    = 0.05; // 5% vai pro Ciro
+        
+        // 3. Herança do CIRO
+        app.state.t1_matrix['CIRO']['CIRO']    = 0.40; 
+        app.state.t1_matrix['CIRO']['LULA']    = 0.30;
+        app.state.t1_matrix['CIRO']['ZEMA']    = 0.10;
+        
+        // 4. Herança da SIMONE
+        app.state.t1_matrix['SIMONE']['LULA']   = 0.30;
+        app.state.t1_matrix['SIMONE']['CAIADO'] = 0.20;
+        app.state.t1_matrix['SIMONE']['ZEMA']   = 0.20;
+        app.state.t1_matrix['SIMONE']['ALDO']   = 0.10;
 
-// 2. Quem herda votos do LULA ('LULA')?
-app.state.t1_matrix['LULA']['LULA']    = 0.90; // 90% retém
-app.state.t1_matrix['LULA']['CIRO']    = 0.05; // 5% volta pro Ciro
 
-// 3. Quem herda votos do CIRO ('CIRO')?
-app.state.t1_matrix['CIRO']['CIRO']    = 0.40; // 40% fica com ele
-app.state.t1_matrix['CIRO']['LULA']    = 0.30; // 30% vai pro Lula
-app.state.t1_matrix['CIRO']['ZEMA']    = 0.10; 
+        // B. CONFIGURANDO MULTIPLICADORES ESTADUAIS (Força Regional)
+        // IMPORTANTE: Use o CÓDIGO IBGE do estado (ex: MG é '31', GO é '52')
+        // Lista rápida: MG:31, SP:35, RJ:33, GO:52, PR:41, RS:43, BA:29, CE:23
 
-// 4. Quem herda votos da TEBET ('SIMONE')?
-app.state.t1_matrix['SIMONE']['CAIADO'] = 0.30;
-app.state.t1_matrix['SIMONE']['RATINHO'] = 0.30;
-app.state.t1_matrix['SIMONE']['LULA']   = 0.30;
-app.state.t1_matrix['SIMONE']['ZEMA']   = 0.20;
+        // Função auxiliar para evitar erro de "undefined"
+        const setMult = (ufId, candId, valor) => {
+            if(!app.state.t1_mults[ufId]) app.state.t1_mults[ufId] = {};
+            app.state.t1_mults[ufId][candId] = valor;
+        };
 
-// --- CONFIGURAÇÃO DE LIDERANÇA REGIONAL (MULTIPLICADORES) ---
-// IDs dos Estados:
-// MG = '31', GO = '52', SP = '35', PR = '41', RJ = '33', RS = '43', BA = '29'
+        // --- DEFINA AS REGRAS AQUI ---
+        
+        // Ronaldo Caiado (Rei de Goiás)
+        setMult('52', 'CAIADO', 2.5); // Multiplica votos por 4x em Goiás
+        setMult('52', 'ZEMA', 0.3);
+        setMult('52', 'RATINHO', 0.3);
+        setMult('52', 'FLAVIO', 0.8);
 
-// Inicializa o objeto se não existir
-if(!app.state.t1_mults['31']) app.state.t1_mults['31'] = {}; // Minas
-if(!app.state.t1_mults['52']) app.state.t1_mults['52'] = {}; // Goiás
-if(!app.state.t1_mults['41']) app.state.t1_mults['41'] = {}; // Paraná
-if(!app.state.t1_mults['35']) app.state.t1_mults['35'] = {}; // São Paulo
+        setMult('51', 'CAIADO', 1.3);
 
-// Define os multiplicadores (1.5 = +50% de votos naquele estado)
+        setMult('17', 'RENAN', 0.7);
 
-// ZEMA em Minas Gerais (MG - 31)
-app.state.t1_mults['31']['ZEMA'] = 3; // Zema muito forte em MG
-app.state.t1_mults['31']['FlAVIO'] = 0.8;
-app.state.t1_mults['31']['CAIADO'] = 0.3;
-app.state.t1_mults['31']['RATINHO'] = 0.3;
-app.state.t1_mults['31']['ZEMA'] = 0.3;
+        // Romeu Zema (Forte em Minas)
+        setMult('31', 'ZEMA', 3.0);   // Multiplica votos por 3x em Minas
+        setMult('31', 'FLAVIO', 0.8);
+        setMult('31', 'RATINHO', 0.3);
+        setMult('31', 'CAIADO', 0.3);
 
-// CAIADO em Goiás (GO - 52)
-app.state.t1_mults['52']['CAIADO'] = 2.5; // Caiado domina GO
-app.state.t1_mults['52']['FlAVIO'] = 0.8;
-app.state.t1_mults['52']['RATINHO'] = 0.3;
-app.state.t1_mults['52']['ZEMA'] = 0.3;
+        // Ratinho Jr (Forte no Paraná)
+        setMult('41', 'RATINHO', 3.0); // Multiplica votos por 3x no Paraná
+        setMult('41', 'FLAVIO', 0.8);
+        setMult('41', 'ZEMA', 0.3);
+        setMult('41', 'CAIADO', 0.3);
 
-// RATINHO no Paraná (PR - 41)
-app.state.t1_mults['41']['RATINHO'] = 3; // Ratinho forte no PR
-app.state.t1_mults['41']['FlAVIO'] = 0.8;
-app.state.t1_mults['41']['CAIADO'] = 0.3;
-app.state.t1_mults['41']['ZEMA'] = 0.3;
+        // Ciro Gomes (Forte no Ceará)
+        setMult('23', 'CIRO', 1);
 
-app.state.t1_mults['17']['RENAN'] = 0.7;
+        // Flávio/Tarcísio (Forte em SP e RJ)
+        setMult('33', 'FLAVIO', 1.1); // RJ
+        setMult('35', 'FLAVIO', 1.1); // SP
 
-// TARCÍSIO/FLÁVIO (RJ - 35)
-app.state.t1_mults['33']['FLAVIO'] = 1.1; 
+        // Lula (Forte no Nordeste - Exemplo Bahia e Pernambuco)
+        setMult('23', 'LULA', 0.9); // BA
+        setMult('21', 'LULA', 0.9); // PE
 
-// LULA na Bahia (BA - 29)
-if(!app.state.t1_mults['29']) app.state.t1_mults['29'] = {};
-app.state.t1_mults['29']['LULA'] = 1;
+        // ---------------------------------------------------------------------
+        // FIM DA ÁREA DE PERSONALIZAÇÃO
+        // ---------------------------------------------------------------------
 
         app.renderLegend();
         app.renderUI();
@@ -745,9 +777,6 @@ app.state.t1_mults['29']['LULA'] = 1;
                 } else {
                     let ratio = 0.5;
                     if(app.state.t2_migr[cid] !== undefined) ratio = app.state.t2_migr[cid];
-                    
-                    // CORREÇÃO: Invertido para corresponder à intuição do slider
-                    // Ratio (0..1). Se 1 (Direita/100%) -> Vai para ID2.
                     vA += votos * (1 - ratio);
                     vB += votos * ratio;
                 }
@@ -861,7 +890,6 @@ app.state.t1_mults['29']['LULA'] = 1;
         loader.classList.remove('hidden');
         document.getElementById('loaderMsg').innerText = `Carregando ${ufName}...`;
         
-        // Remove Brasil e Cidades anteriores
         if(app.layers.cities && app.map.hasLayer(app.layers.cities)) {
             app.map.removeLayer(app.layers.cities);
             app.layers.cities = null;
@@ -895,12 +923,10 @@ app.state.t1_mults['29']['LULA'] = 1;
     },
 
     resetMapToStates: () => {
-        // Remove cidades
         if(app.layers.cities && app.map.hasLayer(app.layers.cities)) {
             app.map.removeLayer(app.layers.cities);
             app.layers.cities = null;
         }
-        // Restaura Brasil
         if(app.layers.brazil) {
             if(!app.map.hasLayer(app.layers.brazil)) app.layers.brazil.addTo(app.map);
             app.layers.brazil.setStyle((f) => app.getStyle(f, 'estados'));
@@ -936,7 +962,7 @@ app.state.t1_mults['29']['LULA'] = 1;
             fillColor: discrete,
             weight: (scope === 'estados') ? 0.8 : 0.5,
             color: '#ffffff',
-            opacity: 1, // Borda sólida
+            opacity: 1,
             fillOpacity: 1,
             lineJoin: 'round',
             lineCap: 'round'
@@ -1002,9 +1028,6 @@ app.state.t1_mults['29']['LULA'] = 1;
         if(app.layers.cities) app.layers.cities.setStyle((f) => app.getStyle(f, 'municipios'));
     },
 
-    // =========================================================================
-    // UI HELPERS
-    // =========================================================================
     renderUI: () => {
         const c = document.getElementById('slidersT1');
         c.innerHTML = '';
@@ -1021,17 +1044,15 @@ app.state.t1_mults['29']['LULA'] = 1;
             `;
             c.appendChild(div);
         });
-        app.updateT1Poll('LULA', app.state.t1_polls['LULA']); // Init Total
+        app.updateT1Poll('LULA', app.state.t1_polls['LULA']); 
 
-        // Renderiza os selects de finalistas para o T2, mesmo que o T2 não esteja ativo
         const c1 = document.getElementById('candFinal1');
         const c2 = document.getElementById('candFinal2');
         const opts = CONFIG.candidates.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
         c1.innerHTML = opts; c2.innerHTML = opts;
-        // Define finalistas iniciais (LULA vs FLAVIO)
         c1.value = 'LULA'; c2.value = 'FLAVIO';
         app.state.t2_finalists = ['LULA', 'FLAVIO'];
-        app.updateT2UI(); // Garante que sliders de T2 e migração apareçam
+        app.updateT2UI();
     },
 
     updateT1Poll: (id, val) => {
@@ -1093,19 +1114,6 @@ app.state.t1_mults['29']['LULA'] = 1;
         el.style.color = tot===100?'#4ade80':'#facc15';
     },
 
-    renderLegend: () => {
-        const el = document.getElementById('legendColors');
-        el.innerHTML = '';
-        CONFIG.scheme.forEach(s => {
-            if(s.min >= 20) {
-                const d = document.createElement('div');
-                d.className = 'legend-item';
-                d.style.background = s.ref;
-                el.appendChild(d);
-            }
-        });
-    },
-
     selectRegion: (id, name) => {
         app.state.selectedId = id;
         app.state.selectedName = name;
@@ -1118,7 +1126,6 @@ app.state.t1_mults['29']['LULA'] = 1;
         app.state.selectedName = "Brasil";
         document.getElementById('btnBack').style.display = 'none';
         
-        // Garante que o mapa volta para a visualização de estados nacional
         if (app.layers.cities) {
             app.map.removeLayer(app.layers.cities);
             app.layers.cities = null;
