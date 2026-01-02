@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlas Histórico V25 - Simulação Avançada</title>
+    <title>Atlas Simulação V26 - Fixed</title>
     
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -20,7 +20,6 @@
     <style>
         :root {
             --bg-primary: #0a0c10;
-            --bg-secondary: #11141a;
             --bg-card: rgba(20, 24, 32, 0.98);
             --accent-blue: #3b82f6;
             --text-primary: #ffffff;
@@ -68,7 +67,6 @@
             background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
 
-        /* TABS */
         .mode-tabs { display: flex; gap: 8px; margin-top: 15px; }
         .mode-tab {
             flex: 1; padding: 10px; text-align: center; border-radius: 6px;
@@ -76,7 +74,6 @@
             cursor: pointer; font-size: 0.75rem; font-weight: 700; color: var(--text-muted);
             transition: all 0.2s;
         }
-        .mode-tab:hover { background: rgba(255,255,255,0.1); color: white; }
         .mode-tab.active { background: var(--accent-blue); color: white; border-color: var(--accent-blue); box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); }
 
         .controls { padding: 15px; flex: 1; overflow-y: auto; display:flex; flex-direction:column; gap:15px; }
@@ -88,31 +85,24 @@
             background-color: #050505; color: white; font-family: inherit; font-size: 0.85rem; cursor: pointer;
         }
         
-        /* ACCORDIONS */
-        .accordion { border: 1px solid #333; border-radius: 6px; overflow: hidden; background: rgba(255,255,255,0.02); }
-        .acc-head {
-            padding: 10px; background: rgba(255,255,255,0.05); cursor: pointer;
-            font-size: 0.8rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center;
-        }
-        .acc-head:hover { background: rgba(255,255,255,0.08); }
-        .acc-body { padding: 10px; display: none; border-top: 1px solid #333; }
-        .accordion.open .acc-body { display: block; }
-        .accordion.open .acc-head { color: var(--accent-blue); }
-
-        /* SLIDERS */
-        .slider-box { margin-bottom: 12px; }
-        .slider-header { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px; }
-        input[type=range] { width: 100%; -webkit-appearance: none; background: transparent; }
-        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: #333; border-radius: 2px; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; margin-top: -6px; height: 16px; width: 16px; background: #fff; border-radius: 50%; cursor: pointer; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
-
+        /* BOTÕES */
         button.btn-primary { 
             width: 100%; padding: 12px; border-radius: 8px;
             background: var(--gradient-primary); border: none; 
-            font-weight: 700; color: white; cursor: pointer; margin-top: 10px;
-            transition: transform 0.2s; text-transform: uppercase; letter-spacing: 0.5px;
+            font-weight: 700; color: white; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            transition: transform 0.2s;
         }
         button.btn-primary:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+        button.btn-secondary {
+            width: 100%; padding: 12px; border-radius: 8px;
+            background: rgba(255,255,255,0.05); border: 1px solid #333;
+            color: white; cursor: pointer; font-weight: 600; font-size: 0.85rem;
+            display: flex; justify-content: space-between; align-items: center;
+            transition: background 0.2s;
+        }
+        button.btn-secondary:hover { background: rgba(255,255,255,0.1); border-color: #555; }
 
         button.btn-back {
             width: 100%; padding: 10px; border-radius: 8px;
@@ -121,6 +111,32 @@
             display: none; align-items: center; justify-content: center; gap: 8px;
             font-size: 0.9rem; font-weight: 600;
         }
+
+        /* SLIDERS */
+        .slider-box { margin-bottom: 12px; }
+        .slider-header { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px; }
+        input[type=range] { width: 100%; -webkit-appearance: none; background: transparent; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: #333; border-radius: 2px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; margin-top: -6px; height: 16px; width: 16px; background: #fff; border-radius: 50%; cursor: pointer; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
+
+        /* MODAL */
+        .modal-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+            z-index: 2000; display: none; align-items: center; justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: #11141a; border: 1px solid #333; width: 500px; max-height: 80vh;
+            border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .modal-header {
+            padding: 15px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center;
+            font-weight: 700; font-size: 1rem;
+        }
+        .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+        .modal-footer { padding: 15px; border-top: 1px solid #333; text-align: right; }
+        .close-btn { cursor: pointer; padding: 5px; color: #888; }
+        .close-btn:hover { color: white; }
 
         /* LISTA RESULTADOS */
         .cand-row {
@@ -135,7 +151,7 @@
         .progress-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 6px; overflow: hidden; }
         .progress-fill { height: 100%; transition: width 0.5s ease; }
 
-        /* LEGENDA ORIGINAL */
+        /* LEGENDA */
         .legend {
             position: absolute; bottom: 30px; right: 450px;
             background: #0a0c10; padding: 15px; border: 1px solid #333;
@@ -186,6 +202,22 @@
     <h3 id="loaderMsg">Carregando Dados...</h3>
 </div>
 
+<!-- MODAL GENÉRICO -->
+<div id="modalOverlay" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span id="modalTitle">Configuração</span>
+            <span class="close-btn" onclick="app.closeModal()"><i class="fas fa-times"></i></span>
+        </div>
+        <div class="modal-body" id="modalBody">
+            <!-- Conteúdo Injetado via JS -->
+        </div>
+        <div class="modal-footer">
+            <button class="btn-primary" style="width: auto; padding: 8px 24px;" onclick="app.closeModal()">Confirmar</button>
+        </div>
+    </div>
+</div>
+
 <div id="app">
     <!-- ESQUERDA -->
     <aside class="sidebar">
@@ -215,33 +247,15 @@
             </div>
             <div id="slidersT1"></div>
 
-            <div class="accordion">
-                <div class="acc-head" onclick="this.parentElement.classList.toggle('open')">
-                    <span>HERANÇA DE 2022</span> <i class="fas fa-chevron-down"></i>
-                </div>
-                <div class="acc-body">
-                    <label>Origem (2022)</label>
-                    <select id="matrixSrcLula" onchange="app.renderMatrixSliders(this.value)" style="margin-bottom:10px;">
-                        <option value="LULA">Lula</option>
-                        <option value="JAIR">Bolsonaro</option>
-                        <option value="CIRO">Ciro Gomes</option>
-                        <option value="SIMONE">Simone Tebet</option>
-                    </select>
-                    <div id="matrixContainer"></div>
-                </div>
-            </div>
+            <button class="btn-secondary" onclick="app.openMatrixModal()">
+                <span><i class="fas fa-network-wired"></i> Herança (2022)</span>
+                <i class="fas fa-chevron-right"></i>
+            </button>
 
-            <div class="accordion">
-                <div class="acc-head" onclick="this.parentElement.classList.toggle('open')">
-                    <span>MULTIPLICADORES POR ESTADO</span> <i class="fas fa-map"></i>
-                </div>
-                <div class="acc-body">
-                    <select id="stateMultSelect" onchange="app.renderStateMults(1)" style="margin-bottom:10px;">
-                        <option value="">Selecione um Estado...</option>
-                    </select>
-                    <div id="stateMultsContainer"></div>
-                </div>
-            </div>
+            <button class="btn-secondary" onclick="app.openStateModal(1)">
+                <span><i class="fas fa-map-marker-alt"></i> Multiplicadores Estaduais</span>
+                <i class="fas fa-chevron-right"></i>
+            </button>
 
             <button class="btn-primary" onclick="app.runSimulation()">CALCULAR 1º TURNO</button>
         </div>
@@ -263,29 +277,15 @@
                 <div id="slidersT2"></div>
             </div>
 
-            <div class="accordion open">
-                <div class="acc-head" onclick="this.parentElement.classList.toggle('open')">
-                    <span>TRANSFERÊNCIA DE VOTOS</span> <i class="fas fa-exchange-alt"></i>
-                </div>
-                <div class="acc-body">
-                    <div style="font-size:0.7rem; color:#888; margin-bottom:10px;">
-                        Define para onde vão os votos dos candidatos eliminados no 1º turno (Geografia).
-                    </div>
-                    <div id="migrationContainer"></div>
-                </div>
-            </div>
+            <button class="btn-secondary" onclick="app.openMigrationModal()">
+                <span><i class="fas fa-exchange-alt"></i> Transferência de Votos</span>
+                <i class="fas fa-chevron-right"></i>
+            </button>
 
-            <div class="accordion">
-                <div class="acc-head" onclick="this.parentElement.classList.toggle('open')">
-                    <span>MULTIPLICADORES (2º TURNO)</span> <i class="fas fa-map"></i>
-                </div>
-                <div class="acc-body">
-                    <select id="stateMultSelectT2" onchange="app.renderStateMults(2)" style="margin-bottom:10px;">
-                        <option value="">Selecione um Estado...</option>
-                    </select>
-                    <div id="stateMultsContainerT2"></div>
-                </div>
-            </div>
+            <button class="btn-secondary" onclick="app.openStateModal(2)">
+                <span><i class="fas fa-map-marker-alt"></i> Multiplicadores (T2)</span>
+                <i class="fas fa-chevron-right"></i>
+            </button>
 
             <button class="btn-primary" onclick="app.runSimulation()">CALCULAR 2º TURNO</button>
         </div>
@@ -337,13 +337,6 @@ const STATES = [
 ];
 
 const CONFIG = {
-    colors: {
-        'PT': '#E12525', 'PL': '#5756d6', 'PSB': '#E12525', 'PDT': '#F58220', 
-        'UNIÃO': '#009EE3', 'PSDB': '#003399', 'MDB': '#008000', 'PSD': '#FAA21B',
-        'PP': '#0066CC', 'NOVO': '#F58220', 'MISSÃO': '#D4AF37', 'DC': '#006400', 
-        'DEFAULT': '#555555'
-    },
-    // LISTA ORIGINAL DE CANDIDATOS
     candidates: [
         { id: 'LULA',    name: 'Lula',             party: 'PT',     val: 40, color: '#E12525' },
         { id: 'FLAVIO',  name: 'Flávio Bolsonaro', party: 'PL',     val: 30, color: '#5756d6' },
@@ -378,16 +371,14 @@ const app = {
         view: 'states',
         selectedId: null,
         selectedName: "Brasil",
-        customColors: {},
         
-        // Dados de Input
-        t1_polls: {},     // { LULA: 40, FLAVIO: 30 ... }
-        t1_matrix: {},    // { LULA_22: { LULA_26: 0.9 ... } }
-        t1_mults: {},     // { SP: { LULA: 1.1 } }
+        t1_polls: {},     
+        t1_matrix: {},    
+        t1_mults: {},     
 
-        t2_finalists: [], // [ID1, ID2]
-        t2_polls: {},     // { ID1: 52, ID2: 48 }
-        t2_migr: {},      // { CIRO: 0.8 } (80% vai pro cand1)
+        t2_finalists: [], 
+        t2_polls: {},     
+        t2_migr: {},      
         t2_mults: {}
     },
 
@@ -407,7 +398,6 @@ const app = {
             app.state.t1_matrix[src] = {};
             CONFIG.candidates.forEach(dest => {
                 let v = 0;
-                // Lógica simples inicial
                 if(src==='LULA' && dest.party==='PT') v = 0.9;
                 else if(src==='JAIR' && dest.party==='PL') v = 0.9;
                 else if(src==='JAIR' && dest.party==='UNIÃO') v = 0.1;
@@ -423,7 +413,6 @@ const app = {
     loadData: async () => {
         const loader = document.getElementById('loader');
         try {
-            // Carrega base 2022
             const res = await fetch('data/2022_president.json');
             if(!res.ok) throw new Error("Base 2022 não encontrada");
             const json = await res.json();
@@ -431,7 +420,7 @@ const app = {
             app.data.names = json['1'].meta_nomes || {};
 
             await app.loadBrazilLayer();
-            app.runSimulation(); // Roda T1 inicial
+            app.runSimulation();
         } catch(e) {
             console.error(e);
             alert("Erro dados: " + e.message);
@@ -447,7 +436,6 @@ const app = {
         document.getElementById('controlsT1').style.display = t===1?'flex':'none';
         document.getElementById('controlsT2').style.display = t===2?'flex':'none';
         
-        // Se for pro T2 e não tiver finalistas definidos, define os top 2 do T1 atual
         if(t === 2 && app.state.t2_finalists.length === 0 && app.data.round1) {
             const nac = app.data.round1.nacional;
             const sorted = Object.entries(nac).sort((a,b)=>b[1]-a[1]);
@@ -465,6 +453,131 @@ const app = {
         app.state.view = document.getElementById('viewModeSelect').value;
         if(app.state.view === 'all_cities') await app.loadAllMunicipalities();
         else app.resetMapToStates();
+    },
+
+    // =========================================================================
+    // MODAL SYSTEM (CORREÇÃO DE UI)
+    // =========================================================================
+    openModal: (title, html) => {
+        document.getElementById('modalTitle').innerText = title;
+        document.getElementById('modalBody').innerHTML = html;
+        document.getElementById('modalOverlay').classList.add('active');
+    },
+    closeModal: () => {
+        document.getElementById('modalOverlay').classList.remove('active');
+    },
+
+    openMatrixModal: () => {
+        // Dropdown para selecionar a origem e sliders grandes para todos
+        const sources = ['LULA','JAIR','CIRO','SIMONE'];
+        let html = `
+            <div style="margin-bottom:15px">
+                <label style="color:#aaa; font-size:0.8rem">VOTOS DE 2022 DE:</label>
+                <select id="modalSrcSelect" onchange="app.renderModalMatrix(this.value)" style="width:100%">
+                    ${sources.map(s => `<option value="${s}">${s}</option>`).join('')}
+                </select>
+            </div>
+            <div id="modalMatrixContent"></div>
+        `;
+        app.openModal("Matriz de Herança", html);
+        app.renderModalMatrix(sources[0]);
+    },
+
+    renderModalMatrix: (src) => {
+        const c = document.getElementById('modalMatrixContent');
+        c.innerHTML = '';
+        CONFIG.candidates.forEach(dest => {
+            const val = (app.state.t1_matrix[src][dest.id] || 0) * 100;
+            const div = document.createElement('div');
+            div.className = 'slider-box';
+            div.innerHTML = `
+                <div class="slider-header">
+                    <span style="color:${dest.color}; font-weight:bold">${dest.name}</span>
+                    <span id="mod_mtx_${dest.id}">${Math.round(val)}%</span>
+                </div>
+                <input type="range" min="0" max="100" value="${val}" 
+                       oninput="app.state.t1_matrix['${src}']['${dest.id}'] = this.value/100; document.getElementById('mod_mtx_${dest.id}').innerText=this.value+'%';">
+            `;
+            c.appendChild(div);
+        });
+    },
+
+    openStateModal: (turn) => {
+        let html = `
+            <div style="margin-bottom:15px">
+                <label style="color:#aaa; font-size:0.8rem">ESTADO:</label>
+                <select id="modalStateSelect" onchange="app.renderModalStateMults(${turn}, this.value)" style="width:100%">
+                    <option value="">Selecione...</option>
+                    ${STATES.map(s => `<option value="${s.sigla}">${s.nome}</option>`).join('')}
+                </select>
+            </div>
+            <div id="modalStateContent"></div>
+        `;
+        app.openModal(turn === 1 ? "Multiplicadores (1º Turno)" : "Multiplicadores (2º Turno)", html);
+    },
+
+    renderModalStateMults: (turn, uf) => {
+        const c = document.getElementById('modalStateContent');
+        c.innerHTML = '';
+        if(!uf) return;
+
+        const store = turn===1 ? app.state.t1_mults : app.state.t2_mults;
+        if(!store[uf]) store[uf] = {};
+
+        const cands = turn===1 ? CONFIG.candidates : app.state.t2_finalists.map(id => CONFIG.candidates.find(c=>c.id===id));
+
+        cands.forEach(cand => {
+            if(!cand) return;
+            const val = store[uf][cand.id] !== undefined ? store[uf][cand.id] : 1.0;
+            const div = document.createElement('div');
+            div.className = 'slider-box';
+            div.innerHTML = `
+                <div class="slider-header">
+                    <span style="color:${cand.color}; font-weight:bold">${cand.name}</span>
+                    <span id="mod_mul_${cand.id}">x${val.toFixed(2)}</span>
+                </div>
+                <input type="range" min="0" max="300" value="${val*100}" 
+                       oninput="app.updateMult(${turn}, '${uf}', '${cand.id}', this.value); document.getElementById('mod_mul_${cand.id}').innerText='x'+(this.value/100).toFixed(2);">
+            `;
+            c.appendChild(div);
+        });
+    },
+
+    updateMult: (turn, uf, cid, val) => {
+        const store = turn===1 ? app.state.t1_mults : app.state.t2_mults;
+        store[uf][cid] = parseInt(val)/100;
+    },
+
+    openMigrationModal: () => {
+        const [id1, id2] = app.state.t2_finalists;
+        const obj1 = CONFIG.candidates.find(c=>c.id===id1);
+        const obj2 = CONFIG.candidates.find(c=>c.id===id2);
+
+        let html = `<div style="text-align:center; font-size:0.8rem; color:#888; margin-bottom:15px">
+            Configure para quem os eleitores dos candidatos derrotados no 1º turno irão migrar.
+            <br>Isquerda: 100% para <b>${obj1.name}</b> | Direita: 100% para <b>${obj2.name}</b>
+        </div>`;
+        html += `<div id="modalMigContent"></div>`;
+        app.openModal("Transferência de Votos", html);
+
+        const c = document.getElementById('modalMigContent');
+        CONFIG.candidates.forEach(cand => {
+            if(cand.id === id1 || cand.id === id2) return;
+            const ratio = app.state.t2_migr[cand.id] !== undefined ? app.state.t2_migr[cand.id] : 0.5;
+            
+            const div = document.createElement('div');
+            div.className = 'slider-box';
+            div.innerHTML = `
+                <div class="slider-header"><span style="color:${cand.color}; font-weight:bold">Votos de ${cand.name}</span></div>
+                <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#aaa; margin-bottom:5px;">
+                    <span style="color:${obj1.color}">${obj1.name}</span>
+                    <span style="color:${obj2.color}">${obj2.name}</span>
+                </div>
+                <input type="range" min="0" max="100" value="${ratio*100}" 
+                       oninput="app.state.t2_migr['${cand.id}'] = this.value/100;">
+            `;
+            c.appendChild(div);
+        });
     },
 
     // =========================================================================
@@ -490,7 +603,6 @@ const app = {
     },
 
     calculateTurn1: () => {
-        // 1. Prepara dados
         const base = app.data.base22.municipios;
         const targetPcts = {};
         const totalSlider = Object.values(app.state.t1_polls).reduce((a,b)=>a+b,0);
@@ -500,7 +612,6 @@ const app = {
         let tempNacional = {};
         let grandTotal = 0;
 
-        // 2. Passo Geográfico (Herança + Multiplicador)
         for(let ibge in base) {
             const votes22 = base[ibge];
             const uf = ibge.substring(0,2);
@@ -508,13 +619,11 @@ const app = {
             
             CONFIG.candidates.forEach(cand => {
                 let sum = 0;
-                // Herança
                 for(let srcKey in app.state.t1_matrix) {
                     const ratio = app.state.t1_matrix[srcKey][cand.id] || 0;
                     const srcVal = app.getVotes22(votes22, srcKey);
                     sum += srcVal * ratio;
                 }
-                // Multiplicador Estadual
                 if(app.state.t1_mults[uf] && app.state.t1_mults[uf][cand.id]) {
                     sum *= app.state.t1_mults[uf][cand.id];
                 }
@@ -525,18 +634,14 @@ const app = {
             res.municipios[ibge] = mVotes;
         }
 
-        // 3. Normalização (Swing) para bater com os Sliders
         const corrections = {};
         CONFIG.candidates.forEach(c => {
             const currPct = tempNacional[c.id] / (grandTotal||1);
             const target = targetPcts[c.id];
-            
-            // CORREÇÃO DO BUG 0%: Se target é 0, fator é 0.
             if(app.state.t1_polls[c.id] <= 0) corrections[c.id] = 0;
             else corrections[c.id] = (currPct > 0) ? (target / currPct) : 1;
         });
 
-        // 4. Aplica Correção e Finaliza
         for(let ibge in res.municipios) {
             const uf = ibge.substring(0,2);
             if(!res.estados[uf]) res.estados[uf] = {};
@@ -545,7 +650,6 @@ const app = {
                 let v = res.municipios[ibge][cid] * corrections[cid];
                 v = Math.round(v);
                 res.municipios[ibge][cid] = v;
-                
                 res.estados[uf][cid] = (res.estados[uf][cid]||0) + v;
                 res.nacional[cid] = (res.nacional[cid]||0) + v;
             }
@@ -554,12 +658,14 @@ const app = {
     },
 
     calculateTurn2: () => {
+        // CORREÇÃO: Garante que o Round 1 existe
+        if(!app.data.round1) app.calculateTurn1();
+        
         const r1 = app.data.round1;
-        if(!r1) return;
         const [id1, id2] = app.state.t2_finalists;
         if(!id1 || !id2) return;
 
-        // Targets do T2
+        // Metas Nacionais definidas pelo usuário no 2T
         const totalSlider = (app.state.t2_polls[id1]||0) + (app.state.t2_polls[id2]||0);
         const targetPcts = {
             [id1]: (app.state.t2_polls[id1]||0) / (totalSlider||1),
@@ -578,15 +684,21 @@ const app = {
 
             for(let cid in v1) {
                 const votos = v1[cid];
-                if(cid === id1) { vA += votos; continue; }
-                if(cid === id2) { vB += votos; continue; }
-
-                // Derrotados: usam slider de migração (0 a 1, onde 1 = 100% pro Cand1)
-                let ratio = 0.5; // neutro
-                if(app.state.t2_migr[cid] !== undefined) ratio = app.state.t2_migr[cid];
                 
-                vA += votos * ratio;
-                vB += votos * (1 - ratio);
+                if(cid === id1) { 
+                    vA += votos; 
+                } else if(cid === id2) { 
+                    vB += votos; 
+                } else {
+                    // CORREÇÃO: Lógica de transferência dos derrotados
+                    // Pega o ratio definido no modal (default 0.5)
+                    // Ratio 1 = Tudo para id1 (A), Ratio 0 = Tudo para id2 (B)
+                    let ratio = 0.5;
+                    if(app.state.t2_migr[cid] !== undefined) ratio = app.state.t2_migr[cid];
+                    
+                    vA += votos * ratio;
+                    vB += votos * (1 - ratio);
+                }
             }
 
             // Multiplicadores T2
@@ -595,7 +707,6 @@ const app = {
                 if(app.state.t2_mults[uf][id2]) vB *= app.state.t2_mults[uf][id2];
             }
 
-            // Temp save
             tempNacional[id1] += vA;
             tempNacional[id2] += vB;
             grandTotal += (vA + vB);
@@ -629,7 +740,6 @@ const app = {
     },
 
     getVotes22: (obj, key) => {
-        // Helper para agrupar votos 22
         let sum = 0;
         for(let k in obj) {
             if(k.toUpperCase().includes(key)) sum += obj[k];
@@ -644,7 +754,6 @@ const app = {
         if(app.layers.brazil) { app.layers.brazil.addTo(app.map); return; }
         const res = await fetch('https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson');
         const data = await res.json();
-        // Mapeia IDs
         data.features.forEach(f => {
             const s = STATES.find(x => x.sigla === f.properties.sigla);
             if(s) f.properties.id = s.id;
@@ -664,6 +773,8 @@ const app = {
     loadAllMunicipalities: async () => {
         const loader = document.getElementById('loader');
         loader.classList.remove('hidden');
+        
+        // CORREÇÃO DE GLITCH: Remove seguramente
         if(app.layers.brazil) app.map.removeLayer(app.layers.brazil);
         if(app.layers.cities) app.map.removeLayer(app.layers.cities);
 
@@ -686,12 +797,18 @@ const app = {
     },
 
     loadStateCities: async (ufId, ufName) => {
-        if(app.state.view === 'all_cities') return; // Já está vendo tudo
+        if(app.state.view === 'all_cities') return; 
         const loader = document.getElementById('loader');
         loader.classList.remove('hidden');
         
-        if(app.layers.cities) app.map.removeLayer(app.layers.cities);
-        app.map.eachLayer(l => { if(l.setStyle && l !== app.layers.brazil) app.map.removeLayer(l); });
+        // CORREÇÃO DE GLITCH: Limpeza profunda
+        if(app.layers.cities) {
+            app.map.removeLayer(app.layers.cities);
+            app.layers.cities = null;
+        }
+        app.map.eachLayer(l => { 
+            if(l !== app.layers.brazil && l.setStyle) app.map.removeLayer(l); 
+        });
 
         if(!app.data.geoJson) {
             const r = await fetch("https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json");
@@ -710,19 +827,26 @@ const app = {
             }
         }).addTo(app.map);
         
-        app.map.fitBounds(app.layers.cities.getBounds());
+        if (app.layers.cities.getBounds().isValid()) {
+            app.map.fitBounds(app.layers.cities.getBounds());
+        }
         app.selectRegion(ufId, ufName);
         loader.classList.add('hidden');
     },
 
     resetMapToStates: () => {
-        if(app.layers.cities) app.map.removeLayer(app.layers.cities);
-        if(app.layers.brazil) app.layers.brazil.addTo(app.map);
+        // CORREÇÃO DE GLITCH: Remove e Adiciona com segurança
+        if(app.layers.cities) {
+            app.map.removeLayer(app.layers.cities);
+            app.layers.cities = null;
+        }
+        if(app.layers.brazil) {
+            if(!app.map.hasLayer(app.layers.brazil)) app.layers.brazil.addTo(app.map);
+        }
         app.map.setView([-15, -50], 4);
         app.resetSelection();
     },
 
-    // ESTILO & COR (Original Logic)
     getStyle: (feature, scope) => {
         const id = feature.properties.id || feature.properties.codarea;
         const dataset = app.state.turn === 1 ? app.data.round1 : app.data.round2;
@@ -737,19 +861,19 @@ const app = {
             if(votes[c] > max) { max = votes[c]; winner = c; }
         }
 
-        if(!winner) return { fillColor: '#222', weight: 0.2 };
+        // CORREÇÃO: Outline branco (color: #ffffff) e weight maior
+        if(!winner) return { fillColor: '#222', weight: 0.5, color: '#ffffff' };
 
         const cand = CONFIG.candidates.find(c => c.id === winner);
         const color = cand ? cand.color : '#555';
         const pct = total > 0 ? (max/total)*100 : 0;
-        
-        // Aplica o degradê original
         const discrete = app.getDiscreteColor(color, pct);
         
         return {
             fillColor: discrete,
-            weight: (scope === 'estados') ? 0.8 : 0.2,
-            color: '#ffffff',
+            weight: (scope === 'estados') ? 0.8 : 0.5, // Aumentado para visibilidade
+            color: '#ffffff', // Borda branca
+            opacity: 0.5,
             fillOpacity: 1
         };
     },
@@ -789,7 +913,6 @@ const app = {
             const votes = (id.length===2 && scope==='estados') ? dataset.estados[id] : dataset.municipios[id];
             if(!votes) return "Sem dados";
 
-            // Top 1
             const sorted = Object.entries(votes).sort((a,b)=>b[1]-a[1]);
             const total = sorted.reduce((a,b)=>a+b[1],0);
             const wId = sorted[0][0];
@@ -818,7 +941,6 @@ const app = {
     // UI HELPERS
     // =========================================================================
     renderUI: () => {
-        // T1 Sliders
         const c = document.getElementById('slidersT1');
         c.innerHTML = '';
         CONFIG.candidates.forEach(cand => {
@@ -834,15 +956,7 @@ const app = {
             `;
             c.appendChild(div);
         });
-
-        // State Selects
-        const opts = '<option value="">Selecione um Estado...</option>' + 
-                     STATES.map(s => `<option value="${s.sigla}">${s.nome}</option>`).join('');
-        document.getElementById('stateMultSelect').innerHTML = opts;
-        document.getElementById('stateMultSelectT2').innerHTML = opts;
-
-        app.renderMatrixSliders('LULA');
-        app.renderLegend();
+        app.updateT1Poll('LULA', app.state.t1_polls['LULA']); // Init Total
     },
 
     updateT1Poll: (id, val) => {
@@ -853,71 +967,13 @@ const app = {
         document.getElementById('totalSimVal').style.color = tot===100?'#4ade80':'#facc15';
     },
 
-    renderMatrixSliders: (src) => {
-        const c = document.getElementById('matrixContainer');
-        c.innerHTML = '';
-        CONFIG.candidates.forEach(dest => {
-            const val = (app.state.t1_matrix[src][dest.id] || 0) * 100;
-            const div = document.createElement('div');
-            div.className = 'slider-box';
-            div.innerHTML = `
-                <div class="slider-header">
-                    <span style="color:${dest.color}">${dest.name}</span>
-                    <span id="mtx_${src}_${dest.id}">${Math.round(val)}%</span>
-                </div>
-                <input type="range" min="0" max="100" value="${val}" 
-                       oninput="app.state.t1_matrix['${src}']['${dest.id}'] = this.value/100; document.getElementById('mtx_${src}_${dest.id}').innerText=this.value+'%';">
-            `;
-            c.appendChild(div);
-        });
-    },
-
-    renderStateMults: (turn) => {
-        const selId = turn===1 ? 'stateMultSelect' : 'stateMultSelectT2';
-        const contId = turn===1 ? 'stateMultsContainer' : 'stateMultsContainerT2';
-        const uf = document.getElementById(selId).value;
-        const container = document.getElementById(contId);
-        container.innerHTML = '';
-        
-        if(!uf) return;
-
-        const store = turn===1 ? app.state.t1_mults : app.state.t2_mults;
-        if(!store[uf]) store[uf] = {};
-
-        const cands = turn===1 ? CONFIG.candidates : app.state.t2_finalists.map(id => CONFIG.candidates.find(c=>c.id===id));
-
-        cands.forEach(cand => {
-            if(!cand) return;
-            const val = store[uf][cand.id] !== undefined ? store[uf][cand.id] : 1.0;
-            const div = document.createElement('div');
-            div.className = 'slider-box';
-            div.innerHTML = `
-                <div class="slider-header">
-                    <span style="color:${cand.color}">${cand.name}</span>
-                    <span id="mult_${turn}_${uf}_${cand.id}">x${val.toFixed(2)}</span>
-                </div>
-                <input type="range" min="0" max="300" value="${val*100}" 
-                       oninput="app.updateMult(${turn}, '${uf}', '${cand.id}', this.value)">
-            `;
-            container.appendChild(div);
-        });
-    },
-
-    updateMult: (turn, uf, cid, val) => {
-        const store = turn===1 ? app.state.t1_mults : app.state.t2_mults;
-        store[uf][cid] = parseInt(val)/100;
-        document.getElementById(`mult_${turn}_${uf}_${cid}`).innerText = 'x'+(parseInt(val)/100).toFixed(2);
-    },
-
     updateT2UI: () => {
         const c1 = document.getElementById('candFinal1');
         const c2 = document.getElementById('candFinal2');
         
-        // Popula selects se vazio
         if(c1.options.length === 0) {
             const opts = CONFIG.candidates.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
             c1.innerHTML = opts; c2.innerHTML = opts;
-            // Defaults
             if(app.state.t2_finalists.length === 2) {
                 c1.value = app.state.t2_finalists[0];
                 c2.value = app.state.t2_finalists[1];
@@ -932,13 +988,12 @@ const app = {
         const obj1 = CONFIG.candidates.find(c=>c.id===id1);
         const obj2 = CONFIG.candidates.find(c=>c.id===id2);
 
-        // Render Sliders de % (Novo pedido)
         const slidersDiv = document.getElementById('slidersT2');
         slidersDiv.innerHTML = '';
         
         [obj1, obj2].forEach(cand => {
             const current = app.state.t2_polls[cand.id] !== undefined ? app.state.t2_polls[cand.id] : 50;
-            app.state.t2_polls[cand.id] = current; // init
+            app.state.t2_polls[cand.id] = current;
             
             const div = document.createElement('div');
             div.className = 'slider-box';
@@ -953,30 +1008,6 @@ const app = {
             slidersDiv.appendChild(div);
         });
         app.checkT2Total();
-
-        // Render Migração
-        const migrDiv = document.getElementById('migrationContainer');
-        migrDiv.innerHTML = '';
-        
-        CONFIG.candidates.forEach(cand => {
-            if(cand.id === id1 || cand.id === id2) return;
-            const ratio = app.state.t2_migr[cand.id] !== undefined ? app.state.t2_migr[cand.id] : 0.5;
-            
-            const div = document.createElement('div');
-            div.className = 'slider-box';
-            div.innerHTML = `
-                <div class="slider-header"><span style="color:${cand.color}">Votos de ${cand.name}</span></div>
-                <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:#aaa; margin-bottom:2px;">
-                    <span>${obj1.name}</span><span>${obj2.name}</span>
-                </div>
-                <input type="range" min="0" max="100" value="${ratio*100}" 
-                       oninput="app.state.t2_migr['${cand.id}'] = this.value/100;">
-            `;
-            migrDiv.appendChild(div);
-        });
-
-        // Atualiza mults se aberto
-        if(document.getElementById('stateMultSelectT2').value) app.renderStateMults(2);
     },
 
     checkT2Total: () => {
