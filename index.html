@@ -351,12 +351,12 @@ const STATES = [
 
 const CONFIG = {
     candidates: [
-        { id: 'LULA',    name: 'Lula',             party: 'PT',     val: 45, color: '#E12525' },
-        { id: 'FLAVIO',  name: 'Flávio Bolsonaro', party: 'PL',     val: 28, color: '#5756d6' },
+        { id: 'LULA',    name: 'Lula',             party: 'PT',     val: 46, color: '#E12525' },
+        { id: 'FLAVIO',  name: 'Flávio Bolsonaro', party: 'PL',     val: 32, color: '#5756d6' },
         { id: 'RENAN',   name: 'Renan Santos',     party: 'MISSÃO', val: 3,  color: '#D4AF37' },
-        { id: 'CAIADO',  name: 'Ronaldo Caiado',   party: 'UNIÃO',  val: 8,  color: '#009EE3' },
-        { id: 'ZEMA',    name: 'Romeu Zema',       party: 'NOVO',   val: 7,  color: '#F58220' },
-        { id: 'RATINHO', name: 'Ratinho Jr',       party: 'PSD',    val: 6,  color: '#FAA21B' },
+        { id: 'CAIADO',  name: 'Ronaldo Caiado',   party: 'UNIÃO',  val: 7,  color: '#009EE3' },
+        { id: 'ZEMA',    name: 'Romeu Zema',       party: 'NOVO',   val: 5,  color: '#F58220' },
+        { id: 'RATINHO', name: 'Ratinho Jr',       party: 'PSD',    val: 4,  color: '#FAA21B' },
         { id: 'CIRO',    name: 'Ciro Gomes',       party: 'PDT',    val: 2,  color: '#003399' },
         { id: 'ALDO',    name: 'Aldo Rebelo',      party: 'DC',     val: 1,  color: '#006400' }
     ],
@@ -408,10 +408,10 @@ const app = {
         });
 
         // Configuração Manual da Matriz
-        app.state.t1_matrix['JAIR']['FLAVIO']  = 0.65; // 65% vai pro Flávio
-        app.state.t1_matrix['JAIR']['CAIADO']  = 0.15; // 15% vai pro Caiado
+        app.state.t1_matrix['JAIR']['FLAVIO']  = 0.85; // 65% vai pro Flávio
+        app.state.t1_matrix['JAIR']['CAIADO']  = 0.10; // 15% vai pro Caiado
         app.state.t1_matrix['JAIR']['ZEMA']    = 0.10; // 10% vai pro Zema
-        app.state.t1_matrix['JAIR']['RATINHO'] = 0.05; // 5% vai pro Ratinho
+        app.state.t1_matrix['JAIR']['RATINHO'] = 0.10; // 5% vai pro Ratinho
         app.state.t1_matrix['JAIR']['RENAN'] = 0.05;
         
         // 2. Herança do LULA
@@ -459,7 +459,7 @@ const app = {
         setMult('41', 'CAIADO', 0.3);
 
         // Ciro Gomes (Forte no Ceará)
-        setMult('23', 'CIRO', 1);
+        setMult('23', 'CIRO', 1.1);
 
         // Flávio/Tarcísio (Forte em SP e RJ)
         setMult('33', 'FLAVIO', 1.1); // RJ
