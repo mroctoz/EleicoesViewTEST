@@ -688,27 +688,39 @@ const app = {
         }).addTo(app.map);
     },
 
-loadStateCities: async (ufId, ufName) => {
+    loadStateCities: async (ufId, ufName) => {
         const loader = document.getElementById('loader');
         loader.classList.remove('hidden');
+
+        // --- CORREÇÃO NUCLEAR ---
+        // Varre todas as camadas do mapa. Se for GeoJSON (tem setStyle), remove.
+        // Isso garante que não sobre nenhum "fantasma" do Brasil ou de outros mapas.
+        app.map.eachLayer((layer) => {
+            // Não removemos o TileLayer (o mapa mundi escuro de fundo)
+            // Identificamos camadas de polígono/GeoJSON pela presença da função setStyle
+            if (layer.setStyle && layer !== app.layers.cities) {
+                app.map.removeLayer(layer);
+            }
+        });
         
-        // CORREÇÃO 1: Removemos as camadas IMEDIATAMENTE, antes de carregar os dados.
-        // Isso limpa o "fundo" na hora, evitando que o mapa antigo fique visível.
-        if (app.layers.brazil) {
-            app.map.removeLayer(app.layers.brazil);
-        }
+        // Limpa a referência da camada de cidades para evitar conflitos
         if (app.layers.cities) {
             app.map.removeLayer(app.layers.cities);
-            app.layers.cities = null; // Garante que a referência seja limpa
+            app.layers.cities = null;
         }
+        // -------------------------
 
         try {
+            // Carrega os dados (isso pode demorar um pouco, por isso limpamos o mapa antes)
             const fullData = await app.fetchGeoJsonCache();
+            
+            // Filtra apenas os municípios do estado selecionado
             const stateFeatures = fullData.features.filter(f => {
                 const cod = f.properties.id || f.properties.codarea;
                 return cod && cod.toString().startsWith(ufId);
             });
 
+            // Cria a nova camada
             app.layers.cities = L.geoJSON({ type: "FeatureCollection", features: stateFeatures }, {
                 smoothFactor: 0.3,
                 style: (f) => app.getStyle(f, 'municipios'),
@@ -717,20 +729,22 @@ loadStateCities: async (ufId, ufName) => {
                     const name = app.data.names[id] || f.properties.name;
                     l.on('click', (e) => { 
                         L.DomEvent.stopPropagation(e); 
-                        // Opcional: Se quiser permitir clicar num município para focar nele
                         app.selectRegion(id, name); 
                     });
                     app.bindTooltip(l, id, 'municipios', name);
                 }
             }).addTo(app.map);
             
+            // Ajusta o zoom para o estado
             app.map.fitBounds(app.layers.cities.getBounds());
+            
+            // Atualiza a barra lateral
             app.selectRegion(ufId, ufName);
 
         } catch(e) { 
-            console.error(e); 
-            // Se der erro, tenta restaurar o mapa do Brasil para não ficar tela preta
-            app.loadBrazilLayer();
+            console.error("Erro ao carregar cidades:", e);
+            // Se der erro, volta para o mapa do Brasil
+            app.resetMapToStates();
         } finally { 
             loader.classList.add('hidden'); 
         }
