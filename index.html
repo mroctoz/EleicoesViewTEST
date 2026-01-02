@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlas Simulação V26 - Final</title>
+    <title>Atlas Simulação V26 - Final Gold</title>
     
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -554,7 +554,7 @@ const app = {
 
         let html = `<div style="text-align:center; font-size:0.8rem; color:#888; margin-bottom:15px">
             Configure para quem os eleitores dos candidatos derrotados no 1º turno irão migrar.
-            <br>Esquerda: 100% para <b>${obj1.name}</b> | Direita: 100% para <b>${obj2.name}</b>
+            <br>Esquerda (0%): <b>${obj1.name}</b> | Direita (100%): <b>${obj2.name}</b>
         </div>`;
         html += `<div id="modalMigContent"></div>`;
         app.openModal("Transferência de Votos", html);
@@ -689,8 +689,11 @@ const app = {
                 } else {
                     let ratio = 0.5;
                     if(app.state.t2_migr[cid] !== undefined) ratio = app.state.t2_migr[cid];
-                    vA += votos * ratio;
-                    vB += votos * (1 - ratio);
+                    
+                    // CORREÇÃO: Invertido para corresponder à intuição do slider
+                    // Ratio (0..1). Se 1 (Direita/100%) -> Vai para ID2.
+                    vA += votos * (1 - ratio);
+                    vB += votos * ratio;
                 }
             }
 
@@ -866,7 +869,6 @@ const app = {
             if(votes[c] > max) { max = votes[c]; winner = c; }
         }
 
-        // CORREÇÃO: Outline sólido para evitar buracos
         if(!winner) return { fillColor: '#222', weight: 0.5, color: '#ffffff', opacity: 1, fillOpacity: 1 };
 
         const cand = CONFIG.candidates.find(c => c.id === winner);
