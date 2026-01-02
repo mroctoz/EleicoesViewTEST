@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIMULADOR ELEITORAL 2026 - Atlas V25</title>
+    <title>Atlas Histórico V25 - High Res & Simulação</title>
     
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -23,12 +23,10 @@
             --bg-secondary: #11141a;
             --bg-card: rgba(20, 24, 32, 0.98);
             --accent-blue: #3b82f6;
-            --accent-green: #10b981;
-            --accent-red: #ef4444;
-            --accent-yellow: #f59e0b;
             --text-primary: #ffffff;
             --text-muted: #94a3b8;
             --border-color: rgba(255, 255, 255, 0.1);
+            --gradient-primary: linear-gradient(135deg, #3b82f6, #8b5cf6);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
@@ -40,556 +38,170 @@
             height: 100vh;
         }
 
-        #app { 
-            width: 100vw; 
-            height: 100vh; 
-            display: flex; 
-            position: relative; 
-        }
-        
-        #map { 
-            flex: 1; 
-            height: 100%; 
-            background: #1a1a1a; 
-            z-index: 1; 
-        }
+        #app { width: 100vw; height: 100vh; display: flex; position: relative; }
+        #map { flex: 1; height: 100%; background: #1a1a1a; z-index: 1; }
 
         /* SIDEBARS */
         .sidebar {
-            width: 420px;
+            width: 380px;
             background: var(--bg-card);
             backdrop-filter: blur(20px);
-            display: flex; 
-            flex-direction: column;
+            display: flex; flex-direction: column;
             z-index: 1000;
             border-right: 1px solid var(--border-color);
             box-shadow: 5px 0 30px rgba(0,0,0,0.5);
         }
-        
-        .sidebar-right { 
-            border-left: 1px solid var(--border-color); 
-            border-right: none; 
-            width: 450px; 
-        }
+        .sidebar-right { border-left: 1px solid var(--border-color); border-right: none; width: 420px; }
 
         .header {
-            padding: 20px;
+            padding: 24px;
             background: linear-gradient(180deg, rgba(10, 12, 16, 1) 0%, rgba(10, 12, 16, 0.8) 100%);
             border-bottom: 1px solid var(--border-color);
         }
-        
         .header h1 {
-            font-size: 1.4rem; 
-            font-weight: 800; 
-            margin: 0;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6); 
-            -webkit-background-clip: text; 
-            -webkit-text-fill-color: transparent;
+            font-size: 1.4rem; font-weight: 800; margin: 0;
+            background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
 
         /* TABS */
-        .mode-tabs { 
-            display: flex; 
-            gap: 8px; 
-            margin-top: 15px; 
-        }
-        
+        .mode-tabs { display: flex; gap: 8px; margin-top: 15px; }
         .mode-tab {
-            flex: 1; 
-            padding: 10px; 
-            text-align: center; 
-            border-radius: 6px;
-            background: rgba(255,255,255,0.05); 
-            border: 1px solid var(--border-color);
-            cursor: pointer; 
-            font-size: 0.75rem; 
-            font-weight: 700; 
-            color: var(--text-muted);
+            flex: 1; padding: 10px; text-align: center; border-radius: 6px;
+            background: rgba(255,255,255,0.05); border: 1px solid var(--border-color);
+            cursor: pointer; font-size: 0.75rem; font-weight: 700; color: var(--text-muted);
             transition: all 0.2s;
         }
-        
-        .mode-tab:hover { 
-            background: rgba(255,255,255,0.1); 
-            color: white; 
-        }
-        
-        .mode-tab.active { 
-            background: var(--accent-blue); 
-            color: white; 
-            border-color: var(--accent-blue); 
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); 
-        }
+        .mode-tab:hover { background: rgba(255,255,255,0.1); color: white; }
+        .mode-tab.active { background: var(--accent-blue); color: white; border-color: var(--accent-blue); box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); }
 
-        .controls { 
-            padding: 20px; 
-            flex: 1; 
-            overflow-y: auto; 
-        }
+        .controls { padding: 20px; flex: 1; overflow-y: auto; }
         
-        .control-group { 
-            margin-bottom: 15px; 
-        }
+        .control-group { margin-bottom: 15px; }
+        .control-group label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
         
-        .control-group label { 
-            display: block; 
-            font-size: 0.75rem; 
-            color: var(--text-muted); 
-            margin-bottom: 6px; 
-            font-weight: 700; 
-            text-transform: uppercase; 
-            letter-spacing: 0.5px; 
-        }
-        
-        select, input[type="number"], input[type="text"] {
-            width: 100%; 
-            padding: 12px; 
-            border-radius: 8px;
+        select {
+            width: 100%; padding: 12px; border-radius: 8px;
             border: 1px solid #333;
-            background-color: #050505; 
-            color: white;
-            font-family: inherit; 
-            font-size: 0.9rem;
-            appearance: none; 
-            cursor: pointer;
+            background-color: #050505; color: white;
+            font-family: inherit; font-size: 0.9rem;
+            appearance: none; cursor: pointer;
         }
-        
-        select:focus, input:focus { 
-            border-color: var(--accent-blue); 
-        }
-        
-        button {
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
+        select:focus { border-color: var(--accent-blue); }
+        option { background-color: #050505; color: white; padding: 10px; }
+
         button.btn-primary { 
-            width: 100%; 
-            padding: 12px; 
-            border-radius: 8px;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6); 
-            border: none; 
-            font-weight: 700; 
-            color: white; 
-            margin-top: 10px;
+            width: 100%; padding: 12px; border-radius: 8px;
+            background: var(--gradient-primary); border: none; 
+            font-weight: 700; color: white; cursor: pointer; margin-top: 10px;
+            transition: transform 0.2s;
         }
-        
-        button.btn-primary:hover { 
-            transform: translateY(-2px); 
-            filter: brightness(1.1); 
-        }
+        button.btn-primary:hover { transform: translateY(-2px); filter: brightness(1.1); }
 
         button.btn-back {
-            width: 100%; 
-            padding: 10px; 
-            border-radius: 8px;
-            background: #222; 
-            border: 1px solid #444; 
-            color: white; 
-            margin-bottom: 15px;
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 8px;
-            font-size: 0.9rem; 
-            font-weight: 600;
+            width: 100%; padding: 10px; border-radius: 8px;
+            background: #222; border: 1px solid #444; 
+            color: white; cursor: pointer; margin-bottom: 15px;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            font-size: 0.9rem; font-weight: 600;
         }
-        
-        button.btn-back:hover { 
-            background: #333; 
-            border-color: var(--accent-blue); 
-        }
+        button.btn-back:hover { background: #333; border-color: var(--accent-blue); }
 
-        /* CANDIDATE ROWS */
+        /* LISTA */
         .cand-row {
-            display: flex; 
-            align-items: center; 
-            gap: 10px;
-            padding: 12px; 
-            margin-bottom: 8px;
-            background: rgba(255,255,255,0.03); 
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 8px; 
-            transition: all 0.2s;
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px; margin-bottom: 8px;
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px; transition: all 0.2s;
         }
-        
-        .cand-row:hover { 
-            background: rgba(255,255,255,0.08); 
-            border-color: rgba(255,255,255,0.2); 
-        }
-        
-        .cand-row.disabled { 
-            opacity: 0.4; 
-            filter: grayscale(1); 
-        }
+        .cand-row:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
+        .cand-row.disabled { opacity: 0.4; filter: grayscale(1); }
 
         .cand-check {
-            width: 18px; 
-            height: 18px; 
-            border: 2px solid #555; 
-            border-radius: 4px;
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            cursor: pointer;
+            width: 18px; height: 18px; border: 2px solid #555; border-radius: 4px;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
         }
+        .cand-check.checked { background: var(--accent-blue); border-color: var(--accent-blue); }
+        .cand-check.checked::after { content: '✓'; color: white; font-size: 12px; font-weight: 900; }
         
-        .cand-check.checked { 
-            background: var(--accent-blue); 
-            border-color: var(--accent-blue); 
-        }
-        
-        .cand-check.checked::after { 
-            content: '✓'; 
-            color: white; 
-            font-size: 12px; 
-            font-weight: 900; 
-        }
-        
-        .cand-color { 
-            width: 18px; 
-            height: 18px; 
-            border-radius: 4px; 
-            border: 1px solid rgba(255,255,255,0.5); 
-            cursor: pointer; 
-        }
-        
-        .cand-info { 
-            flex: 1; 
-            min-width: 0; 
-        }
-        
-        .cand-head { 
-            display: flex; 
-            justify-content: space-between; 
-            font-size: 0.9rem; 
-            font-weight: 600; 
-            margin-bottom: 2px; 
-        }
-        
-        .cand-sub { 
-            font-size: 0.75rem; 
-            color: var(--text-muted); 
-            display: flex; 
-            justify-content: space-between; 
-        }
-        
-        .progress-bar { 
-            height: 4px; 
-            background: rgba(255,255,255,0.1); 
-            border-radius: 2px; 
-            margin-top: 6px; 
-            overflow: hidden; 
-        }
-        
-        .progress-fill { 
-            height: 100%; 
-            transition: width 0.5s ease; 
-        }
+        .cand-color { width: 18px; height: 18px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.5); cursor: pointer; }
+        .cand-info { flex: 1; min-width: 0; }
+        .cand-head { display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 600; margin-bottom: 2px; }
+        .cand-sub { font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between; }
+        .progress-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+        .progress-fill { height: 100%; transition: width 0.5s ease; }
 
         /* SLIDERS */
         .sim-slider-box {
-            background: rgba(255,255,255,0.03); 
-            border: 1px solid rgba(255,255,255,0.05);
-            padding: 12px; 
-            border-radius: 8px; 
-            margin-bottom: 10px;
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
+            padding: 12px; border-radius: 8px; margin-bottom: 10px;
         }
-        
-        .sim-head { 
-            display: flex; 
-            justify-content: space-between; 
-            font-size: 0.85rem; 
-            font-weight: 700; 
-            margin-bottom: 4px; 
-        }
-        
-        .sim-sub { 
-            font-size: 0.7rem; 
-            color: var(--text-muted); 
-            text-transform: uppercase; 
-            font-weight: 600; 
-        }
-        
-        input[type=range] { 
-            width: 100%; 
-            margin-top: 10px; 
-            -webkit-appearance: none; 
-            background: transparent; 
-        }
-        
-        input[type=range]::-webkit-slider-runnable-track { 
-            width: 100%; 
-            height: 4px; 
-            background: #333; 
-            border-radius: 2px; 
-        }
-        
-        input[type=range]::-webkit-slider-thumb { 
-            -webkit-appearance: none; 
-            margin-top: -6px; 
-            height: 16px; 
-            width: 16px; 
-            background: #fff; 
-            border-radius: 50%; 
-            cursor: pointer; 
-            box-shadow: 0 0 10px rgba(0,0,0,0.5); 
-        }
+        .sim-head { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; margin-bottom: 4px; }
+        .sim-sub { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
+        input[type=range] { width: 100%; margin-top: 10px; -webkit-appearance: none; background: transparent; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: #333; border-radius: 2px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; margin-top: -6px; height: 16px; width: 16px; background: #fff; border-radius: 50%; cursor: pointer; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
 
-        /* CONFIG PANELS */
-        .config-panel {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-        }
-        
-        .config-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .config-title {
-            color: var(--accent-blue);
-            font-size: 0.9rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .config-toggle {
-            background: rgba(59, 130, 246, 0.2);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            color: #93c5fd;
-            border-radius: 6px;
-            padding: 5px 10px;
-            font-size: 0.7rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .config-toggle:hover {
-            background: rgba(59, 130, 246, 0.3);
-        }
-        
-        .config-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out;
-        }
-        
-        .config-content.expanded {
-            max-height: 1000px;
-            overflow-y: auto;
-        }
-
-        /* TRANSFER GRID */
-        .transfer-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .transfer-item {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 8px;
-            padding: 12px;
-        }
-        
-        .transfer-label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-bottom: 5px;
-            display: block;
-        }
-        
-        .transfer-value {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: white;
-        }
-
-        /* LEGEND */
+        /* LEGENDA */
         .legend {
-            position: absolute; 
-            bottom: 30px; 
-            right: 480px;
-            background: #0a0c10; 
-            padding: 15px; 
-            border: 1px solid #333;
-            border-radius: 12px; 
-            z-index: 999; 
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            position: absolute; bottom: 30px; right: 450px;
+            background: #0a0c10; padding: 15px; border: 1px solid #333;
+            border-radius: 12px; z-index: 999; box-shadow: 0 10px 40px rgba(0,0,0,0.8);
         }
-        
         .legend-grid { 
-            display: flex; 
-            height: 20px; 
-            width: 225px;
-            border-radius: 4px; 
-            overflow: hidden; 
-            border: 1px solid #444; 
+            display: flex; height: 20px; width: 225px;
+            border-radius: 4px; overflow: hidden; border: 1px solid #444; 
         }
-        
-        .legend-item { 
-            flex: 1; 
-            border-right: 1px solid rgba(0,0,0,0.3); 
-        }
-        
-        .legend-item:last-child { 
-            border-right: none; 
-        }
+        .legend-item { flex: 1; border-right: 1px solid rgba(0,0,0,0.3); }
+        .legend-item:last-child { border-right: none; }
 
         .map-controls {
-            position: absolute; 
-            top: 20px; 
-            right: 480px;
-            display: flex; 
-            flex-direction: column; 
-            gap: 8px; 
-            z-index: 999;
+            position: absolute; top: 20px; right: 450px;
+            display: flex; flex-direction: column; gap: 8px; z-index: 999;
         }
-        
         .map-btn {
-            width: 40px; 
-            height: 40px; 
-            background: #0a0c10; 
-            border: 1px solid #333;
-            color: #ddd; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-size: 1.2rem;
+            width: 40px; height: 40px; background: #0a0c10; border: 1px solid #333;
+            color: #ddd; display: flex; align-items: center; justify-content: center;
+            border-radius: 8px; cursor: pointer; font-size: 1.2rem;
         }
-        
-        .map-btn:hover { 
-            background: #222; 
-            color: white; 
-        }
+        .map-btn:hover { background: #222; color: white; }
 
         /* TOOLTIP */
         .custom-tooltip {
-            background: #0a0c10; 
-            border: 1px solid #333; 
-            color: white;
-            border-radius: 8px; 
-            font-family: 'Inter', sans-serif; 
-            padding: 0;
+            background: #0a0c10; border: 1px solid #333; color: white;
+            border-radius: 8px; font-family: 'Inter', sans-serif; padding: 0;
             box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
-        
-        .tt-head { 
-            background: #151a23; 
-            padding: 10px; 
-            font-weight: 700; 
-            border-bottom: 1px solid #333; 
-            border-radius: 8px 8px 0 0; 
-        }
-        
-        .tt-body { 
-            padding: 10px; 
-        }
+        .tt-head { background: #151a23; padding: 10px; font-weight: 700; border-bottom: 1px solid #333; border-radius: 8px 8px 0 0; }
+        .tt-body { padding: 10px; }
 
-        /* LOADER */
         #loader {
-            position: absolute; 
-            inset: 0; 
-            background: rgba(5,5,5,0.95); 
-            z-index: 9999;
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            flex-direction: column;
+            position: absolute; inset: 0; background: rgba(5,5,5,0.95); z-index: 9999;
+            display: flex; align-items: center; justify-content: center; flex-direction: column;
             transition: opacity 0.3s;
         }
-        
-        .hidden { 
-            opacity: 0; 
-            pointer-events: none; 
-        }
-        
+        .hidden { opacity: 0; pointer-events: none; }
         .spinner {
-            width: 50px; 
-            height: 50px; 
-            border: 4px solid #333; 
-            border-top-color: var(--accent-blue);
-            border-radius: 50%; 
-            animation: spin 1s linear infinite; 
-            margin-bottom: 15px;
+            width: 50px; height: 50px; border: 4px solid #333; border-top-color: var(--accent-blue);
+            border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px;
         }
-        
-        @keyframes spin { 
-            to { 
-                transform: rotate(360deg); 
-            } 
-        }
-
-        /* SECOND ROUND SELECTION */
-        .candidate-select-box {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px;
-            margin-bottom: 8px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 6px;
-            border: 1px solid rgba(255,255,255,0.05);
-            cursor: pointer;
-        }
-        
-        .candidate-select-box.selected {
-            background: rgba(59, 130, 246, 0.1);
-            border-color: var(--accent-blue);
-        }
-        
-        .select-checkbox {
-            width: 20px;
-            height: 20px;
-            border: 2px solid #555;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .select-checkbox.checked {
-            background: var(--accent-blue);
-            border-color: var(--accent-blue);
-        }
-        
-        .select-checkbox.checked::after {
-            content: '✓';
-            color: white;
-            font-size: 12px;
-            font-weight: bold;
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
 <div id="loader">
     <div class="spinner"></div>
-    <h3 id="loaderMsg">Carregando Simulador...</h3>
+    <h3 id="loaderMsg">Carregando Dados...</h3>
 </div>
 
 <div id="app">
     <!-- BARRA ESQUERDA -->
     <aside class="sidebar">
         <div class="header">
-            <h1>SIMULADOR 2026</h1>
+            <h1>Atlas V25</h1>
             <div class="mode-tabs">
-                <div class="mode-tab active" id="tabFirst" onclick="app.setMode('first_round')">1º TURNO</div>
-                <div class="mode-tab" id="tabSecond" onclick="app.setMode('second_round')">2º TURNO</div>
-                <div class="mode-tab" id="tabConfig" onclick="app.setMode('configuration')">CONFIG</div>
+                <div class="mode-tab active" id="tabHist" onclick="app.setMode('history')">HISTÓRICO</div>
+                <div class="mode-tab" id="tabSim" onclick="app.setMode('simulation')">SIMULAÇÃO 2026</div>
             </div>
         </div>
         
@@ -597,242 +209,59 @@
             <div class="control-group">
                 <label>VISUALIZAÇÃO</label>
                 <select id="viewModeSelect" onchange="app.handleViewChange()">
-                    <option value="states">Por Estados</option>
-                    <option value="all_cities">Municípios</option>
+                    <option value="states">Por Estados (Brasil)</option>
+                    <option value="all_cities">Brasil Municipal</option>
                 </select>
             </div>
         </div>
         
-        <!-- 1º TURNO -->
-        <div class="controls" id="firstControls">
-            <div style="font-size: 0.75rem; color: #888; text-align: center; margin-bottom: 20px;">
-                Simulação baseada nos dados de 2022 com transferência realista
+        <!-- CONTROLES HISTÓRICO -->
+        <div class="controls" id="historyControls">
+            <div class="control-group">
+                <label>ANO</label>
+                <select id="yearSelect">
+                    <option value="2022">2022</option>
+                    <option value="2018">2018</option>
+                    <option value="2014">2014</option>
+                    <option value="2010">2010</option>
+                    <option value="2006">2006</option>
+                    <option value="2002">2002</option>
+                    <option value="1998">1998</option>
+                    <option value="1994">1994</option>
+                </select>
             </div>
-
-            <!-- CANDIDATOS E PESOS -->
-            <div class="config-panel">
-                <div class="config-header">
-                    <div class="config-title"><i class="fas fa-user"></i> CANDIDATOS 2026</div>
-                    <div class="config-toggle" onclick="app.toggleConfigPanel('candidatesPanel')">▼ Expandir</div>
-                </div>
-                <div class="config-content expanded" id="candidatesPanel">
-                    <div id="candidatesSliders"></div>
-                    
-                    <div style="margin-top:15px; padding:12px; background:#151a23; border-radius:8px; text-align:center; border: 1px solid #333;">
-                        <label style="font-size:0.65rem; margin-bottom: 0;">TOTAL PROJEÇÃO</label>
-                        <div id="totalProjection" style="font-size:1.3rem; font-weight:800; color:#4ade80;">100%</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TRANSFERÊNCIAS BASE -->
-            <div class="config-panel">
-                <div class="config-header">
-                    <div class="config-title"><i class="fas fa-exchange-alt"></i> TRANSFERÊNCIAS 2022→2026</div>
-                    <div class="config-toggle" onclick="app.toggleConfigPanel('transfersPanel')">▼ Expandir</div>
-                </div>
-                <div class="config-content" id="transfersPanel">
-                    <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:15px;">
-                        Como os votos de 2022 se transferem para os candidatos de 2026:
-                    </div>
-                    
-                    <div class="transfer-grid" id="baseTransfers"></div>
-                    
-                    <div class="control-group">
-                        <label>RETENÇÃO DE BASE</label>
-                        <input type="range" min="50" max="95" value="80" id="baseRetention">
-                        <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted);">
-                            <span>50%</span>
-                            <span id="baseRetentionValue">80%</span>
-                            <span>95%</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- BÔNUS REGIONAIS -->
-            <div class="config-panel">
-                <div class="config-header">
-                    <div class="config-title"><i class="fas fa-map-marked-alt"></i> BÔNUS REGIONAIS</div>
-                    <div class="config-toggle" onclick="app.toggleConfigPanel('regionalPanel')">▼ Expandir</div>
-                </div>
-                <div class="config-content" id="regionalPanel">
-                    <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:15px;">
-                        Vantagem regional para líderes estaduais (1º turno):
-                    </div>
-                    
-                    <div class="transfer-grid" id="regionalBonuses"></div>
-                    
-                    <div class="control-group">
-                        <label>INTENSIDADE DO BÔNUS</label>
-                        <input type="range" min="0" max="50" value="30" id="bonusIntensity">
-                        <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted);">
-                            <span>0%</span>
-                            <span id="bonusIntensityValue">30%</span>
-                            <span>50%</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- CONFIGURAÇÕES GERAIS -->
-            <div class="config-panel">
-                <div class="config-header">
-                    <div class="config-title"><i class="fas fa-cog"></i> CONFIGURAÇÕES</div>
-                </div>
-                <div class="config-content expanded">
-                    <div class="control-group">
-                        <label>TOTAL DE VOTOS VÁLIDOS 2026</label>
-                        <input type="number" id="totalVotesInput" value="124000000" 
-                               style="font-weight:700; color:#4ade80;">
-                    </div>
-                    
-                    <div class="control-group">
-                        <label>MARGEM DE ERRO</label>
-                        <select id="errorMargin">
-                            <option value="0">0% (Preciso)</option>
-                            <option value="2" selected>2% (Realista)</option>
-                            <option value="5">5% (Aproximado)</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <button id="btnSimulate" class="btn-primary" onclick="app.runFirstRound()">
-                <i class="fas fa-bolt"></i> SIMULAR 1º TURNO
-            </button>
+            
+            <div class="control-group"><label>TURNO</label><select id="turnSelect"><option value="1">1º Turno</option><option value="2">2º Turno</option></select></div>
+            <div class="control-group"><label>CARGO</label><select id="roleSelect"><option value="president">Presidente</option><option value="governor">Governador</option><option value="senator">Senador</option></select></div>
+            <button class="btn-primary" onclick="app.loadData()">CARREGAR MAPA</button>
         </div>
 
-        <!-- 2º TURNO -->
-        <div class="controls" id="secondControls" style="display: none;">
+        <!-- CONTROLES SIMULAÇÃO -->
+        <div class="controls" id="simControls" style="display: none;">
             <div style="font-size: 0.75rem; color: #888; text-align: center; margin-bottom: 20px;">
-                Simulação do 2º turno baseada no 1º turno simulado
+                Os votos são redistribuídos com base na geografia de 2022 e normalizados pelo total fixo abaixo.
             </div>
 
-            <!-- SELEÇÃO DE CANDIDATOS -->
-            <div class="config-panel">
-                <div class="config-header">
-                    <div class="config-title"><i class="fas fa-check-double"></i> SELECIONE 2 CANDIDATOS</div>
-                </div>
-                <div class="config-content expanded">
-                    <div id="candidateSelection"></div>
-                    <div id="selectedCandidatesInfo" style="margin-top: 10px; font-size: 0.8rem; color: #94a3b8; display: none;">
-                        <strong>Selecionados:</strong> <span id="selectedNames"></span>
-                    </div>
-                </div>
+            <div id="slidersContainer"></div>
+            
+            <div style="margin-top:15px; padding:12px; background:#151a23; border-radius:8px; text-align:center; border: 1px solid #333;">
+                <label style="font-size:0.65rem; margin-bottom: 0;">PERCENTUAL TOTAL</label>
+                <div id="totalSimVal" style="font-size:1.3rem; font-weight:800; color:#4ade80;">100%</div>
             </div>
 
-            <!-- TRANSFERÊNCIAS DO 2º TURNO -->
-            <div class="config-panel">
-                <div class="config-header">
-                    <div class="config-title"><i class="fas fa-retweet"></i> TRANSFERÊNCIAS</div>
-                    <div class="config-toggle" onclick="app.toggleConfigPanel('secondTransfers')">▼ Expandir</div>
-                </div>
-                <div class="config-content" id="secondTransfers">
-                    <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:15px;">
-                        Como os votos dos outros candidatos se transferem:
-                    </div>
-                    
-                    <div class="control-group">
-                        <label>MODO DE TRANSFERÊNCIA</label>
-                        <select id="transferMode">
-                            <option value="proportional" selected>Proporcional aos votos do 1º turno</option>
-                            <option value="regional">Favorece líderes regionais</option>
-                            <option value="ideological">Por alinhamento ideológico</option>
-                            <option value="custom">Personalizado</option>
-                        </select>
-                    </div>
-                    
-                    <div id="customTransfers" style="display: none; margin-top:15px;">
-                        <div class="transfer-grid" id="customTransferSliders"></div>
-                    </div>
-                    
-                    <div class="control-group">
-                        <label>POLARIZAÇÃO</label>
-                        <input type="range" min="0" max="100" value="70" id="polarization">
-                        <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted);">
-                            <span>Baixa</span>
-                            <span id="polarizationValue">70%</span>
-                            <span>Alta</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <button id="btnSecondRound" class="btn-primary" onclick="app.runSecondRound()" disabled>
-                <i class="fas fa-flag-checkered"></i> SIMULAR 2º TURNO
+            <button id="btnSimulate" class="btn-primary" onclick="app.runSimulation()" style="margin-top: 20px;">
+                <i class="fas fa-magic"></i> GERAR SIMULAÇÃO
             </button>
             
-            <button class="btn-back" onclick="app.setMode('first_round')" style="margin-top:10px;">
-                <i class="fas fa-arrow-left"></i> Voltar ao 1º Turno
-            </button>
-        </div>
-
-        <!-- CONFIGURAÇÕES -->
-        <div class="controls" id="configControls" style="display: none;">
-            <div style="font-size: 0.75rem; color: #888; text-align: center; margin-bottom: 20px;">
-                Configurações avançadas do simulador
-            </div>
-
-            <!-- PRESETS -->
-            <div class="config-panel">
-                <div class="config-header">
-                    <div class="config-title"><i class="fas fa-sliders-h"></i> PRESETS</div>
-                </div>
-                <div class="config-content expanded">
-                    <div class="control-group">
-                        <label>CENÁRIO BASE</label>
-                        <select id="scenarioSelect" onchange="app.loadScenario(this.value)">
-                            <option value="realistic">Realista (Padrão)</option>
-                            <option value="conservative">Conservador</option>
-                            <option value="progressive">Progressista</option>
-                            <option value="regionalist">Regionalista</option>
-                            <option value="polarized">Polarizado</option>
-                        </select>
-                    </div>
-                    
-                    <div style="display: flex; gap: 10px; margin-top: 15px;">
-                        <button class="btn-primary" style="flex:1;" onclick="app.savePreset()">
-                            <i class="fas fa-save"></i> Salvar
-                        </button>
-                        <button class="btn-primary" style="flex:1;" onclick="app.loadPreset()">
-                            <i class="fas fa-folder-open"></i> Carregar
-                        </button>
-                        <button class="btn-primary" style="flex:1;" onclick="app.resetDefaults()">
-                            <i class="fas fa-undo"></i> Padrão
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ESTATÍSTICAS -->
-            <div class="config-panel">
-                <div class="config-header">
-                    <div class="config-title"><i class="fas fa-chart-bar"></i> ESTATÍSTICAS</div>
-                </div>
-                <div class="config-content expanded">
-                    <div id="simulationStats" style="font-size:0.85rem;">
-                        <div style="color:#94a3b8; margin-bottom:10px;">Gere uma simulação para ver estatísticas</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SOBRE -->
-            <div class="config-panel">
-                <div class="config-header">
-                    <div class="config-title"><i class="fas fa-info-circle"></i> SOBRE</div>
-                </div>
-                <div class="config-content expanded" style="font-size:0.8rem; color:#94a3b8;">
-                    <p><strong>SIMULADOR ELEITORAL 2026 v2.0</strong></p>
-                    <p>Baseado nos dados reais de 2022 com transferências configuráveis.</p>
-                    <p>Desenvolvido para análise política e projeções eleitorais.</p>
-                    <p style="margin-top:10px; font-size:0.7rem;">Atlas V25 © 2024</p>
-                </div>
+            <!-- Input Total Votos -->
+            <div class="control-group" style="margin-top:15px; border-top:1px solid #333; padding-top:15px;">
+                <label>Projeção de Votos Válidos</label>
+                <input type="number" id="simTotalInput" value="121274352" 
+                       style="width:100%; padding:10px; background:#050505; border:1px solid #333; color:#4ade80; border-radius:6px; font-family:inherit; font-weight:700;">
             </div>
         </div>
     </aside>
 
-    <!-- MAPA -->
     <div id="map"></div>
 
     <!-- BARRA DIREITA -->
@@ -844,7 +273,7 @@
 
         <div style="padding: 15px; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border-color);">
             <button id="btnBack" class="btn-back" style="display: none;" onclick="app.resetSelection()">
-                <i class="fas fa-arrow-left"></i> Voltar para Brasil
+                <i class="fas fa-arrow-left"></i> Voltar para Visão Geral
             </button>
             <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Votos Totais (Válidos)</div>
             <div id="totalVotesVal" style="font-size: 1.6rem; font-weight: 800; color: white;">-</div>
@@ -853,16 +282,11 @@
         <div class="controls" id="resultsContainer"></div>
     </aside>
 
-    <!-- CONTROLES DO MAPA -->
     <div class="map-controls">
         <div class="map-btn" onclick="app.map.zoomIn()">+</div>
         <div class="map-btn" onclick="app.map.zoomOut()">-</div>
-        <div class="map-btn" onclick="app.resetMapView()">
-            <i class="fas fa-globe-americas"></i>
-        </div>
     </div>
 
-    <!-- LEGENDA -->
     <div class="legend">
         <div style="font-size: 0.8rem; margin-bottom: 8px; font-weight: 700; color: white;">
             Percentual do Vencedor
@@ -876,130 +300,85 @@
 
 <script>
 // =============================================================================
-// CONFIGURAÇÕES INICIAIS - BASE REALISTA
+// CONFIGURAÇÃO DE PESOS
 // =============================================================================
-const REALISTIC_CONFIG = {
-    // Cores dos partidos
-    partyColors: {
-        'PT': '#E12525', 'PL': '#5756d6', 'PSB': '#E12525', 'PDT': '#F58220',
+const CONFIG_PESOS = {
+    rules: [
+        { src: 'LULA', dest: 'LULA', ratio: 0.9, regionBonus: {'15': 0.9} }, // Nordeste/Norte
+        { src: 'LULA', dest: 'LULA', ratio: 0.9, regionBonus: {'23': 0.9} }, // Nordeste/Norte
+        { src: 'LULA', dest: 'LULA', ratio: 0.9, regionBonus: {'21': 0.9} }, // Nordeste/Norte
+        { src: 'LULA', dest: 'LULA', ratio: 0.9, regionBonus: {'12': 0.9} }, // Nordeste/Norte
+        { src: 'LULA', dest: 'LULA', ratio: 0.9, regionBonus: {'14': 0.9} }, // Nordeste/Norte
+        { src: 'LULA', dest: 'LULA', ratio: 0.9, regionBonus: {'31': 0.7} },
+        { src: 'LULA', dest: 'LULA', ratio: 0.9, regionBonus: {'52': 0.7} },
+        { src: 'LULA', dest: 'LULA', ratio: 0.9, regionBonus: {'41': 0.7} },
+
+        { src: 'JAIR', dest: 'FLAVIO', ratio: 0.9, regionBonus: {'33': 1.3} }, // RJ
+        { src: 'JAIR', dest: 'CAIADO', ratio: 0.9, regionBonus: {'52': 1.5} }, // GO
+        { src: 'JAIR', dest: 'RATINHO', ratio: 0.7, regionBonus: {'41': 1.5} }, // PR
+        { src: 'JAIR', dest: 'RENAN', ratio: 0.2, regionBonus: {'42': 1.2} }, // SC
+        { src: 'JAIR', dest: 'ZEMA', ratio: 0.8, regionBonus: {'31': 1.5} }, // MG
+        { src: 'CAIADO', dest: 'CAIADO', ratio: 1, regionBonus: {'50': 1.6} }, // MS
+        { src: 'FELIPE', dest: 'ZEMA', ratio: 0.9, regionBonus: {'31': 1.5} }, // MG
+
+        { src: 'CAIADO', dest: 'ZEMA', ratio: 1, regionBonus: {'31': 2} },
+        { src: 'RATINHO', dest: 'ZEMA', ratio: 1, regionBonus: {'31': 2} },
+        { src: 'ZEMA', dest: 'RATINHO', ratio: 1, regionBonus: {'41': 2} },
+        { src: 'CAIADO', dest: 'RATINHO', ratio: 1, regionBonus: {'41': 2} },
+        { src: 'ZEMA', dest: 'CAIADO', ratio: 1, regionBonus: {'52': 2} },
+        { src: 'RATINHO', dest: 'CAIADO', ratio: 1, regionBonus: {'52': 2} },
+
+        { src: 'JAIR', dest: 'FLAVIO', ratio: 1, regionBonus: {'31': 0.5} },
+        { src: 'JAIR', dest: 'FLAVIO', ratio: 1, regionBonus: {'41': 0.5} },
+        { src: 'JAIR', dest: 'FLAVIO', ratio: 1, regionBonus: {'52': 0.5} },
+
+        { src: 'JAIR', dest: 'RATINHO', ratio: 1, regionBonus: {'31': 0.1} },
+        { src: 'JAIR', dest: 'RATINHO', ratio: 1, regionBonus: {'52': 0.1} },
+
+        { src: 'JAIR', dest: 'CAIADO', ratio: 1, regionBonus: {'31': 0.1} },
+        { src: 'JAIR', dest: 'CAIADO', ratio: 1, regionBonus: {'41': 0.1} },
+
+        { src: 'JAIR', dest: 'ZEMA', ratio: 1, regionBonus: {'41': 0.1} },
+        { src: 'JAIR', dest: 'ZEMA', ratio: 1, regionBonus: {'52': 0.1} },
+
+        { src: 'RENAN', dest: 'RENAN', ratio: 1, regionBonus: {'51': 1.1} }, // MT
+        { src: 'RENAN', dest: 'RENAN', ratio: 1, regionBonus: {'17': 0.8} }, // TO
+        { src: 'RENAN', dest: 'RENAN', ratio: 1, regionBonus: {'16': 0.7} }, // AP
+        { src: 'RENAN', dest: 'RENAN', ratio: 1, regionBonus: {'14': 0.7} }, // RR
+        { src: 'FELIPE', dest: 'RENAN', ratio: 0.9, regionBonus: {} },
+
+        { src: 'CIRO', dest: 'RENAN', ratio: 0.1, regionBonus: {'35': 1.2} }, // SP
+        { src: 'CIRO', dest: 'RATINHO', ratio: 0.1, regionBonus: {} },
+        { src: 'CIRO', dest: 'CIRO', ratio: 0.8, regionBonus: {'23': 1.0} }, // CE
+
+        { src: 'TEBET', dest: 'ALDO', ratio: 0.5, regionBonus: {} },
+        { src: 'TEBET', dest: 'RATINHO', ratio: 0.5, regionBonus: {} }
+    ]
+};
+
+const CONFIG = {
+    colors: {
+        'PT': '#E12525', 'PL': '#5756d6', 'PSB': '#E12525', 'PDT': '#F58220', 
         'UNIÃO': '#009EE3', 'PSDB': '#003399', 'MDB': '#008000', 'PSD': '#FAA21B',
         'PP': '#0066CC', 'NOVO': '#F58220', 'REPUBLICANOS': '#0066CC',
-        'MISSÃO': '#D4AF37', 'DC': '#006400', 'SOLIDARIEDADE': '#F58220',
-        'PATRIOTA': '#FFD700', 'PCdoB': '#FF0000', 'PV': '#00FF00',
-        'CIDADANIA': '#FFA500', 'AVANTE': '#800080', 'PSOL': '#FFCC00',
+        'MISSÃO': '#D4AF37', 'DC': '#006400', 
+        'SOLIDARIEDADE': '#F58220', 'PATRIOTA': '#FFD700', 'PCdoB': '#FF0000',
+        'PV': '#00FF00', 'CIDADANIA': '#FFA500', 'AVANTE': '#800080',
+        'PRONA': '#006400', 'PFL': '#0056A8', 'PMDB': '#008000', 'PSOL': '#FFCC00',
         'OUTROS': '#666666', 'DEFAULT': '#555555'
     },
-    
-    // Candidatos 2026 com projeções realistas
-    candidates2026: [
-        { id: 'LULA',    name: 'Lula',             party: 'PT',     color: '#E12525', baseWeight: 0.48 },
-        { id: 'FLAVIO',  name: 'Flávio Bolsonaro', party: 'PL',     color: '#5756d6', baseWeight: 0.32 },
-        { id: 'CAIADO',  name: 'Ronaldo Caiado',   party: 'UNIÃO',  color: '#009EE3', baseWeight: 0.08 },
-        { id: 'ZEMA',    name: 'Romeu Zema',       party: 'NOVO',   color: '#F58220', baseWeight: 0.06 },
-        { id: 'RATINHO', name: 'Ratinho Jr',       party: 'PSD',    color: '#FAA21B', baseWeight: 0.03 },
-        { id: 'CIRO',    name: 'Ciro Gomes',       party: 'PSDB',   color: '#003399', baseWeight: 0.02 },
-        { id: 'RENAN',   name: 'Renan Santos',     party: 'MISSÃO', color: '#D4AF37', baseWeight: 0.01 }
-    ],
-    
-    // Candidatos 2022 (para transferências)
-    candidates2022: [
-        { id: 'LULA22', name: 'Lula', party: 'PT', votes: 0.4843 },
-        { id: 'JAIR22', name: 'Jair Bolsonaro', party: 'PL', votes: 0.4320 },
-        { id: 'CIRO22', name: 'Ciro Gomes', party: 'PDT', votes: 0.0304 },
-        { id: 'TEBET22', name: 'Simone Tebet', party: 'MDB', votes: 0.0416 },
-        { id: 'OUTROS22', name: 'Outros', party: 'OUTROS', votes: 0.0117 }
-    ],
-    
-    // Estados brasileiros
-    states: {
-        '12': 'AC', '27': 'AL', '13': 'AM', '16': 'AP', '29': 'BA',
-        '23': 'CE', '53': 'DF', '32': 'ES', '52': 'GO', '21': 'MA',
-        '31': 'MG', '50': 'MS', '51': 'MT', '15': 'PA', '25': 'PB',
-        '26': 'PE', '22': 'PI', '41': 'PR', '33': 'RJ', '24': 'RN',
-        '11': 'RO', '14': 'RR', '43': 'RS', '42': 'SC', '28': 'SE',
-        '35': 'SP', '17': 'TO'
-    },
-    
-    // Força regional por estado (base 2022)
-    regionalStrength: {
-        '33': { 'FLAVIO': 1.4 },  // RJ - Flávio
-        '52': { 'CAIADO': 1.6 },  // GO - Caiado
-        '50': { 'CAIADO': 1.3 },  // MS - Caiado
-        '41': { 'RATINHO': 1.5 }, // PR - Ratinho
-        '31': { 'ZEMA': 1.4 },    // MG - Zema
-        '42': { 'RENAN': 1.3 },   // SC - Renan
-        '23': { 'LULA': 1.3 },    // CE - Lula
-        '21': { 'LULA': 1.2 },    // MA - Lula
-        '15': { 'LULA': 1.2 },    // PA - Lula
-        '35': { 'CIRO': 1.1 }     // SP - Ciro
-    }
+    simCandidates: [
+        { id: 'LULA',    name: 'Lula',             party: 'PT',     val: 45, color: '#E12525' },
+        { id: 'FLAVIO',  name: 'Flávio Bolsonaro', party: 'PL',     val: 30, color: '#5756d6' },
+        { id: 'RENAN',   name: 'Renan Santos',     party: 'MISSÃO', val: 3,  color: '#D4AF37' },
+        { id: 'CAIADO',  name: 'Ronaldo Caiado',   party: 'UNIÃO',  val: 9,  color: '#009EE3' },
+        { id: 'ZEMA',  name: 'Romeu Zema',         party: 'NOVO',   val: 6,  color: '#F58220' },
+        { id: 'RATINHO', name: 'Ratinho Jr',       party: 'PSD',    val: 4,  color: '#FAA21B' },
+        { id: 'CIRO',    name: 'Ciro Gomes',       party: 'PSDB',   val: 2,  color: '#003399' },
+        { id: 'ALDO',    name: 'Aldo Rebelo',      party: 'DC',     val: 1,  color: '#006400' }
+    ]
 };
 
-// Configurações de transferência (ajustáveis)
-let TRANSFER_CONFIG = {
-    firstRound: {
-        // Transferências base 2022→2026
-        baseTransfers: {
-            'LULA22->LULA': 0.85,
-            'JAIR22->FLAVIO': 0.65,
-            'JAIR22->CAIADO': 0.15,
-            'JAIR22->ZEMA': 0.10,
-            'JAIR22->RATINHO': 0.08,
-            'CIRO22->CIRO': 0.40,
-            'CIRO22->LULA': 0.35,
-            'CIRO22->FLAVIO': 0.15,
-            'TEBET22->CAIADO': 0.45,
-            'TEBET22->LULA': 0.30,
-            'TEBET22->FLAVIO': 0.15,
-            'OUTROS22->LULA': 0.40,
-            'OUTROS22->FLAVIO': 0.35,
-            'OUTROS22->OUTROS': 0.25
-        },
-        
-        // Configurações
-        baseRetention: 0.80,      // 80% de retenção de base
-        bonusIntensity: 0.30,     // 30% de bônus regional
-        errorMargin: 0.02         // 2% de margem de erro
-    },
-    
-    secondRound: {
-        // Transferências por cenário
-        scenarioTransfers: {
-            // Lula vs Flávio (cenário mais provável)
-            'LULA_FLAVIO': {
-                'CAIADO->LULA': 0.25,
-                'CAIADO->FLAVIO': 0.65,
-                'ZEMA->LULA': 0.30,
-                'ZEMA->FLAVIO': 0.60,
-                'RATINHO->LULA': 0.20,
-                'RATINHO->FLAVIO': 0.70,
-                'CIRO->LULA': 0.60,
-                'CIRO->FLAVIO': 0.30,
-                'RENAN->LULA': 0.40,
-                'RENAN->FLAVIO': 0.50
-            },
-            // Lula vs Caiado
-            'LULA_CAIADO': {
-                'FLAVIO->LULA': 0.10,
-                'FLAVIO->CAIADO': 0.80,
-                'ZEMA->LULA': 0.25,
-                'ZEMA->CAIADO': 0.65,
-                'RATINHO->LULA': 0.15,
-                'RATINHO->CAIADO': 0.75,
-                'CIRO->LULA': 0.65,
-                'CIRO->CAIADO': 0.25,
-                'RENAN->LULA': 0.45,
-                'RENAN->CAIADO': 0.45
-            }
-        },
-        
-        // Configurações gerais
-        polarization: 0.70,       // 70% de polarização
-        turnoutChange: 1.02       // 2% de aumento no comparecimento
-    }
-};
-
-// Gradiente para o mapa
 const GRADIENT_SCHEME = [
     { min: 0,  mix: '#ffffff', ratio: 0.85, ref: '#E6E6E6' },
     { min: 20, mix: '#ffffff', ratio: 0.85, ref: '#E6E6E6' },
@@ -1013,1275 +392,510 @@ const GRADIENT_SCHEME = [
     { min: 100,mix: '#000000', ratio: 0.75, ref: '#202020' }
 ];
 
-// =============================================================================
-// APLICAÇÃO PRINCIPAL
-// =============================================================================
 const app = {
-    // Estado
-    state: {
-        mode: 'first_round',
-        view: 'states',
-        selectedId: null,
-        selectedName: "Brasil",
-        ignored: new Set(),
-        secondRoundCandidates: [],
-        currentScenario: 'realistic',
-        expandedPanels: new Set(['candidatesPanel'])
-    },
-    
-    // Dados
-    data: {
-        full: null,                // Dados completos de 2022
-        current: null,             // Dados atuais (simulados)
-        names: {},                 // Nomes de regiões
-        geoJsonCache: null,        // Cache do GeoJSON
-        firstRoundResults: null,   // Resultados do 1º turno
-        simulationStats: null      // Estatísticas
-    },
-    
-    // Mapa
     map: null,
-    layers: {
-        brazil: null,
-        cities: null
-    },
-    
-    // =========================================================================
-    // INICIALIZAÇÃO
-    // =========================================================================
-    init: function() {
-        // Inicializar mapa
-        this.map = L.map('map', {
-            center: [-15, -55], 
-            zoom: 4, 
-            zoomControl: false,
-            preferCanvas: true, 
-            background: '#1a1a1a'
+    layers: { brazil: null, cities: null },
+    data: { full: null, current: null, names: {}, geoJsonCache: null },
+    state: { mode: 'history', view: 'states', selectedId: null, selectedName: "Brasil", ignored: new Set(), customColors: JSON.parse(localStorage.getItem('v25_colors') || '{}') },
+
+    init: () => {
+        app.map = L.map('map', {
+            center: [-15, -50], zoom: 4, zoomControl: false,
+            preferCanvas: true, background: '#1a1a1a'
         });
         
-        // Tile layer
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { 
-            opacity: 0.4 
-        }).addTo(this.map);
-        
-        // Configurar legenda
-        this.setupLegend();
-        
-        // Inicializar interface
-        this.initUI();
-        
-        // Carregar dados base
-        this.loadBaseData();
-        
-        // Configurar eventos
-        this.setupEvents();
-        
-        // Esconder loader
-        setTimeout(() => {
-            document.getElementById('loader').classList.add('hidden');
-        }, 500);
-    },
-    
-    setupLegend: function() {
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { opacity: 0.4 }).addTo(app.map);
+
         const legendDiv = document.getElementById('legendColors');
-        legendDiv.innerHTML = '';
-        
         const steps = [20, 30, 40, 50, 60, 70, 80, 90, 100];
         steps.forEach(pct => {
             const el = document.createElement('div');
             el.className = 'legend-item';
-            el.style.background = this.getGradientConfig(pct).ref;
+            el.style.background = app.getGradientConfig(pct).ref;
             legendDiv.appendChild(el);
         });
+
+        app.renderSliders();
+        app.loadData();
     },
-    
-    initUI: function() {
-        // Renderizar sliders dos candidatos
-        this.renderCandidateSliders();
+
+    setMode: (mode) => {
+        app.state.mode = mode;
+        document.getElementById('tabHist').className = `mode-tab ${mode==='history'?'active':''}`;
+        document.getElementById('tabSim').className = `mode-tab ${mode==='simulation'?'active':''}`;
+        document.getElementById('historyControls').style.display = mode==='history'?'block':'none';
+        document.getElementById('simControls').style.display = mode==='simulation'?'block':'none';
         
-        // Renderizar transferências base
-        this.renderBaseTransfers();
-        
-        // Renderizar bônus regionais
-        this.renderRegionalBonuses();
-        
-        // Renderizar seleção de candidatos para 2º turno
-        this.renderCandidateSelection();
-        
-        // Configurar sliders
-        this.setupSliders();
-        
-        // Expandir painéis padrão
-        this.toggleConfigPanel('candidatesPanel', true);
+        // Recarregar se voltar pro histórico
+        if(mode === 'history') app.loadData();
     },
-    
-    setupEvents: function() {
-        // Sliders
-        document.getElementById('baseRetention').addEventListener('input', (e) => {
-            TRANSFER_CONFIG.firstRound.baseRetention = e.target.value / 100;
-            document.getElementById('baseRetentionValue').textContent = e.target.value + '%';
-        });
-        
-        document.getElementById('bonusIntensity').addEventListener('input', (e) => {
-            TRANSFER_CONFIG.firstRound.bonusIntensity = e.target.value / 100;
-            document.getElementById('bonusIntensityValue').textContent = e.target.value + '%';
-        });
-        
-        document.getElementById('polarization').addEventListener('input', (e) => {
-            TRANSFER_CONFIG.secondRound.polarization = e.target.value / 100;
-            document.getElementById('polarizationValue').textContent = e.target.value + '%';
-        });
-        
-        // Modo de transferência
-        document.getElementById('transferMode').addEventListener('change', (e) => {
-            const customDiv = document.getElementById('customTransfers');
-            customDiv.style.display = e.target.value === 'custom' ? 'block' : 'none';
-        });
-        
-        // Total de votos
-        document.getElementById('totalVotesInput').addEventListener('change', (e) => {
-            if(e.target.value < 100000000) e.target.value = 124000000;
-        });
+
+    handleViewChange: () => {
+        app.state.view = document.getElementById('viewModeSelect').value;
+        if(app.state.mode === 'history') app.loadData();
+        else if (app.data.current) app.runSimulation();
     },
-    
-    // =========================================================================
-    // INTERFACE
-    // =========================================================================
-    setMode: function(mode) {
-        this.state.mode = mode;
-        
-        // Atualizar tabs
-        document.querySelectorAll('.mode-tab').forEach(tab => {
-            tab.classList.remove('active');
-        });
-        document.getElementById(`tab${mode.charAt(0).toUpperCase() + mode.slice(1).replace('_', '')}`).classList.add('active');
-        
-        // Mostrar/ocultar controles
-        document.getElementById('firstControls').style.display = mode === 'first_round' ? 'block' : 'none';
-        document.getElementById('secondControls').style.display = mode === 'second_round' ? 'block' : 'none';
-        document.getElementById('configControls').style.display = mode === 'configuration' ? 'block' : 'none';
-        
-        if(mode === 'second_round' && this.data.firstRoundResults) {
-            this.updateCandidateSelection();
-        } else if(mode === 'configuration') {
-            this.updateSimulationStats();
-        }
-    },
-    
-    toggleConfigPanel: function(panelId, forceExpand = false) {
-        const panel = document.getElementById(panelId);
-        const toggle = panel.previousElementSibling.querySelector('.config-toggle');
-        
-        if(forceExpand || !panel.classList.contains('expanded')) {
-            panel.classList.add('expanded');
-            toggle.textContent = '▲ Recolher';
-            this.state.expandedPanels.add(panelId);
-        } else {
-            panel.classList.remove('expanded');
-            toggle.textContent = '▼ Expandir';
-            this.state.expandedPanels.delete(panelId);
-        }
-    },
-    
-    renderCandidateSliders: function() {
-        const container = document.getElementById('candidatesSliders');
-        container.innerHTML = '';
-        
-        REALISTIC_CONFIG.candidates2026.forEach((cand, idx) => {
+
+    renderSliders: () => {
+        const c = document.getElementById('slidersContainer');
+        c.innerHTML = '';
+        CONFIG.simCandidates.forEach((cand, idx) => {
             const div = document.createElement('div');
             div.className = 'sim-slider-box';
             div.innerHTML = `
                 <div class="sim-head">
-                    <span style="color:${cand.color}">${cand.name}</span>
-                    <span id="candVal_${idx}">${Math.round(cand.baseWeight * 100)}%</span>
+                    <span style="color:${CONFIG.colors[cand.party]}">${cand.name}</span>
+                    <span id="val_${idx}">${cand.val}%</span>
                 </div>
                 <div class="sim-sub">${cand.party}</div>
-                <input type="range" min="0" max="100" value="${Math.round(cand.baseWeight * 100)}" 
-                       data-id="${cand.id}" oninput="app.updateCandidateWeight(this)">
+                <input type="range" min="0" max="100" value="${cand.val}" 
+                       data-idx="${idx}" oninput="app.onSliderChange(this)">
             `;
-            container.appendChild(div);
-        });
-        
-        this.updateTotalProjection();
-    },
-    
-    updateCandidateWeight: function(slider) {
-        const candidateId = slider.dataset.id;
-        const value = parseInt(slider.value) / 100;
-        const idx = REALISTIC_CONFIG.candidates2026.findIndex(c => c.id === candidateId);
-        
-        if(idx !== -1) {
-            REALISTIC_CONFIG.candidates2026[idx].baseWeight = value;
-            document.getElementById(`candVal_${idx}`).textContent = slider.value + '%';
-            this.updateTotalProjection();
-        }
-    },
-    
-    updateTotalProjection: function() {
-        const total = REALISTIC_CONFIG.candidates2026.reduce((sum, cand) => sum + cand.baseWeight, 0);
-        const totalEl = document.getElementById('totalProjection');
-        totalEl.textContent = Math.round(total * 100) + '%';
-        totalEl.style.color = Math.round(total * 100) === 100 ? '#4ade80' : '#facc15';
-    },
-    
-    renderBaseTransfers: function() {
-        const container = document.getElementById('baseTransfers');
-        container.innerHTML = '';
-        
-        const transfers = [
-            { from: 'Lula 2022', to: 'Lula 2026', key: 'LULA22->LULA', value: 85 },
-            { from: 'Bolsonaro', to: 'Flávio', key: 'JAIR22->FLAVIO', value: 65 },
-            { from: 'Bolsonaro', to: 'Caiado', key: 'JAIR22->CAIADO', value: 15 },
-            { from: 'Ciro 2022', to: 'Ciro 2026', key: 'CIRO22->CIRO', value: 40 },
-            { from: 'Tebet', to: 'Caiado', key: 'TEBET22->CAIADO', value: 45 },
-            { from: 'Outros', to: 'Distribuído', key: 'OUTROS22->LULA', value: 40 }
-        ];
-        
-        transfers.forEach(transfer => {
-            const div = document.createElement('div');
-            div.className = 'transfer-item';
-            div.innerHTML = `
-                <div class="transfer-label">${transfer.from} → ${transfer.to}</div>
-                <div class="transfer-value">${transfer.value}%</div>
-                <input type="range" min="0" max="100" value="${transfer.value}" 
-                       data-key="${transfer.key}" class="transfer-slider" 
-                       oninput="app.updateTransferValue(this)">
-            `;
-            container.appendChild(div);
+            c.appendChild(div);
         });
     },
-    
-    updateTransferValue: function(slider) {
-        const key = slider.dataset.key;
-        const value = parseInt(slider.value) / 100;
-        
-        if(TRANSFER_CONFIG.firstRound.baseTransfers[key] !== undefined) {
-            TRANSFER_CONFIG.firstRound.baseTransfers[key] = value;
-            
-            // Atualizar display
-            const valueEl = slider.previousElementSibling;
-            valueEl.textContent = slider.value + '%';
-        }
+
+    onSliderChange: (el) => {
+        const idx = el.dataset.idx;
+        const val = parseInt(el.value);
+        CONFIG.simCandidates[idx].val = val;
+        document.getElementById(`val_${idx}`).innerText = val + "%";
+        const total = CONFIG.simCandidates.reduce((a,b) => a+b.val, 0);
+        const totEl = document.getElementById('totalSimVal');
+        totEl.innerText = total + "%";
+        totEl.style.color = total === 100 ? '#4ade80' : '#facc15';
     },
-    
-    renderRegionalBonuses: function() {
-        const container = document.getElementById('regionalBonuses');
-        container.innerHTML = '';
-        
-        const bonuses = [
-            { uf: 'RJ', candidate: 'Flávio', value: 40 },
-            { uf: 'GO', candidate: 'Caiado', value: 60 },
-            { uf: 'PR', candidate: 'Ratinho', value: 50 },
-            { uf: 'MG', candidate: 'Zema', value: 40 },
-            { uf: 'CE', candidate: 'Lula', value: 30 },
-            { uf: 'SP', candidate: 'Ciro', value: 10 }
-        ];
-        
-        bonuses.forEach(bonus => {
-            const div = document.createElement('div');
-            div.className = 'transfer-item';
-            div.innerHTML = `
-                <div class="transfer-label">${bonus.uf} - ${bonus.candidate}</div>
-                <div class="transfer-value">+${bonus.value}%</div>
-            `;
-            container.appendChild(div);
-        });
-    },
-    
-    renderCandidateSelection: function() {
-        const container = document.getElementById('candidateSelection');
-        container.innerHTML = '';
-        
-        REALISTIC_CONFIG.candidates2026.forEach(cand => {
-            const div = document.createElement('div');
-            div.className = 'candidate-select-box';
-            div.innerHTML = `
-                <div class="select-checkbox" data-id="${cand.id}"></div>
-                <div style="width: 20px; height: 20px; border-radius: 4px; background: ${cand.color};"></div>
-                <div style="flex: 1;">
-                    <div style="font-weight: 700; font-size: 0.85rem;">${cand.name}</div>
-                    <div style="font-size: 0.7rem; color: #94a3b8;">${cand.party}</div>
-                </div>
-            `;
-            
-            div.addEventListener('click', (e) => {
-                this.toggleCandidateSelection(cand.id, div.querySelector('.select-checkbox'));
-            });
-            
-            container.appendChild(div);
-        });
-    },
-    
-    toggleCandidateSelection: function(candidateId, checkboxElement) {
-        const index = this.state.secondRoundCandidates.indexOf(candidateId);
-        const box = checkboxElement.closest('.candidate-select-box');
-        
-        if(index === -1) {
-            if(this.state.secondRoundCandidates.length >= 2) {
-                this.showNotification('Selecione apenas 2 candidatos para o 2º turno.', 'warning');
-                return;
-            }
-            this.state.secondRoundCandidates.push(candidateId);
-            checkboxElement.classList.add('checked');
-            box.classList.add('selected');
-        } else {
-            this.state.secondRoundCandidates.splice(index, 1);
-            checkboxElement.classList.remove('checked');
-            box.classList.remove('selected');
-        }
-        
-        this.updateSelectedCandidatesInfo();
-        
-        // Habilitar/desabilitar botão
-        const btn = document.getElementById('btnSecondRound');
-        btn.disabled = this.state.secondRoundCandidates.length !== 2;
-    },
-    
-    updateSelectedCandidatesInfo: function() {
-        const infoDiv = document.getElementById('selectedCandidatesInfo');
-        const namesSpan = document.getElementById('selectedNames');
-        
-        if(this.state.secondRoundCandidates.length > 0) {
-            const names = this.state.secondRoundCandidates.map(id => {
-                const cand = REALISTIC_CONFIG.candidates2026.find(c => c.id === id);
-                return cand ? cand.name : id;
-            }).join(' vs ');
-            
-            namesSpan.textContent = names;
-            infoDiv.style.display = 'block';
-        } else {
-            infoDiv.style.display = 'none';
-        }
-    },
-    
-    updateCandidateSelection: function() {
-        // Atualizar baseado nos resultados do 1º turno
-        if(!this.data.firstRoundResults) return;
-        
-        // Ordenar candidatos por votos no 1º turno
-        const stats = this.calculateNationalStats(this.data.firstRoundResults);
-        if(!stats || !stats.ranking) return;
-        
-        // Selecionar os 2 primeiros automaticamente
-        const topTwo = stats.ranking.slice(0, 2).map(r => {
-            const cand = REALISTIC_CONFIG.candidates2026.find(c => 
-                r.cand.includes(c.name)
-            );
-            return cand ? cand.id : null;
-        }).filter(id => id !== null);
-        
-        // Atualizar seleção
-        this.state.secondRoundCandidates = topTwo;
-        
-        // Atualizar UI
-        document.querySelectorAll('.candidate-select-box').forEach(box => {
-            const checkbox = box.querySelector('.select-checkbox');
-            const candidateId = checkbox.dataset.id;
-            
-            if(topTwo.includes(candidateId)) {
-                checkbox.classList.add('checked');
-                box.classList.add('selected');
-            } else {
-                checkbox.classList.remove('checked');
-                box.classList.remove('selected');
-            }
-        });
-        
-        this.updateSelectedCandidatesInfo();
-        
-        // Habilitar botão se tiver 2 candidatos
-        const btn = document.getElementById('btnSecondRound');
-        btn.disabled = this.state.secondRoundCandidates.length !== 2;
-    },
-    
-    setupSliders: function() {
-        // Configurar valores iniciais
-        document.getElementById('baseRetention').value = TRANSFER_CONFIG.firstRound.baseRetention * 100;
-        document.getElementById('baseRetentionValue').textContent = Math.round(TRANSFER_CONFIG.firstRound.baseRetention * 100) + '%';
-        
-        document.getElementById('bonusIntensity').value = TRANSFER_CONFIG.firstRound.bonusIntensity * 100;
-        document.getElementById('bonusIntensityValue').textContent = Math.round(TRANSFER_CONFIG.firstRound.bonusIntensity * 100) + '%';
-        
-        document.getElementById('polarization').value = TRANSFER_CONFIG.secondRound.polarization * 100;
-        document.getElementById('polarizationValue').textContent = Math.round(TRANSFER_CONFIG.secondRound.polarization * 100) + '%';
-    },
-    
+
     // =========================================================================
-    // DADOS E SIMULAÇÃO
+    // LÓGICA DE DADOS (INCLUINDO A CORREÇÃO app.loadData)
     // =========================================================================
-    loadBaseData: async function() {
+    
+    // Função loadData adicionada aqui para corrigir o TypeError
+    loadData: async () => {
         const loader = document.getElementById('loader');
-        loader.querySelector('#loaderMsg').textContent = "Carregando dados de 2022...";
+        loader.classList.remove('hidden');
+        app.state.ignored.clear();
         
+        const year = document.getElementById('yearSelect').value;
+        const role = document.getElementById('roleSelect').value;
+        const turn = document.getElementById('turnSelect').value;
+        app.state.view = document.getElementById('viewModeSelect').value;
+
         try {
-            // Carregar dados de 2022
-            const response = await fetch('data/2022_president.json');
-            if(!response.ok) throw new Error("Dados de 2022 não encontrados");
-            
-            this.data.full = await response.json();
-            this.data.names = this.data.full['1'].meta_nomes || {};
-            
-            // Carregar mapa do Brasil
-            await this.loadBrazilLayer();
-            
-        } catch(error) {
-            console.error("Erro ao carregar dados:", error);
-            this.showNotification("Erro ao carregar dados base. Usando dados de exemplo.", "error");
-            
-            // Criar dados de exemplo para desenvolvimento
-            this.createSampleData();
+            // Pré-carrega 2022 se necessário para simulação
+            if (!app.data.full || !app.data.full['1']) {
+                const res22 = await fetch('data/2022_president.json');
+                if(res22.ok) {
+                    app.data.full = await res22.json();
+                    app.data.names = app.data.full['1'].meta_nomes || {};
+                }
+            }
+
+            if (app.state.mode === 'history') {
+                const res = await fetch(`data/${year}_${role}.json`);
+                if(!res.ok) throw new Error("Dados não encontrados.");
+                const json = await res.json();
+                
+                app.data.current = json[turn];
+                if(json[turn].meta_nomes) app.data.names = json[turn].meta_nomes;
+                
+                if (app.state.view === 'all_cities') await app.loadAllMunicipalities();
+                else app.resetMapToStates();
+                
+                app.refreshUI();
+            }
+
+        } catch(e) {
+            console.error(e);
+            if(app.state.mode === 'history') alert("Erro: " + e.message);
+        } finally {
+            loader.classList.add('hidden');
         }
     },
-    
-    createSampleData: function() {
-        // Dados de exemplo para desenvolvimento
-        this.data.full = {
-            '1': {
-                municipios: {},
-                estados: {},
-                meta_nomes: {}
-            }
-        };
-        
-        // Preencher com dados fictícios para cada estado
-        Object.keys(REALISTIC_CONFIG.states).forEach(ufCode => {
-            this.data.full['1'].estados[ufCode] = {
-                'Lula (PT)': Math.floor(Math.random() * 1000000) + 500000,
-                'Jair Bolsonaro (PL)': Math.floor(Math.random() * 800000) + 400000,
-                'Ciro Gomes (PDT)': Math.floor(Math.random() * 100000) + 50000,
-                'Simone Tebet (MDB)': Math.floor(Math.random() * 80000) + 30000,
-                'Outros (OUTROS)': Math.floor(Math.random() * 20000) + 10000
-            };
-        });
-    },
-    
-    // =========================================================================
-    // SIMULAÇÃO DO 1º TURNO (MELHORADA)
-    // =========================================================================
-    runFirstRound: async function() {
+
+    runSimulation: async () => {
         const loader = document.getElementById('loader');
         const btn = document.getElementById('btnSimulate');
         
         loader.classList.remove('hidden');
-        loader.querySelector('#loaderMsg').textContent = "Simulando 1º turno...";
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> PROCESSANDO...';
-        
-        this.state.ignored.clear();
-        
-        try {
-            // 1. Garantir que temos dados base
-            if (!this.data.full || !this.data.full['1']) {
-                await this.loadBaseData();
-            }
-            
-            // 2. Configurar mapa
-            if(this.state.view === 'all_cities') {
-                await this.loadAllMunicipalities();
-            } else {
-                this.resetMapToStates();
-            }
-            
-            // 3. Obter dados de 2022
-            const sourceData = this.data.full['1'];
-            const sourceStates = sourceData.estados || {};
-            const sourceMuns = sourceData.municipios || {};
-            
-            // 4. Calcular totais nacionais de 2022
-            const nationalTotals2022 = {};
-            Object.values(sourceStates).forEach(state => {
-                Object.entries(state).forEach(([candidate, votes]) => {
-                    const key = this.getCandidateKey2022(candidate);
-                    nationalTotals2022[key] = (nationalTotals2022[key] || 0) + votes;
-                });
-            });
-            
-            // 5. Aplicar transferências com realismo
-            const simulatedStates = {};
-            const simulatedMuns = {};
-            
-            // Para cada estado
-            for(const [ufCode, stateVotes] of Object.entries(sourceStates)) {
-                const newStateVotes = {};
-                let stateTotal = Object.values(stateVotes).reduce((a, b) => a + b, 0);
-                
-                // Para cada voto de 2022 neste estado
-                for(const [candidate2022, votes2022] of Object.entries(stateVotes)) {
-                    const sourceKey = this.getCandidateKey2022(candidate2022);
+        document.getElementById('loaderMsg').innerText = "Processando...";
+        btn.innerText = "CALCULANDO...";
+        app.state.ignored.clear();
+
+        setTimeout(async () => {
+            try {
+                // 1. Garante base 2022
+                if (!app.data.full || !app.data.full['1']) {
+                    const res = await fetch('data/2022_president.json');
+                    if(!res.ok) throw new Error("Base 2022 não encontrada.");
+                    app.data.full = await res.json();
+                    app.data.names = app.data.full['1'].meta_nomes || {};
+                }
+
+                // 2. GARANTE O MAPA CORRETO
+                if(app.state.view === 'all_cities') {
+                    await app.loadAllMunicipalities(); 
+                } else {
+                    app.resetMapToStates();
+                }
+
+                const sourceMuns = app.data.full['1'].municipios;
+                const nationalTotals = {}; 
+                const baseMap = {};
+
+                // Passo A: Herança
+                for (let ibge in sourceMuns) {
+                    const srcVotes = sourceMuns[ibge];
+                    const uf = ibge.substring(0, 2);
+                    const newVotes = {};
                     
-                    // Distribuir para candidatos de 2026
-                    for(const candidate2026 of REALISTIC_CONFIG.candidates2026) {
-                        const transferKey = `${sourceKey}->${candidate2026.id}`;
-                        const baseRatio = TRANSFER_CONFIG.firstRound.baseTransfers[transferKey] || 0;
-                        
-                        if(baseRatio > 0) {
-                            // Aplicar retenção de base
-                            let effectiveRatio = baseRatio * TRANSFER_CONFIG.firstRound.baseRetention;
-                            
-                            // Aplicar bônus regional
-                            if(REALISTIC_CONFIG.regionalStrength[ufCode] && 
-                               REALISTIC_CONFIG.regionalStrength[ufCode][candidate2026.id]) {
-                                const bonus = REALISTIC_CONFIG.regionalStrength[ufCode][candidate2026.id];
-                                effectiveRatio *= (1 + TRANSFER_CONFIG.firstRound.bonusIntensity * (bonus - 1));
+                    for (let key22 in srcVotes) {
+                        const votes = srcVotes[key22];
+                        const keyUpper = key22.toUpperCase();
+                        CONFIG_PESOS.rules.forEach(rule => {
+                            if (keyUpper.includes(rule.src)) {
+                                const bonus = rule.regionBonus[uf] || 1.0;
+                                const transfer = Math.floor(votes * rule.ratio * bonus);
+                                if (transfer > 0) {
+                                    newVotes[rule.dest] = (newVotes[rule.dest] || 0) + transfer;
+                                    nationalTotals[rule.dest] = (nationalTotals[rule.dest] || 0) + transfer;
+                                }
                             }
-                            
-                            // Calcular votos transferidos
-                            const transferredVotes = Math.floor(votes2022 * effectiveRatio);
-                            
-                            if(transferredVotes > 0) {
-                                const candidateName = `${candidate2026.name} (${candidate2026.party})`;
-                                newStateVotes[candidateName] = (newStateVotes[candidateName] || 0) + transferredVotes;
-                            }
-                        }
-                    }
-                }
-                
-                // Adicionar margem de erro
-                const errorMargin = parseInt(document.getElementById('errorMargin').value) / 100;
-                if(errorMargin > 0) {
-                    Object.keys(newStateVotes).forEach(candidate => {
-                        const error = 1 + (Math.random() * 2 - 1) * errorMargin;
-                        newStateVotes[candidate] = Math.floor(newStateVotes[candidate] * error);
-                    });
-                }
-                
-                simulatedStates[ufCode] = newStateVotes;
-            }
-            
-            // 6. Ajustar para os pesos desejados
-            const nationalTotals = this.calculateNationalTotals(simulatedStates);
-            const desiredWeights = {};
-            
-            REALISTIC_CONFIG.candidates2026.forEach(cand => {
-                desiredWeights[cand.id] = cand.baseWeight;
-            });
-            
-            // Calcular multiplicadores para ajustar aos pesos desejados
-            const multipliers = this.calculateMultipliers(nationalTotals, desiredWeights);
-            
-            // 7. Aplicar multiplicadores e normalizar
-            const totalVotesDesired = parseInt(document.getElementById('totalVotesInput').value);
-            const finalStates = {};
-            const finalMuns = {};
-            
-            // Primeiro, ajustar estados
-            for(const [ufCode, stateVotes] of Object.entries(simulatedStates)) {
-                const adjustedVotes = {};
-                let stateTotal = 0;
-                
-                for(const [candidateName, votes] of Object.entries(stateVotes)) {
-                    const candidate2026 = REALISTIC_CONFIG.candidates2026.find(c => 
-                        candidateName.includes(c.name)
-                    );
-                    
-                    if(candidate2026) {
-                        const multiplier = multipliers[candidate2026.id] || 1;
-                        const adjusted = Math.floor(votes * multiplier);
-                        adjustedVotes[candidateName] = adjusted;
-                        stateTotal += adjusted;
-                    }
-                }
-                
-                // Normalizar para manter proporção nacional
-                const stateFactor = totalVotesDesired / this.calculateNationalTotal(finalStates);
-                Object.keys(adjustedVotes).forEach(candidate => {
-                    adjustedVotes[candidate] = Math.floor(adjustedVotes[candidate] * stateFactor);
-                });
-                
-                finalStates[ufCode] = adjustedVotes;
-            }
-            
-            // 8. Criar dados municipais (simplificado)
-            // Distribuir votos estaduais proporcionalmente entre municípios
-            for(const [ufCode, stateVotes] of Object.entries(finalStates)) {
-                // Encontrar municípios deste estado
-                const stateMuns = {};
-                for(const munCode in sourceMuns) {
-                    if(munCode.startsWith(ufCode)) {
-                        stateMuns[munCode] = {};
-                        
-                        // Distribuir votos estaduais proporcionalmente
-                        const munWeight = 0.5 + Math.random() * 1; // Peso aleatório
-                        Object.entries(stateVotes).forEach(([candidate, votes]) => {
-                            stateMuns[munCode][candidate] = Math.floor(votes * munWeight / 100);
                         });
                     }
+                    baseMap[ibge] = newVotes;
                 }
-                
-                Object.assign(finalMuns, stateMuns);
-            }
-            
-            // 9. Salvar resultados
-            this.data.firstRoundResults = {
-                estados: finalStates,
-                municipios: finalMuns
-            };
-            
-            this.data.current = this.data.firstRoundResults;
-            
-            // 10. Atualizar interface
-            this.refreshUI();
-            this.calculateSimulationStats();
-            
-            this.showNotification('Simulação do 1º turno concluída com sucesso!', 'success');
-            
-            // 11. Atualizar seleção de candidatos para 2º turno
-            this.updateCandidateSelection();
-            
-        } catch(error) {
-            console.error("Erro na simulação:", error);
-            this.showNotification('Erro na simulação: ' + error.message, 'error');
-        } finally {
-            loader.classList.add('hidden');
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-bolt"></i> SIMULAR 1º TURNO';
-        }
-    },
-    
-    // =========================================================================
-    // SIMULAÇÃO DO 2º TURNO (MELHORADA)
-    // =========================================================================
-    runSecondRound: function() {
-        if(this.state.secondRoundCandidates.length !== 2) {
-            this.showNotification('Selecione exatamente 2 candidatos para o 2º turno.', 'warning');
-            return;
-        }
-        
-        if(!this.data.firstRoundResults) {
-            this.showNotification('Gere primeiro uma simulação do 1º turno.', 'warning');
-            return;
-        }
-        
-        const loader = document.getElementById('loader');
-        const btn = document.getElementById('btnSecondRound');
-        
-        loader.classList.remove('hidden');
-        loader.querySelector('#loaderMsg').textContent = "Simulando 2º turno...";
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> PROCESSANDO...';
-        
-        try {
-            const candidate1 = this.state.secondRoundCandidates[0];
-            const candidate2 = this.state.secondRoundCandidates[1];
-            const cand1Data = REALISTIC_CONFIG.candidates2026.find(c => c.id === candidate1);
-            const cand2Data = REALISTIC_CONFIG.candidates2026.find(c => c.id === candidate2);
-            
-            if(!cand1Data || !cand2Data) {
-                throw new Error("Candidatos não encontrados.");
-            }
-            
-            const firstRoundData = this.data.firstRoundResults;
-            const transferMode = document.getElementById('transferMode').value;
-            const polarization = TRANSFER_CONFIG.secondRound.polarization;
-            
-            // Preparar dados para 2º turno
-            const secondRoundStates = {};
-            const secondRoundMuns = {};
-            
-            // Para cada estado
-            for(const [ufCode, stateVotes] of Object.entries(firstRoundData.estados)) {
-                let votes1 = 0;
-                let votes2 = 0;
-                let otherVotes = {};
-                
-                // Separar votos dos finalistas dos demais
-                Object.entries(stateVotes).forEach(([candidateName, votes]) => {
-                    if(candidateName.includes(cand1Data.name)) {
-                        votes1 += votes;
-                    } else if(candidateName.includes(cand2Data.name)) {
-                        votes2 += votes;
-                    } else {
-                        // Identificar qual candidato é este
-                        const otherCandidate = REALISTIC_CONFIG.candidates2026.find(c => 
-                            candidateName.includes(c.name)
-                        );
-                        
-                        if(otherCandidate) {
-                            otherVotes[otherCandidate.id] = votes;
-                        }
-                    }
+
+                // Passo B: Sliders
+                const grandTotal = Object.values(nationalTotals).reduce((a,b)=>a+b, 0);
+                const multipliers = {};
+                CONFIG.simCandidates.forEach(c => {
+                    const baseVal = nationalTotals[c.id] || 0;
+                    const pct = grandTotal > 0 ? (baseVal / grandTotal) * 100 : 0;
+                    multipliers[c.id] = pct > 0 ? (c.val / pct) : 0;
                 });
-                
-                // Redistribuir votos dos outros candidatos
-                let totalOtherVotes = Object.values(otherVotes).reduce((a, b) => a + b, 0);
-                
-                if(totalOtherVotes > 0) {
-                    let transferTo1 = 0;
-                    let transferTo2 = 0;
-                    
-                    switch(transferMode) {
-                        case 'proportional':
-                            // Proporcional aos votos atuais
-                            const totalSelected = votes1 + votes2;
-                            if(totalSelected > 0) {
-                                transferTo1 = Math.round(totalOtherVotes * (votes1 / totalSelected));
-                                transferTo2 = totalOtherVotes - transferTo1;
-                            } else {
-                                transferTo1 = Math.round(totalOtherVotes / 2);
-                                transferTo2 = totalOtherVotes - transferTo1;
+
+                // Passo C: Aplicação & NORMALIZAÇÃO POR TARGET INPUT
+                const userTargetTotal = parseInt(document.getElementById('simTotalInput').value) || 123000000;
+                const finalMuns = {};
+                const finalStates = {};
+                let simGrandTotal = 0;
+
+                // C1: Calcula bruto
+                const rawSim = {};
+                for (let ibge in baseMap) {
+                    const preVotes = baseMap[ibge];
+                    const temp = {};
+                    for (let key in preVotes) {
+                        const mult = multipliers[key] || 0;
+                        const val = Math.floor(preVotes[key] * mult);
+                        if(val > 0) temp[key] = val;
+                    }
+                    rawSim[ibge] = temp;
+                    simGrandTotal += Object.values(temp).reduce((a,b)=>a+b, 0);
+                }
+
+                // C2: Normaliza para o INPUT
+                const normFactor = simGrandTotal > 0 ? (userTargetTotal / simGrandTotal) : 1;
+
+                for (let ibge in rawSim) {
+                    const temp = rawSim[ibge];
+                    const finalVotes = {};
+                    let hasVotes = false;
+
+                    CONFIG.simCandidates.forEach(c => {
+                        if(temp[c.id]) {
+                            const normalizedVal = Math.floor(temp[c.id] * normFactor);
+                            if(normalizedVal > 0) {
+                                finalVotes[`${c.name} (${c.party})`] = normalizedVal;
+                                hasVotes = true;
                             }
-                            break;
-                            
-                        case 'regional':
-                            // Considerar força regional
-                            const scenarioKey = `${candidate1}_${candidate2}`;
-                            const regionalConfig = TRANSFER_CONFIG.secondRound.scenarioTransfers[scenarioKey] || {};
-                            
-                            Object.entries(otherVotes).forEach(([otherId, votes]) => {
-                                const key1 = `${otherId}->${candidate1}`;
-                                const key2 = `${otherId}->${candidate2}`;
-                                
-                                const ratio1 = regionalConfig[key1] || 0.5;
-                                const ratio2 = regionalConfig[key2] || 0.5;
-                                const totalRatio = ratio1 + ratio2;
-                                
-                                if(totalRatio > 0) {
-                                    transferTo1 += Math.round(votes * (ratio1 / totalRatio));
-                                    transferTo2 += Math.round(votes * (ratio2 / totalRatio));
-                                } else {
-                                    transferTo1 += Math.round(votes / 2);
-                                    transferTo2 += Math.round(votes / 2);
-                                }
-                            });
-                            break;
-                            
-                        case 'ideological':
-                            // Por alinhamento ideológico
-                            const leftParties = ['PT', 'PSB', 'PCdoB', 'PSOL'];
-                            const rightParties = ['PL', 'UNIÃO', 'PSD', 'NOVO', 'PP', 'REPUBLICANOS'];
-                            
-                            const isLeft1 = leftParties.includes(cand1Data.party);
-                            const isRight1 = rightParties.includes(cand1Data.party);
-                            const isLeft2 = leftParties.includes(cand2Data.party);
-                            const isRight2 = rightParties.includes(cand2Data.party);
-                            
-                            Object.entries(otherVotes).forEach(([otherId, votes]) => {
-                                const otherCand = REALISTIC_CONFIG.candidates2026.find(c => c.id === otherId);
-                                if(!otherCand) {
-                                    transferTo1 += Math.round(votes / 2);
-                                    transferTo2 += Math.round(votes / 2);
-                                    return;
-                                }
-                                
-                                const isOtherLeft = leftParties.includes(otherCand.party);
-                                const isOtherRight = rightParties.includes(otherCand.party);
-                                
-                                if((isLeft1 && isOtherLeft) || (isRight1 && isOtherRight)) {
-                                    transferTo1 += Math.round(votes * (0.5 + polarization/2));
-                                    transferTo2 += Math.round(votes * (0.5 - polarization/2));
-                                } else if((isLeft2 && isOtherLeft) || (isRight2 && isOtherRight)) {
-                                    transferTo1 += Math.round(votes * (0.5 - polarization/2));
-                                    transferTo2 += Math.round(votes * (0.5 + polarization/2));
-                                } else {
-                                    transferTo1 += Math.round(votes / 2);
-                                    transferTo2 += Math.round(votes / 2);
-                                }
-                            });
-                            break;
-                            
-                        case 'custom':
-                            // Personalizado (para implementação futura)
-                            transferTo1 = Math.round(totalOtherVotes / 2);
-                            transferTo2 = totalOtherVotes - transferTo1;
-                            break;
-                            
-                        default:
-                            transferTo1 = Math.round(totalOtherVotes / 2);
-                            transferTo2 = totalOtherVotes - transferTo1;
-                    }
-                    
-                    votes1 += transferTo1;
-                    votes2 += transferTo2;
-                }
-                
-                // Aplicar aumento no comparecimento
-                votes1 = Math.floor(votes1 * TRANSFER_CONFIG.secondRound.turnoutChange);
-                votes2 = Math.floor(votes2 * TRANSFER_CONFIG.secondRound.turnoutChange);
-                
-                // Criar novo objeto de votos
-                const newStateVotes = {};
-                newStateVotes[`${cand1Data.name} (${cand1Data.party})`] = votes1;
-                newStateVotes[`${cand2Data.name} (${cand2Data.party})`] = votes2;
-                
-                secondRoundStates[ufCode] = newStateVotes;
-            }
-            
-            // Criar dados municipais (simplificado)
-            for(const [ufCode, stateVotes] of Object.entries(secondRoundStates)) {
-                // Encontrar municípios deste estado
-                for(const munCode in firstRoundData.municipios) {
-                    if(munCode.startsWith(ufCode)) {
-                        // Distribuir proporcionalmente
-                        const munVotes = {};
-                        const stateTotal = Object.values(stateVotes).reduce((a, b) => a + b, 0);
-                        
-                        if(stateTotal > 0) {
-                            Object.entries(stateVotes).forEach(([candidate, votes]) => {
-                                const proportion = votes / stateTotal;
-                                const munTotal = Math.floor(Math.random() * 50000) + 10000;
-                                munVotes[candidate] = Math.floor(munTotal * proportion);
-                            });
-                            
-                            secondRoundMuns[munCode] = munVotes;
                         }
+                    });
+
+                    if (!hasVotes) finalVotes['OUTROS (OUTROS)'] = 100; 
+
+                    finalMuns[ibge] = finalVotes;
+
+                    // Agrega Estado
+                    const uf = ibge.substring(0, 2);
+                    if(!finalStates[uf]) finalStates[uf] = {};
+                    for(let k in finalVotes) {
+                        finalStates[uf][k] = (finalStates[uf][k]||0) + finalVotes[k];
                     }
                 }
+
+                app.data.current = { municipios: finalMuns, estados: finalStates };
+                app.refreshUI();
+                btn.innerHTML = '<i class="fas fa-magic"></i> GERAR SIMULAÇÃO';
+
+            } catch(e) {
+                console.error(e);
+                alert("Erro: " + e.message);
+                btn.innerHTML = 'TENTAR NOVAMENTE';
+            } finally {
+                loader.classList.add('hidden');
             }
+        }, 100);
+    },
+
+    // =========================================================================
+    // MAPA & CACHE
+    // =========================================================================
+    fetchGeoJsonCache: async () => {
+        if (app.data.geoJsonCache) return app.data.geoJsonCache;
+        const url = "https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json";
+        const res = await fetch(url);
+        const data = await res.json();
+        app.data.geoJsonCache = data;
+        return data;
+    },
+
+    loadAllMunicipalities: async () => {
+        const loader = document.getElementById('loader');
+        loader.querySelector('h3').innerText = "Carregando Malha Municipal...";
+        loader.classList.remove('hidden');
+
+        try {
+            if (app.layers.cities) app.map.removeLayer(app.layers.cities);
+            if (app.layers.brazil) app.map.removeLayer(app.layers.brazil);
+
+            const data = await app.fetchGeoJsonCache();
+
+            app.layers.cities = L.geoJSON(data, {
+                smoothFactor: 0.3,
+                style: (f) => app.getStyle(f, 'municipios'),
+                onEachFeature: (f, layer) => {
+                    const id = f.properties.id || f.properties.codarea;
+                    const name = app.data.names[id] || f.properties.name;
+                    layer.on('click', (e) => {
+                        L.DomEvent.stopPropagation(e);
+                        app.selectRegion(id, name);
+                    });
+                    app.bindTooltip(layer, id, 'municipios', name);
+                }
+            }).addTo(app.map);
             
-            // Atualizar dados atuais
-            this.data.current = {
-                estados: secondRoundStates,
-                municipios: secondRoundMuns
-            };
-            
-            // Atualizar interface
-            this.refreshUI();
-            this.calculateSimulationStats();
-            
-            // Atualizar título
-            document.getElementById('regionName').textContent = 
-                `${cand1Data.name} vs ${cand2Data.name}`;
-            document.getElementById('regionType').textContent = "2º Turno Simulado";
-            
-            this.showNotification('Simulação do 2º turno concluída com sucesso!', 'success');
-            
-        } catch(error) {
-            console.error("Erro no 2º turno:", error);
-            this.showNotification('Erro na simulação: ' + error.message, 'error');
-        } finally {
-            loader.classList.add('hidden');
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-flag-checkered"></i> SIMULAR 2º TURNO';
+            app.state.view = 'all_cities';
+            if (!app.state.selectedId || app.state.selectedId.length === 2) {
+                app.map.fitBounds(app.layers.cities.getBounds());
+            }
+        } catch(e) { console.log(e); } 
+        finally { 
+            loader.classList.add('hidden'); 
+            if(app.data.current) app.updateSidebarRight(); 
         }
     },
-    
-    // =========================================================================
-    // FUNÇÕES AUXILIARES
-    // =========================================================================
-    getCandidateKey2022: function(candidateName) {
-        if(candidateName.includes('Lula')) return 'LULA22';
-        if(candidateName.includes('Bolsonaro')) return 'JAIR22';
-        if(candidateName.includes('Ciro')) return 'CIRO22';
-        if(candidateName.includes('Tebet')) return 'TEBET22';
-        return 'OUTROS22';
+
+    resetMapToStates: () => {
+        if(app.layers.cities) app.map.removeLayer(app.layers.cities);
+        app.loadBrazilLayer();
+        app.state.view = 'states';
+        app.resetSelection();
     },
-    
-    calculateNationalTotals: function(statesData) {
-        const totals = {};
-        
-        Object.values(statesData).forEach(state => {
-            Object.entries(state).forEach(([candidateName, votes]) => {
-                const candidate = REALISTIC_CONFIG.candidates2026.find(c => 
-                    candidateName.includes(c.name)
-                );
-                
-                if(candidate) {
-                    totals[candidate.id] = (totals[candidate.id] || 0) + votes;
-                }
-            });
-        });
-        
-        return totals;
-    },
-    
-    calculateNationalTotal: function(statesData) {
-        let total = 0;
-        
-        Object.values(statesData).forEach(state => {
-            Object.values(state).forEach(votes => {
-                total += votes;
-            });
-        });
-        
-        return total;
-    },
-    
-    calculateMultipliers: function(currentTotals, desiredWeights) {
-        const multipliers = {};
-        const totalVotes = Object.values(currentTotals).reduce((a, b) => a + b, 0);
-        
-        if(totalVotes === 0) {
-            REALISTIC_CONFIG.candidates2026.forEach(cand => {
-                multipliers[cand.id] = 1;
-            });
-            return multipliers;
-        }
-        
-        REALISTIC_CONFIG.candidates2026.forEach(cand => {
-            const currentWeight = (currentTotals[cand.id] || 0) / totalVotes;
-            const desiredWeight = desiredWeights[cand.id] || 0;
-            
-            if(currentWeight > 0) {
-                multipliers[cand.id] = desiredWeight / currentWeight;
-            } else {
-                multipliers[cand.id] = desiredWeight > 0 ? 10 : 1; // Multiplicador alto se não tem votos mas deve ter
-            }
-        });
-        
-        return multipliers;
-    },
-    
-    calculateNationalStats: function(data) {
-        if(!data || !data.estados) return null;
-        
-        const stats = {
-            totalVotes: 0,
-            candidates: {},
-            ranking: []
-        };
-        
-        // Calcular totais
-        Object.values(data.estados).forEach(state => {
-            Object.entries(state).forEach(([candidateName, votes]) => {
-                stats.totalVotes += votes;
-                
-                const candidate = REALISTIC_CONFIG.candidates2026.find(c => 
-                    candidateName.includes(c.name)
-                );
-                
-                if(candidate) {
-                    stats.candidates[candidate.id] = (stats.candidates[candidate.id] || 0) + votes;
-                } else {
-                    stats.candidates['OUTROS'] = (stats.candidates['OUTROS'] || 0) + votes;
-                }
-            });
-        });
-        
-        // Criar ranking
-        Object.entries(stats.candidates).forEach(([candId, votes]) => {
-            const candidate = REALISTIC_CONFIG.candidates2026.find(c => c.id === candId) || 
-                            { name: 'Outros', party: 'OUTROS', color: '#666666' };
-            
-            stats.ranking.push({
-                cand: `${candidate.name} (${candidate.party})`,
-                votes: votes,
-                pct: (votes / stats.totalVotes) * 100
-            });
-        });
-        
-        // Ordenar por votos
-        stats.ranking.sort((a, b) => b.votes - a.votes);
-        
-        return stats;
-    },
-    
-    calculateSimulationStats: function() {
-        if(!this.data.current) return;
-        
-        const stats = this.calculateNationalStats(this.data.current);
-        if(!stats) return;
-        
-        const container = document.getElementById('simulationStats');
-        let html = '<div style="margin-bottom:10px; font-weight:700; color:#3b82f6;">RESULTADO NACIONAL:</div>';
-        
-        stats.ranking.forEach((cand, idx) => {
-            const color = REALISTIC_CONFIG.candidates2026.find(c => cand.cand.includes(c.name))?.color || '#666';
-            
-            html += `
-                <div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.1);">
-                    <div>
-                        <span style="color:${color}; font-weight:600;">${idx + 1}. ${cand.cand.split('(')[0].trim()}</span>
-                        <span style="font-size:0.7rem; color:#94a3b8; margin-left:5px;">(${cand.cand.split('(')[1]}</span>
-                    </div>
-                    <div>
-                        <span style="font-weight:700;">${cand.pct.toFixed(1)}%</span>
-                        <span style="font-size:0.7rem; color:#94a3b8; margin-left:5px;">(${cand.votes.toLocaleString()})</span>
-                    </div>
-                </div>
-            `;
-        });
-        
-        html += `
-            <div style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.2);">
-                <div style="font-size:0.8rem; color:#94a3b8;">Total de votos: <strong>${stats.totalVotes.toLocaleString()}</strong></div>
-            </div>
-        `;
-        
-        container.innerHTML = html;
-        this.data.simulationStats = stats;
-    },
-    
-    // =========================================================================
-    // MAPA E VISUALIZAÇÃO
-    // =========================================================================
-    loadBrazilLayer: async function() {
-        if(this.layers.brazil) {
-            this.layers.brazil.addTo(this.map);
+
+    loadBrazilLayer: async () => {
+        if(app.layers.brazil) {
+            app.layers.brazil.addTo(app.map);
+            app.layers.brazil.setStyle((f) => app.getStyle(f, 'estados'));
             return;
         }
-        
-        try {
-            const response = await fetch('https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson');
-            const data = await response.json();
-            
-            // Mapear siglas para códigos
-            const ufMap = REALISTIC_CONFIG.states;
-            const reverseUfMap = {};
-            Object.entries(ufMap).forEach(([code, sigla]) => {
-                reverseUfMap[sigla] = code;
-            });
-            
-            data.features.forEach(f => {
-                f.properties.id = reverseUfMap[f.properties.sigla];
-            });
-            
-            this.layers.brazil = L.geoJSON(data, {
-                smoothFactor: 0.5,
-                style: (f) => this.getStyle(f, 'estados'),
-                onEachFeature: (f, layer) => {
-                    const ufCode = f.properties.id;
-                    const ufName = f.properties.name;
-                    
-                    layer.on('click', () => {
-                        this.loadStateCities(ufCode, ufName);
-                    });
-                    
-                    this.bindTooltip(layer, ufCode, 'estados', ufName);
-                }
-            }).addTo(this.map);
-            
-        } catch(error) {
-            console.error("Erro ao carregar mapa do Brasil:", error);
-            this.showNotification("Erro ao carregar mapa", "error");
-        }
+        const res = await fetch('https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson');
+        const data = await res.json();
+        const ufMap = {'AC':'12','AL':'27','AM':'13','AP':'16','BA':'29','CE':'23','DF':'53','ES':'32','GO':'52','MA':'21','MG':'31','MS':'50','MT':'51','PA':'15','PB':'25','PE':'26','PI':'22','PR':'41','RJ':'33','RN':'24','RO':'11','RR':'14','RS':'43','SC':'42','SE':'28','SP':'35','TO':'17'};
+        data.features.forEach(f => f.properties.id = ufMap[f.properties.sigla]);
+
+        app.layers.brazil = L.geoJSON(data, {
+            smoothFactor: 0.5,
+            style: (f) => app.getStyle(f, 'estados'),
+            onEachFeature: (f, l) => {
+                l.on('click', () => {
+                    app.loadStateCities(f.properties.id, f.properties.name);
+                });
+                app.bindTooltip(l, f.properties.id, 'estados', f.properties.name);
+            }
+        }).addTo(app.map);
     },
-    
-    loadStateCities: async function(ufCode, ufName) {
+
+    loadStateCities: async (ufId, ufName) => {
         const loader = document.getElementById('loader');
         loader.classList.remove('hidden');
-        loader.querySelector('#loaderMsg').textContent = `Carregando ${ufName}...`;
+
+        // --- CORREÇÃO NUCLEAR ---
+        // Varre todas as camadas do mapa. Se for GeoJSON (tem setStyle), remove.
+        // Isso garante que não sobre nenhum "fantasma" do Brasil ou de outros mapas.
+        app.map.eachLayer((layer) => {
+            // Não removemos o TileLayer (o mapa mundi escuro de fundo)
+            // Identificamos camadas de polígono/GeoJSON pela presença da função setStyle
+            if (layer.setStyle && layer !== app.layers.cities) {
+                app.map.removeLayer(layer);
+            }
+        });
         
+        // Limpa a referência da camada de cidades para evitar conflitos
+        if (app.layers.cities) {
+            app.map.removeLayer(app.layers.cities);
+            app.layers.cities = null;
+        }
+        // -------------------------
+
         try {
-            // Remover camadas existentes
-            if(this.layers.cities) {
-                this.map.removeLayer(this.layers.cities);
-            }
+            // Carrega os dados (isso pode demorar um pouco, por isso limpamos o mapa antes)
+            const fullData = await app.fetchGeoJsonCache();
             
-            if(this.layers.brazil) {
-                this.map.removeLayer(this.layers.brazil);
-            }
-            
-            // Carregar GeoJSON dos municípios
-            if(!this.data.geoJsonCache) {
-                const response = await fetch('https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json');
-                this.data.geoJsonCache = await response.json();
-            }
-            
-            // Filtrar municípios do estado
-            const stateFeatures = this.data.geoJsonCache.features.filter(f => {
+            // Filtra apenas os municípios do estado selecionado
+            const stateFeatures = fullData.features.filter(f => {
                 const cod = f.properties.id || f.properties.codarea;
-                return cod && cod.toString().startsWith(ufCode);
+                return cod && cod.toString().startsWith(ufId);
             });
-            
-            // Criar camada
-            this.layers.cities = L.geoJSON({
-                type: "FeatureCollection",
-                features: stateFeatures
-            }, {
+
+            // Cria a nova camada
+            app.layers.cities = L.geoJSON({ type: "FeatureCollection", features: stateFeatures }, {
                 smoothFactor: 0.3,
-                style: (f) => this.getStyle(f, 'municipios'),
-                onEachFeature: (f, layer) => {
+                style: (f) => app.getStyle(f, 'municipios'),
+                onEachFeature: (f, l) => {
                     const id = f.properties.id || f.properties.codarea;
-                    const name = this.data.names[id] || f.properties.name;
-                    
-                    layer.on('click', (e) => {
-                        L.DomEvent.stopPropagation(e);
-                        this.selectRegion(id, name);
+                    const name = app.data.names[id] || f.properties.name;
+                    l.on('click', (e) => { 
+                        L.DomEvent.stopPropagation(e); 
+                        app.selectRegion(id, name); 
                     });
-                    
-                    this.bindTooltip(layer, id, 'municipios', name);
+                    app.bindTooltip(l, id, 'municipios', name);
                 }
-            }).addTo(this.map);
+            }).addTo(app.map);
             
-            // Ajustar zoom
-            this.map.fitBounds(this.layers.cities.getBounds());
+            // Ajusta o zoom para o estado
+            app.map.fitBounds(app.layers.cities.getBounds());
             
-            // Atualizar seleção
-            this.selectRegion(ufCode, ufName);
-            
-        } catch(error) {
-            console.error("Erro ao carregar municípios:", error);
-            this.showNotification("Erro ao carregar municípios", "error");
-            this.resetMapToStates();
-        } finally {
-            loader.classList.add('hidden');
+            // Atualiza a barra lateral
+            app.selectRegion(ufId, ufName);
+
+        } catch(e) { 
+            console.error("Erro ao carregar cidades:", e);
+            // Se der erro, volta para o mapa do Brasil
+            app.resetMapToStates();
+        } finally { 
+            loader.classList.add('hidden'); 
         }
     },
-    
-    loadAllMunicipalities: async function() {
-        const loader = document.getElementById('loader');
-        loader.classList.remove('hidden');
-        loader.querySelector('#loaderMsg').textContent = "Carregando municípios...";
-        
-        try {
-            // Remover camadas existentes
-            if(this.layers.cities) {
-                this.map.removeLayer(this.layers.cities);
-            }
-            
-            if(this.layers.brazil) {
-                this.map.removeLayer(this.layers.brazil);
-            }
-            
-            // Carregar GeoJSON
-            if(!this.data.geoJsonCache) {
-                const response = await fetch('https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json');
-                this.data.geoJsonCache = await response.json();
-            }
-            
-            // Criar camada
-            this.layers.cities = L.geoJSON(this.data.geoJsonCache, {
-                smoothFactor: 0.3,
-                style: (f) => this.getStyle(f, 'municipios'),
-                onEachFeature: (f, layer) => {
-                    const id = f.properties.id || f.properties.codarea;
-                    const name = this.data.names[id] || f.properties.name;
-                    
-                    layer.on('click', (e) => {
-                        L.DomEvent.stopPropagation(e);
-                        this.selectRegion(id, name);
-                    });
-                    
-                    this.bindTooltip(layer, id, 'municipios', name);
-                }
-            }).addTo(this.map);
-            
-            // Ajustar zoom
-            this.map.fitBounds(this.layers.cities.getBounds());
-            
-        } catch(error) {
-            console.error("Erro ao carregar municípios:", error);
-            this.showNotification("Erro ao carregar municípios", "error");
-            this.resetMapToStates();
-        } finally {
-            loader.classList.add('hidden');
+
+    // =========================================================================
+    // RESTO DO CORE DO APP
+    // =========================================================================
+    getGradientConfig: (pct) => {
+        let config = GRADIENT_SCHEME[0];
+        for (let i = 0; i < GRADIENT_SCHEME.length; i++) {
+            if (pct >= GRADIENT_SCHEME[i].min) config = GRADIENT_SCHEME[i];
         }
+        return config;
     },
-    
-    resetMapToStates: function() {
-        if(this.layers.cities) {
-            this.map.removeLayer(this.layers.cities);
-            this.layers.cities = null;
-        }
-        
-        this.loadBrazilLayer();
-        this.resetSelection();
+
+    getDiscreteColor: (hex, pct) => {
+        const config = app.getGradientConfig(pct);
+        return app.mixColor(hex, config.mix, config.ratio);
     },
-    
-    resetMapView: function() {
-        this.map.setView([-15, -55], 4);
-        this.resetMapToStates();
+
+    mixColor: (hex1, hex2, amount) => {
+        const c1 = app.hexToRgb(hex1);
+        const c2 = app.hexToRgb(hex2);
+        const r = Math.round(c1.r + (c2.r - c1.r) * amount);
+        const g = Math.round(c1.g + (c2.g - c1.g) * amount);
+        const b = Math.round(c1.b + (c2.b - c1.b) * amount);
+        return `rgb(${r}, ${g}, ${b})`;
     },
-    
-    handleViewChange: function() {
-        this.state.view = document.getElementById('viewModeSelect').value;
-        
-        if(this.state.view === 'all_cities') {
-            this.loadAllMunicipalities();
-        } else {
-            this.resetMapToStates();
-        }
+
+    hexToRgb: (hex) => {
+        let c = hex.substring(1).split('');
+        if(c.length==3) c= [c[0], c[0], c[1], c[1], c[2], c[2]];
+        c = '0x'+c.join('');
+        return { r: (c>>16)&255, g: (c>>8)&255, b: c&255 };
     },
-    
-    selectRegion: function(id, name) {
-        this.state.selectedId = id;
-        this.state.selectedName = name;
+
+    selectRegion: (id, name) => {
+        app.state.selectedId = id;
+        app.state.selectedName = name;
         document.getElementById('btnBack').style.display = 'flex';
-        this.updateSidebarRight();
+        app.refreshUI();
     },
-    
-    resetSelection: function() {
-        this.state.selectedId = null;
-        this.state.selectedName = "Brasil";
+
+    resetSelection: () => {
+        app.state.selectedId = null;
+        app.state.selectedName = "Brasil";
         document.getElementById('btnBack').style.display = 'none';
-        this.updateSidebarRight();
-    },
-    
-    refreshUI: function() {
-        if(this.layers.brazil) {
-            this.layers.brazil.setStyle((f) => this.getStyle(f, 'estados'));
+
+        // CORREÇÃO: Se estiver no modo 'states', remove o mapa do estado específico
+        // e recarrega o mapa do Brasil inteiro.
+        if(app.state.view === 'states') {
+            if(app.layers.cities) app.map.removeLayer(app.layers.cities);
+            app.loadBrazilLayer();
         }
-        if(this.layers.cities) {
-            this.layers.cities.setStyle((f) => this.getStyle(f, 'municipios'));
-        }
-        this.updateSidebarRight();
+
+        // Reseta o zoom e a posição da câmera para o Brasil
+        app.map.setView([-15, -50], 4);
+        
+        app.updateSidebarRight();
     },
-    
-    updateSidebarRight: function() {
+
+    refreshUI: () => {
+        if(app.layers.brazil) app.layers.brazil.setStyle((f) => app.getStyle(f, 'estados'));
+        if(app.layers.cities) app.layers.cities.setStyle((f) => app.getStyle(f, 'municipios'));
+        app.updateSidebarRight();
+    },
+
+    updateSidebarRight: () => {
         const container = document.getElementById('resultsContainer');
         const titleEl = document.getElementById('regionName');
         const totalEl = document.getElementById('totalVotesVal');
         const subEl = document.getElementById('regionType');
         
         container.innerHTML = '';
-        
-        // Atualizar título
-        if(this.state.mode === 'second_round' && this.state.secondRoundCandidates.length === 2) {
-            const cand1 = REALISTIC_CONFIG.candidates2026.find(c => c.id === this.state.secondRoundCandidates[0]);
-            const cand2 = REALISTIC_CONFIG.candidates2026.find(c => c.id === this.state.secondRoundCandidates[1]);
-            if(cand1 && cand2) {
-                titleEl.textContent = `${cand1.name} vs ${cand2.name}`;
-                subEl.textContent = "2º Turno Simulado";
-            }
-        } else {
-            titleEl.textContent = this.state.selectedName;
-            subEl.textContent = this.state.selectedId ? 
-                (this.state.selectedId.length === 2 ? "Estado" : "Município") : 
-                "Nacional";
-        }
-        
-        // Obter votos para a região selecionada
+        titleEl.textContent = app.state.selectedName;
+        subEl.innerText = app.state.selectedId ? (app.state.selectedId.length === 2 ? "Estado" : "Município") : "Nacional";
+
         let rawVotes = {};
-        
-        if(this.data.current) {
-            if(!this.state.selectedId) {
-                // Nacional - somar todos os estados
-                if(this.data.current.estados) {
-                    Object.values(this.data.current.estados).forEach(state => {
-                        Object.entries(state).forEach(([candidate, votes]) => {
-                            rawVotes[candidate] = (rawVotes[candidate] || 0) + votes;
-                        });
-                    });
-                }
-            } else {
-                // Estado ou município específico
-                const scope = this.state.selectedId.length === 2 ? 'estados' : 'municipios';
-                if(this.data.current[scope]) {
-                    rawVotes = this.data.current[scope][this.state.selectedId] || {};
-                }
+        if (!app.data.current) return;
+
+        if (app.state.sel) {
+            const scope = app.state.view === 'states' ? 'estados' : 'municipios';
+            rawVotes = app.data.current[scope][app.state.sel.id] || {};
+        } else if (!app.state.selectedId) {
+             if(app.data.current.estados) {
+                 Object.values(app.data.current.estados).forEach(st => {
+                     Object.entries(st).forEach(([c, v]) => rawVotes[c] = (rawVotes[c]||0)+v);
+                 });
+             }
+        } else {
+            const scope = (app.state.selectedId.length === 2) ? 'estados' : 'municipios';
+            if(app.data.current[scope]) {
+                rawVotes = app.data.current[scope][app.state.selectedId] || {};
             }
         }
-        
-        // Filtrar candidatos ignorados
+
         const cleanVotes = {};
         Object.keys(rawVotes).forEach(k => {
-            if(!this.state.ignored.has(k)) {
-                cleanVotes[k] = rawVotes[k];
-            }
+            cleanVotes[k] = rawVotes[k];
         });
-        
-        // Calcular estatísticas
-        const stats = this.recalcStats(cleanVotes);
-        
-        if(!stats || stats.total === 0) {
+
+        const stats = app.recalcStats(cleanVotes);
+
+        if(!stats) {
             totalEl.textContent = "0";
             container.innerHTML = '<div style="color:#666;text-align:center;padding:20px;">Sem dados</div>';
             return;
         }
-        
+
         totalEl.textContent = stats.total.toLocaleString('pt-BR');
-        
-        // Renderizar candidatos
+
         stats.ranking.forEach(r => {
-            const { name, party } = this.parseCandKey(r.cand);
-            const color = this.getCandColor(party);
-            const isIgnored = this.state.ignored.has(r.cand);
-            
+            const { name, party } = app.parseCandKey(r.cand);
+            const color = app.getCandColor(party);
+            const isIgnored = app.state.ignored.has(r.cand);
+
             const div = document.createElement('div');
             div.className = `cand-row ${isIgnored ? 'disabled' : ''}`;
             div.innerHTML = `
-                <div class="cand-check ${isIgnored ? '' : 'checked'}" onclick="app.toggleIgnore('${r.cand.replace(/'/g, "\\'")}')"></div>
-                <div class="cand-color" style="background:${color}" onclick="app.openColorPicker('${party}', '${color}', this)"></div>
+                <div class="cand-check ${isIgnored ? '' : 'checked'}"></div>
+                <div class="cand-color" style="background:${color}"></div>
                 <div class="cand-info">
                     <div class="cand-head">
                         <span>${name}</span>
@@ -2294,25 +908,26 @@ const app = {
                     ${!isIgnored ? `<div class="progress-bar"><div class="progress-fill" style="width:${r.pct}%; background:${color}"></div></div>` : ''}
                 </div>
             `;
+            
+            div.querySelector('.cand-check').onclick = () => {
+                if(app.state.ignored.has(r.cand)) app.state.ignored.delete(r.cand);
+                else app.state.ignored.add(r.cand);
+                app.refreshUI();
+            };
+            div.querySelector('.cand-color').onclick = (e) => {
+                e.stopPropagation();
+                app.openColorPicker(party, color, e.target);
+            };
             container.appendChild(div);
         });
     },
-    
-    toggleIgnore: function(candidateKey) {
-        if(this.state.ignored.has(candidateKey)) {
-            this.state.ignored.delete(candidateKey);
-        } else {
-            this.state.ignored.add(candidateKey);
-        }
-        this.refreshUI();
-    },
-    
-    recalcStats: function(votes) {
+
+    recalcStats: (votes) => {
         let total = 0, max = -1, winner = null;
         let rank = [];
         
         Object.entries(votes).forEach(([c, v]) => {
-            if(!this.state.ignored.has(c)) {
+            if(!app.state.ignored.has(c)) {
                 total += v;
                 if(v > max) { max = v; winner = c; }
                 rank.push({ cand: c, votes: v, pct: 0 });
@@ -2324,12 +939,12 @@ const app = {
         if(total === 0 && rank.length === 0) return null;
         
         rank.forEach(r => { 
-            if(!this.state.ignored.has(r.cand)) r.pct = (r.votes/total)*100; 
+            if(!app.state.ignored.has(r.cand)) r.pct = (r.votes/total)*100; 
         });
         
         rank.sort((a,b) => {
-            const ignA = this.state.ignored.has(a.cand);
-            const ignB = this.state.ignored.has(b.cand);
+            const ignA = app.state.ignored.has(a.cand);
+            const ignB = app.state.ignored.has(b.cand);
             if(ignA && !ignB) return 1;
             if(!ignA && ignB) return -1;
             return b.votes - a.votes;
@@ -2337,54 +952,48 @@ const app = {
         
         return { total, winner, pct: winner ? (max/total)*100 : 0, ranking: rank };
     },
-    
-    getStyle: function(feature, scope) {
-        if(!this.data.current) return { fillColor: '#111', weight: 0.2, color: '#ffffff', fillOpacity: 1 };
+
+    getStyle: (feature, scope) => {
+        if(!app.data.current) return { fillColor: '#111', weight: 0.2, color: '#ffffff' };
         
         const id = feature.properties.id || feature.properties.codarea; 
-        const raw = this.data.current[scope] ? this.data.current[scope][id] : {};
+        const raw = app.data.current[scope] ? app.data.current[scope][id] : {};
         
-        // Filtrar candidatos ignorados
         const clean = {};
         Object.keys(raw || {}).forEach(k => {
-            if(!this.state.ignored.has(k)) clean[k] = raw[k];
+            if(!app.state.ignored.has(k)) clean[k] = raw[k];
         });
-        
-        const stats = this.recalcStats(clean);
-        
+
+        const stats = app.recalcStats(clean);
+
         if (!stats || !stats.winner) {
             return { fillColor: '#222', weight: 0.2, color: '#ffffff', fillOpacity: 1 };
         }
-        
-        const { party } = this.parseCandKey(stats.winner);
-        const color = this.getDiscreteColor(this.getCandColor(party), stats.pct);
+
+        const { party } = app.parseCandKey(stats.winner);
+        const color = app.getDiscreteColor(app.getCandColor(party), stats.pct);
         const borderWeight = scope === 'estados' ? 0.6 : 0.2;
-        
+
         return {
             fillColor: color,
             weight: borderWeight,
             color: '#ffffff',
             fillOpacity: 1,
-            lineJoin: 'round', 
-            lineCap: 'round'
+            lineJoin: 'round', lineCap: 'round'
         };
     },
-    
-    bindTooltip: function(layer, id, scope, name) {
+
+    bindTooltip: (layer, id, scope, name) => {
         layer.bindTooltip(() => {
-            const raw = this.data.current && this.data.current[scope] ? this.data.current[scope][id] : {};
+            const raw = app.data.current[scope] ? app.data.current[scope][id] : {};
             const clean = {};
-            Object.keys(raw || {}).forEach(k => { 
-                if(!this.state.ignored.has(k)) clean[k] = raw[k]; 
-            });
+            Object.keys(raw || {}).forEach(k => { if(!app.state.ignored.has(k)) clean[k] = raw[k]; });
             
-            const stats = this.recalcStats(clean);
-            if(!stats || !stats.winner) {
-                return `<div class="custom-tooltip"><div class="tt-head">${name}</div><div class="tt-body">Sem dados</div></div>`;
-            }
+            const stats = app.recalcStats(clean);
+            if(!stats || !stats.winner) return `<div class="custom-tooltip"><div class="tt-head">${name}</div><div class="tt-body">Sem dados</div></div>`;
             
-            const { name: wName, party } = this.parseCandKey(stats.winner);
-            const color = this.getCandColor(party);
+            const { name: wName, party } = app.parseCandKey(stats.winner);
+            const color = app.getCandColor(party);
             
             return `
                 <div class="custom-tooltip">
@@ -2400,288 +1009,31 @@ const app = {
             `;
         }, { sticky: true, direction: 'top' });
     },
-    
-    getGradientConfig: function(pct) {
-        let config = GRADIENT_SCHEME[0];
-        for (let i = 0; i < GRADIENT_SCHEME.length; i++) {
-            if (pct >= GRADIENT_SCHEME[i].min) config = GRADIENT_SCHEME[i];
-        }
-        return config;
-    },
-    
-    getDiscreteColor: function(hex, pct) {
-        const config = this.getGradientConfig(pct);
-        return this.mixColor(hex, config.mix, config.ratio);
-    },
-    
-    mixColor: function(hex1, hex2, amount) {
-        const c1 = this.hexToRgb(hex1);
-        const c2 = this.hexToRgb(hex2);
-        const r = Math.round(c1.r + (c2.r - c1.r) * amount);
-        const g = Math.round(c1.g + (c2.g - c1.g) * amount);
-        const b = Math.round(c1.b + (c2.b - c1.b) * amount);
-        return `rgb(${r}, ${g}, ${b})`;
-    },
-    
-    hexToRgb: function(hex) {
-        let c = hex.substring(1).split('');
-        if(c.length==3) c= [c[0], c[0], c[1], c[1], c[2], c[2]];
-        c = '0x'+c.join('');
-        return { r: (c>>16)&255, g: (c>>8)&255, b: c&255 };
-    },
-    
-    parseCandKey: function(k) {
+
+    parseCandKey: (k) => {
         const m = k.match(/(.*?)\s*\((.*?)\)/);
         return m ? { name: m[1], party: m[2] } : { name: k, party: 'DEFAULT' };
     },
-    
-    getCandColor: function(p) {
-        return REALISTIC_CONFIG.partyColors[p] || REALISTIC_CONFIG.partyColors['DEFAULT'];
-    },
-    
-    openColorPicker: function(p, def, el) {
+
+    getCandColor: (p) => app.state.customColors[p] || CONFIG.colors[p] || CONFIG.colors['DEFAULT'],
+
+    openColorPicker: (p, def, el) => {
         const pickr = Pickr.create({
-            el: el, 
-            theme: 'nano', 
-            default: def,
-            swatches: Object.values(REALISTIC_CONFIG.partyColors).slice(0, 8),
-            components: { 
-                preview: true, 
-                hue: true, 
-                interaction: { save: true } 
-            }
+            el: el, theme: 'nano', default: def,
+            swatches: Object.values(CONFIG.colors).slice(0, 8),
+            components: { preview: true, hue: true, interaction: { save: true } }
         });
-        
         pickr.on('save', (c) => {
-            // Aqui você pode salvar a cor personalizada se quiser
+            app.state.customColors[p] = c.toHEXA().toString();
+            localStorage.setItem('v25_colors', JSON.stringify(app.state.customColors));
             el.style.background = c.toHEXA().toString();
+            app.refreshUI();
             pickr.destroyAndRemove();
         });
-    },
-    
-    // =========================================================================
-    // CENÁRIOS E PRESETS
-    // =========================================================================
-    loadScenario: function(scenario) {
-        this.state.currentScenario = scenario;
-        
-        switch(scenario) {
-            case 'realistic':
-                // Configuração padrão já aplicada
-                break;
-                
-            case 'conservative':
-                TRANSFER_CONFIG.firstRound.baseRetention = 0.85;
-                TRANSFER_CONFIG.firstRound.bonusIntensity = 0.20;
-                TRANSFER_CONFIG.secondRound.polarization = 0.80;
-                break;
-                
-            case 'progressive':
-                TRANSFER_CONFIG.firstRound.baseRetention = 0.75;
-                TRANSFER_CONFIG.firstRound.bonusIntensity = 0.40;
-                TRANSFER_CONFIG.secondRound.polarization = 0.60;
-                break;
-                
-            case 'regionalist':
-                TRANSFER_CONFIG.firstRound.baseRetention = 0.70;
-                TRANSFER_CONFIG.firstRound.bonusIntensity = 0.50;
-                TRANSFER_CONFIG.secondRound.polarization = 0.50;
-                break;
-                
-            case 'polarized':
-                TRANSFER_CONFIG.firstRound.baseRetention = 0.90;
-                TRANSFER_CONFIG.firstRound.bonusIntensity = 0.10;
-                TRANSFER_CONFIG.secondRound.polarization = 0.90;
-                break;
-        }
-        
-        // Atualizar sliders
-        this.setupSliders();
-        
-        this.showNotification(`Cenário "${scenario}" carregado`, 'success');
-    },
-    
-    savePreset: function() {
-        const preset = {
-            name: prompt("Nome do preset:", `Preset ${new Date().toLocaleDateString()}`),
-            date: new Date().toISOString(),
-            candidates: REALISTIC_CONFIG.candidates2026.map(c => ({
-                id: c.id,
-                baseWeight: c.baseWeight
-            })),
-            transferConfig: JSON.parse(JSON.stringify(TRANSFER_CONFIG))
-        };
-        
-        if(!preset.name) return;
-        
-        let presets = JSON.parse(localStorage.getItem('simulator_presets') || '[]');
-        presets.push(preset);
-        localStorage.setItem('simulator_presets', JSON.stringify(presets));
-        
-        this.showNotification(`Preset "${preset.name}" salvo`, 'success');
-    },
-    
-    loadPreset: function() {
-        const presets = JSON.parse(localStorage.getItem('simulator_presets') || '[]');
-        
-        if(presets.length === 0) {
-            this.showNotification("Nenhum preset salvo", 'warning');
-            return;
-        }
-        
-        const presetNames = presets.map(p => p.name);
-        const selectedName = prompt("Presets disponíveis:\n" + presetNames.join("\n") + "\n\nDigite o nome do preset:");
-        
-        if(!selectedName) return;
-        
-        const preset = presets.find(p => p.name === selectedName);
-        if(!preset) {
-            this.showNotification("Preset não encontrado", 'error');
-            return;
-        }
-        
-        // Carregar configurações
-        if(preset.candidates) {
-            preset.candidates.forEach(savedCand => {
-                const cand = REALISTIC_CONFIG.candidates2026.find(c => c.id === savedCand.id);
-                if(cand) {
-                    cand.baseWeight = savedCand.baseWeight;
-                }
-            });
-            
-            // Atualizar sliders
-            this.renderCandidateSliders();
-        }
-        
-        if(preset.transferConfig) {
-            Object.assign(TRANSFER_CONFIG, preset.transferConfig);
-            this.setupSliders();
-        }
-        
-        this.showNotification(`Preset "${preset.name}" carregado`, 'success');
-    },
-    
-    resetDefaults: function() {
-        if(confirm("Resetar todas as configurações para os valores padrão?")) {
-            // Resetar candidatos
-            REALISTIC_CONFIG.candidates2026.forEach((cand, idx) => {
-                if(idx === 0) cand.baseWeight = 0.48;
-                else if(idx === 1) cand.baseWeight = 0.32;
-                else if(idx === 2) cand.baseWeight = 0.08;
-                else if(idx === 3) cand.baseWeight = 0.06;
-                else if(idx === 4) cand.baseWeight = 0.03;
-                else if(idx === 5) cand.baseWeight = 0.02;
-                else cand.baseWeight = 0.01;
-            });
-            
-            // Resetar transferências
-            TRANSFER_CONFIG = {
-                firstRound: {
-                    baseTransfers: {
-                        'LULA22->LULA': 0.85,
-                        'JAIR22->FLAVIO': 0.65,
-                        'JAIR22->CAIADO': 0.15,
-                        'JAIR22->ZEMA': 0.10,
-                        'JAIR22->RATINHO': 0.08,
-                        'CIRO22->CIRO': 0.40,
-                        'CIRO22->LULA': 0.35,
-                        'CIRO22->FLAVIO': 0.15,
-                        'TEBET22->CAIADO': 0.45,
-                        'TEBET22->LULA': 0.30,
-                        'TEBET22->FLAVIO': 0.15,
-                        'OUTROS22->LULA': 0.40,
-                        'OUTROS22->FLAVIO': 0.35,
-                        'OUTROS22->OUTROS': 0.25
-                    },
-                    baseRetention: 0.80,
-                    bonusIntensity: 0.30,
-                    errorMargin: 0.02
-                },
-                secondRound: {
-                    scenarioTransfers: {
-                        'LULA_FLAVIO': {
-                            'CAIADO->LULA': 0.25,
-                            'CAIADO->FLAVIO': 0.65,
-                            'ZEMA->LULA': 0.30,
-                            'ZEMA->FLAVIO': 0.60,
-                            'RATINHO->LULA': 0.20,
-                            'RATINHO->FLAVIO': 0.70,
-                            'CIRO->LULA': 0.60,
-                            'CIRO->FLAVIO': 0.30,
-                            'RENAN->LULA': 0.40,
-                            'RENAN->FLAVIO': 0.50
-                        }
-                    },
-                    polarization: 0.70,
-                    turnoutChange: 1.02
-                }
-            };
-            
-            // Resetar UI
-            this.renderCandidateSliders();
-            this.setupSliders();
-            document.getElementById('scenarioSelect').value = 'realistic';
-            
-            this.showNotification("Configurações resetadas para os valores padrão", 'success');
-        }
-    },
-    
-    // =========================================================================
-    // UTILITÁRIOS
-    // =========================================================================
-    showNotification: function(message, type = 'info') {
-        // Criar elemento de notificação
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: ${type === 'error' ? '#dc2626' : 
-                        type === 'warning' ? '#d97706' : 
-                        type === 'success' ? '#059669' : '#3b82f6'};
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            z-index: 10001;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-            animation: slideIn 0.3s ease;
-        `;
-        
-        notification.textContent = message;
-        document.body.appendChild(notification);
-        
-        // Remover após 3 segundos
-        setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => {
-                if(notification.parentNode) {
-                    document.body.removeChild(notification);
-                }
-            }, 300);
-        }, 3000);
     }
 };
 
-// Inicializar quando o DOM estiver carregado
-document.addEventListener('DOMContentLoaded', () => {
-    app.init();
-    
-    // Adicionar estilos de animação para notificações
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOut {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-    `;
-    document.head.appendChild(style);
-});
+document.addEventListener('DOMContentLoaded', app.init);
 </script>
 </body>
 </html>
