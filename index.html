@@ -3,284 +3,207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlas Simulador V25 - Ultimate Edition</title>
+    <title>Atlas Simulador V25 - Original Recreation</title>
     
-    <!-- Bibliotecas -->
+    <!-- Leaflet & Utilities -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Color Picker -->
     <link href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
 
     <style>
         :root {
-            --bg-primary: #0a0c10;
-            --bg-secondary: #11141a;
-            --bg-card: rgba(20, 24, 32, 0.95);
-            --accent-blue: #3b82f6;
-            --text-primary: #ffffff;
-            --text-muted: #94a3b8;
-            --border-color: rgba(255, 255, 255, 0.1);
+            --bg-main: #0a0c10;
+            --bg-panel: #11141a;
+            --border: #22262e;
+            --accent: #3b82f6;
+            --text-main: #fff;
+            --text-sub: #9ca3af;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            overflow: hidden;
-            height: 100vh;
-            display: flex;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; outline: none; }
+        body { background: var(--bg-main); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; }
 
-        /* LAYOUT */
-        #app { width: 100vw; height: 100vh; display: flex; position: relative; }
-        #map { flex: 1; height: 100%; background: #050505; z-index: 1; }
+        /* LAYOUT PRINCIPAL */
+        .sidebar { width: 380px; background: var(--bg-panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 20; box-shadow: 5px 0 20px rgba(0,0,0,0.5); }
+        .sidebar-right { border-left: 1px solid var(--border); border-right: none; width: 400px; }
+        #map-container { flex: 1; position: relative; background: #050505; }
+        #map { width: 100%; height: 100%; z-index: 1; }
 
-        /* SIDEBARS */
-        .sidebar {
-            width: 380px;
-            background: var(--bg-secondary);
-            display: flex; flex-direction: column;
-            z-index: 1000;
-            border-right: 1px solid var(--border-color);
-            box-shadow: 5px 0 30px rgba(0,0,0,0.5);
-        }
-        .sidebar-right { border-left: 1px solid var(--border-color); border-right: none; width: 420px; }
-
-        .header {
-            padding: 20px;
-            background: linear-gradient(180deg, rgba(17,20,26,1) 0%, rgba(10,12,16,0) 100%);
-            border-bottom: 1px solid var(--border-color);
-        }
-        .header h1 {
-            font-size: 1.2rem; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 10px;
-        }
-        .header h1 span { color: var(--accent-blue); }
-
-        /* TABS & CONTROLS */
-        .mode-tabs { display: flex; gap: 8px; margin-top: 15px; }
-        .mode-tab {
-            flex: 1; padding: 10px; text-align: center; border-radius: 6px;
-            background: rgba(255,255,255,0.05); border: 1px solid var(--border-color);
-            cursor: pointer; font-size: 0.75rem; font-weight: 700; color: var(--text-muted);
-            transition: all 0.2s;
-        }
-        .mode-tab:hover { background: rgba(255,255,255,0.1); color: white; }
-        .mode-tab.active { background: var(--accent-blue); color: white; border-color: var(--accent-blue); }
-
-        .controls { padding: 20px; flex: 1; overflow-y: auto; }
-        .controls::-webkit-scrollbar { width: 5px; }
-        .controls::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-
-        /* CANDIDATE LIST */
-        .cand-row {
-            display: flex; align-items: center; gap: 10px;
-            padding: 10px; margin-bottom: 8px;
-            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 8px; transition: all 0.2s;
-        }
-        .cand-row:hover { border-color: rgba(255,255,255,0.2); }
+        /* HEADER & TABS */
+        .header { padding: 20px; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, #161b22 0%, #11141a 100%); }
+        .brand { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 15px; }
+        .brand span { color: var(--accent); }
         
-        .cand-color { width: 24px; height: 24px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255,255,255,0.3); }
-        .cand-info { flex: 1; }
-        .cand-head { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; }
-        .cand-sub { font-size: 0.7rem; color: var(--text-muted); }
+        .tabs { display: flex; gap: 8px; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 8px; }
+        .tab { flex: 1; text-align: center; padding: 10px; font-size: 0.75rem; font-weight: 700; cursor: pointer; border-radius: 6px; color: var(--text-sub); transition: 0.2s; }
+        .tab.active { background: var(--accent); color: white; }
+        .tab:hover:not(.active) { background: rgba(255,255,255,0.05); color: white; }
+
+        /* CANDIDATES LIST */
+        .scroll-area { flex: 1; overflow-y: auto; padding: 20px; }
+        .scroll-area::-webkit-scrollbar { width: 6px; }
+        .scroll-area::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+        .cand-row { background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 12px; border-radius: 8px; margin-bottom: 10px; }
+        .cand-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .cand-info { display: flex; align-items: center; gap: 10px; }
+        .color-dot { width: 20px; height: 20px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); cursor: pointer; }
+        .cand-input { width: 55px; background: #050505; border: 1px solid #333; color: white; padding: 5px; text-align: center; border-radius: 4px; font-weight: 700; }
         
-        .cand-input {
-            width: 50px; background: #050505; border: 1px solid #333; color: white;
-            padding: 5px; border-radius: 4px; text-align: center; font-weight: 700; font-size: 0.9rem;
-        }
+        input[type=range] { width: 100%; -webkit-appearance: none; background: transparent; height: 6px; cursor: pointer; }
+        input[type=range]::-webkit-slider-runnable-track { background: #333; height: 4px; border-radius: 2px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; background: white; border-radius: 50%; margin-top: -6px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
 
         /* BUTTONS */
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
-        .btn {
-            padding: 12px; border-radius: 6px; border: 1px solid var(--border-color);
-            background: rgba(255,255,255,0.05); color: var(--text-muted); cursor: pointer;
-            font-weight: 600; font-size: 0.8rem; transition: 0.2s;
-            display: flex; align-items: center; justify-content: center; gap: 6px;
-        }
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+        .btn { padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: rgba(255,255,255,0.05); color: var(--text-sub); cursor: pointer; font-weight: 600; font-size: 0.8rem; display: flex; justify-content: center; gap: 8px; align-items: center; transition: 0.2s; }
         .btn:hover { background: rgba(255,255,255,0.1); color: white; border-color: white; }
-        .btn-primary { 
-            grid-column: span 2; background: var(--accent-blue); color: white; border: none;
-            font-size: 0.9rem; font-weight: 800;
-        }
+        .btn-primary { grid-column: span 2; background: var(--accent); color: white; border: none; font-size: 0.9rem; font-weight: 800; }
         .btn-primary:hover { background: #2563eb; }
 
-        /* MAP OVERLAYS */
-        .map-toggles {
-            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-            z-index: 500; display: flex; gap: 8px; background: rgba(10,12,16,0.9);
-            padding: 6px; border-radius: 30px; border: 1px solid var(--border-color);
-        }
-        .map-btn {
-            padding: 8px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;
-            color: var(--text-muted); cursor: pointer; transition: 0.2s;
-        }
-        .map-btn.active { background: var(--accent-blue); color: white; }
-        
-        .btn-back {
-            position: absolute; top: 20px; right: 20px; z-index: 500;
-            padding: 10px 20px; background: #0a0c10; border: 1px solid var(--border-color);
-            color: white; border-radius: 8px; cursor: pointer; font-weight: 600; display: none;
-        }
+        /* MAP CONTROLS */
+        .map-toggles { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 400; display: flex; gap: 10px; background: rgba(17,20,26,0.9); padding: 6px; border-radius: 30px; border: 1px solid var(--border); backdrop-filter: blur(5px); }
+        .toggle-btn { padding: 8px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; color: var(--text-sub); cursor: pointer; transition: 0.2s; }
+        .toggle-btn.active { background: var(--accent); color: white; }
 
-        .legend {
-            position: absolute; bottom: 30px; left: 30px; width: 220px;
-            background: #0a0c10; padding: 15px; border: 1px solid var(--border-color);
-            border-radius: 12px; z-index: 500; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-        }
-        .legend-bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; margin: 8px 0; }
-        .legend-seg { flex: 1; opacity: 0.8; }
-        .legend-labels { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); }
+        .btn-back { position: absolute; top: 20px; right: 20px; z-index: 400; padding: 10px 20px; background: #11141a; color: white; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; display: none; font-weight: 600; }
 
-        /* RIGHT SIDEBAR RESULTS */
-        .res-header { padding: 20px; border-bottom: 1px solid var(--border-color); }
-        .res-title { font-size: 1.2rem; font-weight: 800; }
-        .res-sub { font-size: 0.75rem; color: var(--accent-blue); text-transform: uppercase; font-weight: 700; }
+        .legend { position: absolute; bottom: 30px; left: 30px; width: 220px; background: #11141a; padding: 15px; border-radius: 12px; border: 1px solid var(--border); z-index: 400; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+        .leg-bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; margin: 8px 0; }
+        .leg-seg { flex: 1; opacity: 0.9; }
+        .leg-labels { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-sub); }
+
+        /* RIGHT SIDEBAR */
+        .res-header { padding: 20px; border-bottom: 1px solid var(--border); }
+        .res-title { font-size: 1.4rem; font-weight: 800; }
+        .res-subtitle { font-size: 0.75rem; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-top: 4px; }
         
         .res-list { padding: 20px; overflow-y: auto; flex: 1; }
         .res-item { margin-bottom: 15px; }
-        .res-top { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.9rem; font-weight: 600; }
+        .res-top { display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; }
         .bar-bg { height: 8px; background: #222; border-radius: 4px; overflow: hidden; }
-        .bar-fill { height: 100%; transition: width 0.5s; }
+        .bar-fill { height: 100%; transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
 
         /* MODALS */
-        .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000;
-            display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px);
-        }
-        .modal {
-            width: 800px; max-height: 85vh; background: #11141a; border: 1px solid var(--border-color);
-            border-radius: 12px; display: flex; flex-direction: column;
-        }
-        .modal-head { padding: 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal { width: 800px; max-height: 85vh; background: #11141a; border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; }
+        .modal-head { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
         .modal-body { padding: 20px; overflow-y: auto; }
         
-        /* TRANSFER MATRIX */
-        .matrix-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 15px; }
-        .matrix-card { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); }
-        .matrix-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.8rem; }
-        .matrix-input { width: 55px; background: #050505; border: 1px solid #333; color: white; padding: 4px; text-align: center; border-radius: 4px; }
+        .matrix-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
+        .matrix-card { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; border: 1px solid var(--border); }
+        .mx-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.8rem; }
+        .mx-input { width: 50px; background: #000; border: 1px solid #333; color: white; padding: 4px; text-align: center; border-radius: 4px; }
 
-        /* LOADING */
-        #loader {
-            position: absolute; inset: 0; background: #0a0c10; z-index: 3000;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .spinner {
-            width: 40px; height: 40px; border: 3px solid #333; border-top-color: var(--accent-blue);
-            border-radius: 50%; animation: spin 1s infinite linear; margin-bottom: 20px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* STATE MULTIPLIER GRID */
         .st-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .st-box { background: rgba(255,255,255,0.02); padding: 8px; border-radius: 6px; border: 1px solid #222; }
+        .st-card { background: rgba(255,255,255,0.02); padding: 10px; border-radius: 6px; border: 1px solid #222; }
+
+        /* LOADER */
+        #loader { position: absolute; inset: 0; background: #0a0c10; z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner { width: 50px; height: 50px; border: 3px solid #333; border-top-color: var(--accent); border-radius: 50%; animation: spin 1s infinite linear; margin-bottom: 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
 <div id="loader">
     <div class="spinner"></div>
-    <div style="font-weight: 700; color: #888; font-size: 0.9rem;">PROCESSANDO MALHA MUNICIPAL...</div>
+    <div style="font-weight:700; color:#888;">CONSTRUINDO GEOGRAFIA ELEITORAL...</div>
 </div>
 
-<!-- MODAL TRANSFERÊNCIA -->
-<div class="modal-overlay" id="transfModal">
+<!-- MODAL TRANSFERENCIA -->
+<div class="modal-overlay" id="modalTransf">
     <div class="modal">
         <div class="modal-head">
-            <h3>Matriz de Transferência de Votos</h3>
-            <button onclick="app.closeModals()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
+            <h3>Matriz de Transferência (2022 > 2026)</h3>
+            <button onclick="app.toggleModal('modalTransf', false)" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
         </div>
         <div class="modal-body">
-            <div id="matrixT1" style="display:block;">
-                <p style="color:#888; font-size:0.85rem; margin-bottom:15px;">
-                    Defina a % de herança. Ex: Quantos % dos eleitores de <b>Lula (2022)</b> votam em cada candidato em 2026?
-                </p>
-                <div class="matrix-grid" id="containerT1"></div>
+            <div id="mx-t1" style="display:block;">
+                <p style="color:#888; font-size:0.8rem; margin-bottom:15px;">Defina a porcentagem de votos que migra dos grupos de 2022 para os candidatos atuais.</p>
+                <div class="matrix-grid" id="gridT1"></div>
             </div>
-            <div id="matrixT2" style="display:none;">
-                <p style="color:#888; font-size:0.85rem; margin-bottom:15px;">
-                    Defina para onde vão os votos dos candidatos eliminados no 1º Turno.
-                </p>
-                <div class="matrix-grid" id="containerT2"></div>
+            <div id="mx-t2" style="display:none;">
+                <p style="color:#888; font-size:0.8rem; margin-bottom:15px;">Defina a migração de votos para o 2º Turno.</p>
+                <div class="matrix-grid" id="gridT2"></div>
             </div>
         </div>
-        <div style="padding:20px; border-top:1px solid var(--border-color); text-align:right;">
-            <button class="btn btn-primary" style="display:inline-flex; width:auto;" onclick="app.applyTransfers()">APLICAR</button>
+        <div style="padding:20px; border-top:1px solid var(--border); text-align:right;">
+            <button class="btn btn-primary" style="display:inline-flex; width:auto;" onclick="app.applyTransf()">APLICAR</button>
         </div>
     </div>
 </div>
 
 <!-- MODAL REGIONAL -->
-<div class="modal-overlay" id="regModal">
+<div class="modal-overlay" id="modalReg">
     <div class="modal">
         <div class="modal-head">
-            <h3>Ajuste de Força Regional</h3>
-            <button onclick="app.closeModals()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
+            <h3>Força Regional (Multiplicador)</h3>
+            <button onclick="app.toggleModal('modalReg', false)" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
         </div>
         <div class="modal-body">
-            <div id="regGrid" class="st-grid"></div>
+            <div class="st-grid" id="gridReg"></div>
         </div>
-        <div style="padding:20px; border-top:1px solid var(--border-color); text-align:right;">
-            <button class="btn btn-primary" style="display:inline-flex; width:auto;" onclick="app.applyRegional()">APLICAR</button>
+        <div style="padding:20px; border-top:1px solid var(--border); text-align:right;">
+            <button class="btn btn-primary" style="display:inline-flex; width:auto;" onclick="app.applyReg()">APLICAR</button>
         </div>
     </div>
 </div>
 
-<!-- SIDEBAR ESQUERDA -->
 <aside class="sidebar">
     <div class="header">
-        <h1><i class="fas fa-chart-pie"></i> ATLAS <span>SIMULATOR</span></h1>
-        <div class="mode-tabs">
-            <div class="mode-tab active" id="tabT1" onclick="app.setTurn(1)">1º TURNO</div>
-            <div class="mode-tab" id="tabT2" onclick="app.setTurn(2)">2º TURNO</div>
+        <div class="brand">ATLAS <span>V25</span></div>
+        <div class="tabs">
+            <div class="tab active" id="btnT1" onclick="app.setTurn(1)">1º TURNO</div>
+            <div class="tab" id="btnT2" onclick="app.setTurn(2)">2º TURNO</div>
         </div>
     </div>
 
-    <div class="controls">
-        <!-- T2 CONFIG -->
-        <div id="t2-setup" style="display:none; padding:15px; background:rgba(255,255,255,0.05); border-radius:8px; margin-bottom:15px;">
-            <label style="font-size:0.75rem; color:#888; font-weight:700;">FINALISTAS (2º TURNO)</label>
+    <div class="scroll-area">
+        <!-- T2 SELECTORS -->
+        <div id="t2-config" style="display:none; padding:15px; background:rgba(255,255,255,0.05); border-radius:8px; margin-bottom:15px;">
+            <label style="font-size:0.75rem; color:#888; font-weight:700;">FINALISTAS</label>
             <div style="display:flex; gap:10px; margin-top:8px;">
-                <select id="selC1" onchange="app.updateT2Setup()" style="flex:1; padding:8px; background:#000; color:white; border:1px solid #333; border-radius:4px;"></select>
-                <select id="selC2" onchange="app.updateT2Setup()" style="flex:1; padding:8px; background:#000; color:white; border:1px solid #333; border-radius:4px;"></select>
+                <select id="sel1" onchange="app.updateT2()" style="flex:1; padding:8px; background:#000; color:white; border:1px solid #333; border-radius:4px;"></select>
+                <select id="sel2" onchange="app.updateT2()" style="flex:1; padding:8px; background:#000; color:white; border:1px solid #333; border-radius:4px;"></select>
             </div>
         </div>
 
         <div id="candList"></div>
 
-        <div class="btn-group">
-            <button class="btn" onclick="app.openTransfModal()"><i class="fas fa-random"></i> Transferência</button>
-            <button class="btn" onclick="app.openRegModal()"><i class="fas fa-map"></i> Regional</button>
-            <button class="btn btn-primary" onclick="app.runSimulation()"><i class="fas fa-play"></i> CALCULAR CENÁRIO</button>
+        <div class="btn-grid">
+            <button class="btn" onclick="app.openTransf()"><i class="fas fa-random"></i> Transferência</button>
+            <button class="btn" onclick="app.openReg()"><i class="fas fa-map-marked-alt"></i> Regional</button>
+            <button class="btn btn-primary" onclick="app.runSim()"><i class="fas fa-play"></i> CALCULAR</button>
         </div>
 
         <div style="margin-top:20px; text-align:center;">
-            <div style="font-size:0.7rem; color:#666;">PROJEÇÃO NACIONAL TOTAL</div>
-            <div id="totalVal" style="font-size:1.5rem; font-weight:800; color:var(--accent-blue);">100%</div>
+            <div style="font-size:0.7rem; color:#666;">TOTAL DE VOTOS</div>
+            <div id="totalSum" style="font-size:1.5rem; font-weight:800; color:var(--accent);">100%</div>
         </div>
     </div>
 </aside>
 
-<div id="app">
+<div id="map-container">
     <div class="map-toggles">
-        <div class="map-btn active" id="viewStates" onclick="app.changeView('states')">ESTADOS</div>
-        <div class="map-btn" id="viewMun" onclick="app.changeView('mun')">BRASIL MUNICIPAL</div>
+        <div class="toggle-btn active" id="viewStates" onclick="app.setView('states')">ESTADOS</div>
+        <div class="toggle-btn" id="viewMun" onclick="app.setView('mun')">MUNICÍPIOS (BR)</div>
     </div>
 
-    <button class="btn-back" id="btnBack" onclick="app.resetToNational()">
+    <button class="btn-back" id="btnBack" onclick="app.resetView()">
         <i class="fas fa-arrow-left"></i> VOLTAR
     </button>
 
     <div id="map"></div>
 
     <div class="legend">
-        <div style="font-size:0.7rem; font-weight:700; color:#fff; margin-bottom:5px;">INTENSIDADE DO VOTO</div>
-        <div class="legend-bar" id="legendBar"></div>
-        <div class="legend-labels">
+        <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#fff; margin-bottom:5px;">Intensidade do Vencedor</div>
+        <div class="leg-bar" id="legBar"></div>
+        <div class="leg-labels">
             <span>Disputado</span>
             <span>Dominante</span>
         </div>
@@ -289,19 +212,19 @@
 
 <aside class="sidebar sidebar-right">
     <div class="res-header">
-        <div class="res-title" id="resTitle">BRASIL</div>
-        <div class="res-sub" id="resSub">PROJEÇÃO NACIONAL</div>
+        <div class="res-title" id="resName">BRASIL</div>
+        <div class="res-subtitle" id="resType">PROJEÇÃO NACIONAL</div>
     </div>
     <div class="res-list" id="resList"></div>
 </aside>
 
 <script>
 // =============================================================================
-// DATA ENGINE (2022 BASE)
+// 1. DATA ENGINE: 2022 GEOGRAPHY BASE
 // =============================================================================
-// Perfil Político Base por Estado (Lula 22 vs Bolso 22)
-// Usado para gerar a "Genética" de cada município
-const STATE_PROFILE = {
+// Defines the Left/Right split of 2022 for each State.
+// The simulation will create a municipal base from this + noise.
+const BASE_2022 = {
     '12':{l:29,r:71}, '27':{l:59,r:41}, '13':{l:51,r:49}, '16':{l:45,r:55},
     '29':{l:72,r:28}, '23':{l:70,r:30}, '53':{l:41,r:59}, '32':{l:42,r:58},
     '52':{l:41,r:59}, '21':{l:71,r:29}, '31':{l:50,r:50}, '50':{l:40,r:60},
@@ -312,24 +235,23 @@ const STATE_PROFILE = {
 };
 
 const UFS = [
-    {id:'12',n:'Acre'},{id:'27',n:'Alagoas'},{id:'13',n:'Amazonas'},{id:'16',n:'Amapá'},
-    {id:'29',n:'Bahia'},{id:'23',n:'Ceará'},{id:'53',n:'DF'},{id:'32',n:'Espírito Santo'},
-    {id:'52',n:'Goiás'},{id:'21',n:'Maranhão'},{id:'31',n:'Minas Gerais'},{id:'50',n:'Mato Grosso do Sul'},
-    {id:'51',n:'Mato Grosso'},{id:'15',n:'Pará'},{id:'25',n:'Paraíba'},{id:'26',n:'Pernambuco'},
-    {id:'22',n:'Piauí'},{id:'41',n:'Paraná'},{id:'33',n:'Rio de Janeiro'},{id:'24',n:'Rio Grande do Norte'},
-    {id:'11',n:'Rondônia'},{id:'14',n:'Roraima'},{id:'43',n:'Rio Grande do Sul'},{id:'42',n:'Santa Catarina'},
-    {id:'28',n:'Sergipe'},{id:'35',n:'São Paulo'},{id:'17',n:'Tocantins'}
+    {id:'12',n:'AC'},{id:'27',n:'AL'},{id:'13',n:'AM'},{id:'16',n:'AP'},{id:'29',n:'BA'},
+    {id:'23',n:'CE'},{id:'53',n:'DF'},{id:'32',n:'ES'},{id:'52',n:'GO'},{id:'21',n:'MA'},
+    {id:'31',n:'MG'},{id:'50',n:'MS'},{id:'51',n:'MT'},{id:'15',n:'PA'},{id:'25',n:'PB'},
+    {id:'26',n:'PE'},{id:'22',n:'PI'},{id:'41',n:'PR'},{id:'33',n:'RJ'},{id:'24',n:'RN'},
+    {id:'11',n:'RO'},{id:'14',n:'RR'},{id:'43',n:'RS'},{id:'42',n:'SC'},{id:'28',n:'SE'},
+    {id:'35',n:'SP'},{id:'17',n:'TO'}
 ];
 
 const CANDIDATES = [
     { id: 'LULA', name: 'Lula', party: 'PT', color: '#E12525', t1: 35, t2: 45 },
-    { id: 'FLAVIO', name: 'Flávio B.', party: 'PL', color: '#002663', t1: 25, t2: 40 },
+    { id: 'FLAVIO', name: 'Flávio B.', party: 'PL', color: '#002776', t1: 25, t2: 40 },
     { id: 'CAIADO', name: 'Caiado', party: 'UNIÃO', color: '#0EA5E9', t1: 8, t2: 0 },
-    { id: 'RATINHO', name: 'Ratinho', party: 'PSD', color: '#109176', t1: 6, t2: 0 },
+    { id: 'RATINHO', name: 'Ratinho', party: 'PSD', color: '#008080', t1: 6, t2: 0 },
     { id: 'RENAN', name: 'Renan', party: 'MISSÃO', color: '#EAB308', t1: 4, t2: 0 },
-    { id: 'ZEMA', name: 'Zema', party: 'NOVO', color: '#F97316', t1: 7, t2: 0 },
+    { id: 'ZEMA', name: 'Zema', party: 'NOVO', color: '#FF8C00', t1: 7, t2: 0 },
     { id: 'CIRO', name: 'Ciro', party: 'PDT', color: '#9333EA', t1: 5, t2: 0 },
-    { id: 'ALDO', name: 'Aldo', party: 'MDB', color: '#006400', t1: 2, t2: 0 }
+    { id: 'ALDO', name: 'Aldo', party: 'MDB', color: '#16a34a', t1: 2, t2: 0 }
 ];
 
 const app = {
@@ -338,142 +260,113 @@ const app = {
     data: { geo: null, stGeo: null, sim: {} },
     state: {
         turn: 1,
-        view: 'states', // 'states', 'mun', 'single'
+        view: 'states', // 'states', 'mun', 'focused'
         activeStateId: null,
-        t2_cands: ['LULA', 'FLAVIO'],
         cands: JSON.parse(JSON.stringify(CANDIDATES)),
-        matrixT1: {}, // { CAND_ID: { l22: 0.5, b22: 0.1, o22: 0.2 } }
-        matrixT2: {},
-        regMult: {} // { turn: { cand: { state: 1.0 } } }
+        t2_pair: ['LULA', 'FLAVIO'],
+        // Configuration
+        mxT1: {}, // { CAND_ID: { l:0.5, b:0.1, o:0.2 } }
+        mxT2: {},
+        reg: {} // { turn: { cand: { state: 1.0 } } }
     },
 
     init: async () => {
-        app.initMatrices();
-        app.initMap();
-        
-        try {
-            // Load GeoJSONs
-            const [munRes, stRes] = await Promise.all([
-                fetch('https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json'),
-                fetch('https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson')
-            ]);
-            
-            const munData = await munRes.json();
-            const stData = await stRes.json();
-
-            // Fix State IDs in stData
-            const ufMap = {}; UFS.forEach(u => ufMap[u.n] = u.id); // Simple map
-            // Need sigla map
-            const siglaMap = {'AC':'12','AL':'27','AM':'13','AP':'16','BA':'29','CE':'23','DF':'53','ES':'32','GO':'52','MA':'21','MG':'31','MS':'50','MT':'51','PA':'15','PB':'25','PE':'26','PI':'22','PR':'41','RJ':'33','RN':'24','RO':'11','RR':'14','RS':'43','SC':'42','SE':'28','SP':'35','TO':'17'};
-            stData.features.forEach(f => f.properties.id = siglaMap[f.properties.sigla]);
-
-            // GENERATE 2022 BASE FOR MUNICIPALITIES
-            munData.features.forEach(f => {
-                const id = f.properties.id.toString();
-                const ufId = id.substring(0, 2);
-                const base = STATE_PROFILE[ufId] || {l:50, r:50};
-                
-                // Add noise for realism
-                const noise = ((parseInt(id) * 12345) % 100 - 50) * 0.25; // +/- 12.5%
-                
-                f.properties.base22 = {
-                    lula: Math.max(0, Math.min(100, base.l + noise)),
-                    bolso: Math.max(0, Math.min(100, base.r - noise))
-                };
-                f.properties.base22.outros = Math.max(0, 100 - f.properties.base22.lula - f.properties.base22.bolso);
-            });
-
-            app.data.geo = munData;
-            app.data.stGeo = stData;
-            
-            document.getElementById('loader').style.display = 'none';
-            app.renderControls();
-            app.runSimulation();
-
-        } catch(e) { console.error(e); alert("Erro ao carregar mapa."); }
-    },
-
-    initMatrices: () => {
-        // Default Logic for Transfer 22->26
+        // Init Defaults
         app.state.cands.forEach(c => {
-            // Heurística Básica
-            let fromL = 0.05, fromB = 0.05, fromO = 0.1;
-            if(['LULA','CIRO'].includes(c.id)) fromL = 0.6;
-            if(['FLAVIO','CAIADO','RATINHO','ZEMA'].includes(c.id)) fromB = 0.6;
-            if(c.id === 'RENAN') { fromL = 0.1; fromB = 0.1; }
-            if(c.id === 'LULA') fromL = 0.8; 
-            if(c.id === 'FLAVIO') fromB = 0.7;
-
-            app.state.matrixT1[c.id] = { l: fromL, b: fromB, o: fromO };
+            // Heuristic Defaults for Transfer Matrix
+            let l=0.05, b=0.05, o=0.1;
+            if(['LULA','CIRO','ALDO'].includes(c.id)) l = 0.5;
+            if(['FLAVIO','CAIADO','RATINHO','ZEMA'].includes(c.id)) b = 0.5;
+            if(c.id==='LULA') l=0.8; if(c.id==='FLAVIO') b=0.7;
+            app.state.mxT1[c.id] = {l,b,o};
         });
-
-        // Init Regional Multipliers
         [1,2].forEach(t => {
-            app.state.regMult[t] = {};
+            app.state.reg[t] = {};
             app.state.cands.forEach(c => {
-                app.state.regMult[t][c.id] = {};
-                UFS.forEach(u => app.state.regMult[t][c.id][u.id] = 1.0);
+                app.state.reg[t][c.id] = {};
+                UFS.forEach(u => app.state.reg[t][c.id][u.id] = 1.0);
             });
         });
-    },
 
-    initMap: () => {
-        app.map = L.map('map', { 
-            center: [-15, -55], zoom: 4, zoomControl: false, preferCanvas: true 
-        });
+        // Initialize Map
+        app.map = L.map('map', { center: [-15, -55], zoom: 4, zoomControl:false, preferCanvas:true });
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { opacity: 1 }).addTo(app.map);
+
+        try {
+            const [mun, st] = await Promise.all([
+                fetch('https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json').then(r=>r.json()),
+                fetch('https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson').then(r=>r.json())
+            ]);
+
+            // Fix State IDs in st data
+            const siglaMap = {'AC':'12','AL':'27','AM':'13','AP':'16','BA':'29','CE':'23','DF':'53','ES':'32','GO':'52','MA':'21','MG':'31','MS':'50','MT':'51','PA':'15','PB':'25','PE':'26','PI':'22','PR':'41','RJ':'33','RN':'24','RO':'11','RR':'14','RS':'43','SC':'42','SE':'28','SP':'35','TO':'17'};
+            st.features.forEach(f => f.properties.id = siglaMap[f.properties.sigla]);
+
+            // GENERATE 2022 BASE FOR MUNICIPALITIES (The "Precise Geography" Fix)
+            mun.features.forEach(f => {
+                const id = f.properties.id.toString();
+                const uf = id.substring(0, 2);
+                const base = BASE_2022[uf] || {l:50, r:50};
+                // Noise based on city ID to simulate local variance
+                const noise = ((parseInt(id) * 12345) % 100 - 50) * 0.25; 
+                f.properties.base22 = {
+                    l: Math.max(0, Math.min(100, base.l + noise)),
+                    r: Math.max(0, Math.min(100, base.r - noise))
+                };
+                f.properties.base22.o = Math.max(0, 100 - f.properties.base22.l - f.properties.base22.r);
+            });
+
+            app.data.geo = mun;
+            app.data.stGeo = st;
+
+            document.getElementById('loader').style.display = 'none';
+            app.renderUI();
+            app.runSim();
+
+        } catch(e) { console.error(e); alert('Erro ao carregar dados.'); }
     },
 
     // =========================================================================
-    // SIMULATION CORE
+    // SIMULATION
     // =========================================================================
-    runSimulation: () => {
+    runSim: () => {
         const t = app.state.turn;
         const active = app.getActiveCands();
-        const res = {}; // { cityId: { winner: id, max: pct, details: {} } }
-        
-        // Sum User Inputs (To Normalize)
-        const userTotal = active.reduce((a,b) => a+b.val, 0);
+        const res = {}; // { cityId: { w: winnerId, m: margin, d: details } }
 
         app.data.geo.features.forEach(f => {
             const id = f.properties.id;
-            const ufId = id.toString().substring(0, 2);
+            const uf = id.toString().substring(0,2);
             const b22 = f.properties.base22;
-            
-            let rawVotes = {};
-            let totalRaw = 0;
+
+            let votes = {};
+            let total = 0;
 
             active.forEach(c => {
                 let score = 0;
                 if(t === 1) {
-                    const m = app.state.matrixT1[c.id];
-                    // Score = Base22 * TransferMatrix
-                    score = (b22.lula * m.l) + (b22.bolso * m.b) + (b22.outros * m.o);
+                    const m = app.state.mxT1[c.id];
+                    // Logic: Transfer from Lula22 + Bolso22 + Other22
+                    score = (b22.l * m.l) + (b22.r * m.b) + (b22.o * m.o);
                 } else {
-                    // Turn 2 Logic: T1 Affinity
-                    // Simplification: We use the T1 logic but re-normalized for 2 candidates
-                    // plus a bias based on ideological proximity
+                    // Turn 2: Simplified Affinity
+                    // Left cands get L22 affinity, Right get R22
                     const isLeft = ['LULA','CIRO','ALDO'].includes(c.id);
-                    const affinity = isLeft ? b22.lula : b22.bolso;
-                    score = affinity;
+                    score = isLeft ? b22.l : b22.r;
                 }
-                
-                // User Slider Adjustment (National Swing)
-                // If user puts 40% in slider, we scale the geo-score to match approx magnitude
-                score *= c.val;
 
-                // Regional Multiplier
-                const reg = app.state.regMult[t][c.id][ufId] || 1.0;
-                score *= reg;
+                // Apply Multipliers
+                score *= c.val; // User Slider
+                score *= (app.state.reg[t][c.id][uf] || 1.0); // Regional
 
-                rawVotes[c.id] = score;
-                totalRaw += score;
+                votes[c.id] = score;
+                total += score;
             });
 
-            // Normalize to 100%
+            // Normalize
             let winner = null, max = -1, details = {};
             active.forEach(c => {
-                const pct = totalRaw > 0 ? (rawVotes[c.id] / totalRaw) * 100 : 0;
+                const pct = total > 0 ? (votes[c.id]/total)*100 : 0;
                 details[c.id] = pct;
                 if(pct > max) { max = pct; winner = c.id; }
             });
@@ -483,159 +376,221 @@ const app = {
 
         app.data.sim = res;
         app.renderMap();
-        app.updateSideResults(); // Update current view results
+        app.updateResults();
     },
 
     // =========================================================================
-    // RENDER MAP
+    // MAP
     // =========================================================================
     renderMap: () => {
         if(app.layers.mun) app.map.removeLayer(app.layers.mun);
         if(app.layers.st) app.map.removeLayer(app.layers.st);
 
-        const mode = app.state.view; // states, mun, single
+        const mode = app.state.view;
         const active = app.getActiveCands();
-        const getCand = (id) => active.find(c => c.id === id);
+        const getC = (id) => active.find(c => c.id === id);
 
-        const getStyle = (id, isState) => {
+        const style = (id, isState) => {
             let winId, pct;
-
-            if (isState) {
-                // Aggregate for state color
-                // Fast Aggregation
+            if(isState) {
+                // Aggregation for State Color
                 let tally = {}; let count = 0;
                 app.data.geo.features.forEach(f => {
                     if(f.properties.id.toString().startsWith(id)) {
                         const r = app.data.sim[f.properties.id];
-                        if(r) {
-                            active.forEach(c => tally[c.id] = (tally[c.id]||0) + r.d[c.id]);
-                            count++;
-                        }
+                        if(r) { active.forEach(c => tally[c.id] = (tally[c.id]||0)+r.d[c.id]); count++; }
                     }
                 });
-                
-                let sMax = -1;
+                let max = -1;
                 active.forEach(c => {
-                    const avg = tally[c.id] / count;
-                    if(avg > sMax) { sMax = avg; winId = c.id; }
+                    let avg = count > 0 ? tally[c.id]/count : 0;
+                    if(avg > max) { max = avg; winId = c.id; }
                 });
-                pct = sMax;
-
+                pct = max;
             } else {
                 const r = app.data.sim[id];
-                if(!r) return {fillColor:'#222', weight:0};
+                if(!r) return {fillColor:'#333', weight:0};
                 winId = r.w; pct = r.m;
             }
 
-            const c = getCand(winId);
-            if(!c) return {fillColor:'#222', weight:0};
+            const c = getC(winId);
+            if(!c) return {fillColor:'#333', weight:0};
 
-            // High Res Shade
-            let shade = 0;
-            if(pct < 35) shade = 0.6;
-            else if(pct < 45) shade = 0.4;
-            else if(pct < 50) shade = 0.2;
-            else if(pct < 60) shade = 0.1;
-            else shade = 0;
-            
-            if(app.state.turn===2 && pct < 55) shade += 0.2;
+            // Atlas Style Buckets
+            let op = 0;
+            if(pct < 35) op = 0.6;
+            else if(pct < 45) op = 0.4;
+            else if(pct < 50) op = 0.2;
+            else if(pct < 60) op = 0.1;
+            else op = 0;
+
+            if(app.state.turn===2 && pct < 55) op += 0.2;
 
             return {
-                fillColor: app.mixColor(c.color, shade),
+                fillColor: app.mix(c.color, op),
                 fillOpacity: 1,
                 color: isState ? 'white' : 'rgba(0,0,0,0.1)',
-                weight: isState ? 1 : 0.3
+                weight: isState ? 1 : 0.2
             };
         };
 
         if(mode === 'states') {
             app.layers.st = L.geoJSON(app.data.stGeo, {
-                style: (f) => getStyle(f.properties.id, true),
-                onEachFeature: (f, l) => {
+                style: (f) => style(f.properties.id, true),
+                onEachFeature: (f,l) => {
                     l.on('click', () => app.enterState(f.properties.id));
-                    l.on('mouseover', () => app.showResultsFor(f.properties.id, f.properties.name, true));
+                    l.on('mouseover', () => app.showRes(f.properties.id, f.properties.name, true));
                 }
             }).addTo(app.map);
             app.map.setView([-15, -55], 4);
         } else {
-            // Municipal View (All or Filtered)
-            const filter = mode === 'single' ? (f) => f.properties.id.toString().startsWith(app.state.activeStateId) : null;
-            
+            const filter = mode === 'focused' ? (f)=>f.properties.id.toString().startsWith(app.state.activeStateId) : null;
             app.layers.mun = L.geoJSON(app.data.geo, {
                 filter: filter,
-                style: (f) => getStyle(f.properties.id, false),
-                onEachFeature: (f, l) => {
-                    l.on('mouseover', () => app.showResultsFor(f.properties.id, f.properties.name, false));
+                style: (f) => style(f.properties.id, false),
+                onEachFeature: (f,l) => {
+                    l.on('mouseover', () => app.showRes(f.properties.id, f.properties.name, false));
                 }
             }).addTo(app.map);
-            
-            if(mode === 'single') app.map.fitBounds(app.layers.mun.getBounds());
+            if(mode === 'focused') app.map.fitBounds(app.layers.mun.getBounds());
             else app.map.setView([-15, -55], 4);
         }
     },
 
-    mixColor: (hex, amount) => {
-        const r = parseInt(hex.substring(1,3),16);
-        const g = parseInt(hex.substring(3,5),16);
-        const b = parseInt(hex.substring(5,7),16);
-        // Mix with #111
-        const r2 = Math.round(r*(1-amount) + 17*amount);
-        const g2 = Math.round(g*(1-amount) + 17*amount);
-        const b2 = Math.round(b*(1-amount) + 17*amount);
-        return `rgb(${r2},${g2},${b2})`;
+    mix: (hex, amount) => {
+        const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+        const tr = Math.round(r*(1-amount)+20*amount); // Mix with dark grey
+        const tg = Math.round(g*(1-amount)+20*amount);
+        const tb = Math.round(b*(1-amount)+20*amount);
+        return `rgb(${tr},${tg},${tb})`;
     },
 
     // =========================================================================
-    // NAVIGATION & INTERACTION
+    // UI HANDLERS
     // =========================================================================
-    changeView: (v) => {
+    renderUI: () => {
+        const div = document.getElementById('candList');
+        div.innerHTML = '';
+        const active = app.getActiveCands();
+        let total = 0;
+
+        active.forEach(c => {
+            total += c.val;
+            const row = document.createElement('div');
+            row.className = 'cand-row';
+            row.innerHTML = `
+                <div class="cand-head">
+                    <div class="cand-info">
+                        <div class="color-dot" style="background:${c.color}" id="cp-${c.id}"></div>
+                        <div>
+                            <div style="font-weight:700; font-size:0.9rem;">${c.name}</div>
+                            <div style="font-size:0.7rem; color:#888;">${c.party}</div>
+                        </div>
+                    </div>
+                    <input type="number" class="cand-input" value="${c.val}" onchange="app.upVal('${c.id}',this.value)">
+                </div>
+                <input type="range" min="0" max="100" value="${c.val}" oninput="app.upVal('${c.id}',this.value)">
+            `;
+            div.appendChild(row);
+
+            setTimeout(() => {
+                const p = Pickr.create({el:`#cp-${c.id}`, theme:'nano', default:c.color, components:{preview:true,hue:true,interaction:{save:true}}});
+                p.on('save', (col) => { c.color=col.toHEXA().toString(); app.renderUI(); app.runSim(); });
+            },0);
+        });
+
+        const sum = document.getElementById('totalSum');
+        sum.innerText = total + "%";
+        sum.style.color = (total>99 && total<101) ? '#3b82f6' : '#ef4444';
+
+        // Legends
+        const lb = document.getElementById('legBar'); lb.innerHTML = '';
+        const win = active.reduce((p,c) => p.val > c.val ? p : c);
+        [0.6, 0.4, 0.2, 0.1, 0].forEach(o => {
+            const d = document.createElement('div'); d.className='leg-seg'; d.style.background=app.mix(win.color, o);
+            lb.appendChild(d);
+        });
+    },
+
+    upVal: (id,v) => {
+        const c = app.state.cands.find(x=>x.id===id);
+        if(app.state.turn===1) c.t1=parseInt(v); else c.t2=parseInt(v);
+        app.renderUI(); app.runSim();
+    },
+
+    setTurn: (t) => {
+        app.state.turn = t;
+        document.getElementById('btnT1').className = t===1?'tab active':'tab';
+        document.getElementById('btnT2').className = t===2?'tab active':'tab';
+        document.getElementById('t2-config').style.display = t===2?'block':'none';
+        
+        if(t===2) {
+            const s1=document.getElementById('sel1'), s2=document.getElementById('sel2');
+            if(s1.options.length===0) {
+                const h = app.state.cands.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+                s1.innerHTML=h; s2.innerHTML=h; s1.value=app.state.t2_pair[0]; s2.value=app.state.t2_pair[1];
+            }
+        }
+        app.renderUI(); app.runSim();
+    },
+
+    updateT2: () => {
+        app.state.t2_pair = [document.getElementById('sel1').value, document.getElementById('sel2').value];
+        app.renderUI(); app.runSim();
+    },
+
+    getActiveCands: () => {
+        if(app.state.turn===1) return app.state.cands.map(c=>({...c, val:c.t1}));
+        return app.state.cands.filter(c=>app.state.t2_pair.includes(c.id)).map(c=>({...c, val:c.t2}));
+    },
+
+    setView: (v) => {
         app.state.view = v;
         app.state.activeStateId = null;
-        document.getElementById('viewStates').className = v==='states'?'map-btn active':'map-btn';
-        document.getElementById('viewMun').className = v==='mun'?'map-btn active':'map-btn';
+        document.getElementById('viewStates').className = v==='states'?'toggle-btn active':'toggle-btn';
+        document.getElementById('viewMun').className = v==='mun'?'toggle-btn active':'toggle-btn';
         document.getElementById('btnBack').style.display = 'none';
         app.renderMap();
     },
-
+    
     enterState: (id) => {
-        app.state.view = 'single';
+        app.state.view = 'focused';
         app.state.activeStateId = id;
         document.getElementById('btnBack').style.display = 'block';
+        document.getElementById('viewStates').className = 'toggle-btn';
+        document.getElementById('viewMun').className = 'toggle-btn';
         app.renderMap();
     },
+    
+    resetView: () => app.setView('states'),
 
-    resetToNational: () => {
-        app.changeView('states');
-    },
-
-    showResultsFor: (id, name, isState) => {
-        const title = document.getElementById('resTitle');
-        const sub = document.getElementById('resSub');
-        const list = document.getElementById('resList');
-        
-        title.innerText = name;
-        sub.innerText = isState ? 'ESTADO' : 'MUNICÍPIO';
+    // =========================================================================
+    // RESULTS & MODALS
+    // =========================================================================
+    showRes: (id, name, isState) => {
+        document.getElementById('resName').innerText = name;
+        document.getElementById('resType').innerText = isState ? 'ESTADO' : 'MUNICÍPIO';
         
         const active = app.getActiveCands();
         let stats = {};
-        
-        if (isState) {
+
+        if(isState) {
             // Aggregate
-            let tally = {}; let count = 0;
+            let t = {}; let cnt = 0;
             app.data.geo.features.forEach(f => {
                 if(f.properties.id.toString().startsWith(id)) {
                     const r = app.data.sim[f.properties.id];
-                    if(r) { active.forEach(c => tally[c.id] = (tally[c.id]||0) + r.d[c.id]); count++; }
+                    if(r) { active.forEach(c => t[c.id] = (t[c.id]||0)+r.d[c.id]); cnt++; }
                 }
             });
-            active.forEach(c => stats[c.id] = count > 0 ? tally[c.id]/count : 0);
+            active.forEach(c => stats[c.id] = cnt>0?t[c.id]/cnt:0);
         } else {
             const r = app.data.sim[id];
             if(r) stats = r.d;
         }
 
-        const sorted = active.map(c => ({...c, p: stats[c.id]||0})).sort((a,b)=>b.p-a.p);
-        
+        const sorted = active.map(c => ({...c, p:stats[c.id]||0})).sort((a,b)=>b.p-a.p);
+        const list = document.getElementById('resList');
         let html = '';
         sorted.forEach(c => {
             html += `
@@ -651,10 +606,9 @@ const app = {
         list.innerHTML = html;
     },
 
-    updateSideResults: () => {
-        // Default to National view if nothing hovered
-        app.showResultsFor('', 'BRASIL', false); 
-        // Note: For Brasil, we use the Sliders/Inputs as truth
+    updateResults: () => {
+        // Default to National (using Input values as truth)
+        app.showRes('', 'BRASIL', false);
         const list = document.getElementById('resList');
         const active = app.getActiveCands().sort((a,b)=>b.val-a.val);
         let html = '';
@@ -670,185 +624,76 @@ const app = {
             `;
         });
         list.innerHTML = html;
-        document.getElementById('resTitle').innerText = 'BRASIL';
-        document.getElementById('resSub').innerText = 'PROJEÇÃO NACIONAL';
+        document.getElementById('resType').innerText = 'PROJEÇÃO NACIONAL';
     },
 
-    // =========================================================================
-    // UI CONTROLS
-    // =========================================================================
-    renderControls: () => {
-        const div = document.getElementById('candList');
-        div.innerHTML = '';
-        const active = app.getActiveCands();
-        let total = 0;
-
-        active.forEach(c => {
-            total += c.val;
-            const row = document.createElement('div');
-            row.className = 'cand-row';
-            row.innerHTML = `
-                <div class="cand-head">
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <div class="cand-color" style="background:${c.color}" id="cp-${c.id}"></div>
-                        <div>
-                            <div>${c.name}</div>
-                            <div class="cand-sub">${c.party}</div>
-                        </div>
-                    </div>
-                    <input type="number" class="cand-input" value="${c.val}" onchange="app.upVal('${c.id}', this.value)">
-                </div>
-                <input type="range" min="0" max="100" value="${c.val}" oninput="app.upVal('${c.id}', this.value)" style="width:100%; margin-top:8px;">
-            `;
-            div.appendChild(row);
-
-            setTimeout(() => {
-                const p = Pickr.create({
-                    el: `#cp-${c.id}`, theme: 'nano', default: c.color,
-                    components: { preview:true, hue:true, interaction:{save:true}}
-                });
-                p.on('save', (col) => {
-                    c.color = col.toHEXA().toString();
-                    row.querySelector('.cand-color').style.background = c.color;
-                    app.runSimulation();
-                });
-            },0);
-        });
-
-        const tot = document.getElementById('totalVal');
-        tot.innerText = total + "%";
-        tot.style.color = (total>99 && total<101) ? '#3b82f6' : '#ef4444';
-        
-        // Legends
-        const lBar = document.getElementById('legendBar');
-        lBar.innerHTML = '';
-        const winner = active.reduce((p,c) => p.val > c.val ? p : c);
-        [0.6, 0.4, 0.2, 0.1, 0].forEach(op => {
-            const s = document.createElement('div');
-            s.className = 'legend-seg';
-            s.style.background = app.mixColor(winner.color, op);
-            lBar.appendChild(s);
-        });
-    },
-
-    upVal: (id, v) => {
-        const val = parseInt(v)||0;
-        const c = app.state.cands.find(x=>x.id===id);
-        if(app.state.turn===1) c.t1=val; else c.t2=val;
-        app.renderControls();
-        app.runSimulation();
-    },
-
-    setTurn: (t) => {
-        app.state.turn = t;
-        document.getElementById('tabT1').className = t===1?'mode-tab active':'mode-tab';
-        document.getElementById('tabT2').className = t===2?'mode-tab active':'mode-tab';
-        document.getElementById('t2-setup').style.display = t===2?'block':'none';
-        
-        // Populate T2 Selects
-        if(t===2) {
-            const s1 = document.getElementById('selC1');
-            const s2 = document.getElementById('selC2');
-            if(s1.options.length === 0) {
-                const o = app.state.cands.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
-                s1.innerHTML = o; s2.innerHTML = o;
-                s1.value = app.state.t2_cands[0];
-                s2.value = app.state.t2_cands[1];
-            }
-        }
-        
-        app.renderControls();
-        app.runSimulation();
-    },
+    // Modal Helpers
+    toggleModal: (id, show) => { document.getElementById(id).style.display = show ? 'flex' : 'none'; },
     
-    updateT2Setup: () => {
-        app.state.t2_cands = [document.getElementById('selC1').value, document.getElementById('selC2').value];
-        app.renderControls();
-        app.runSimulation();
-    },
-
-    getActiveCands: () => {
-        if(app.state.turn===1) return app.state.cands.map(c => ({...c, val:c.t1}));
-        return app.state.cands.filter(c => app.state.t2_cands.includes(c.id)).map(c => ({...c, val:c.t2}));
-    },
-
-    // =========================================================================
-    // MODAL LOGIC
-    // =========================================================================
-    openTransfModal: () => {
-        document.getElementById('transfModal').style.display = 'flex';
-        document.getElementById('matrixT1').style.display = app.state.turn===1 ? 'block' : 'none';
-        document.getElementById('matrixT2').style.display = app.state.turn===2 ? 'block' : 'none';
+    openTransf: () => {
+        app.toggleModal('modalTransf', true);
+        const t = app.state.turn;
+        document.getElementById('mx-t1').style.display = t===1?'block':'none';
+        document.getElementById('mx-t2').style.display = t===2?'block':'none';
         
-        const cont = document.getElementById(app.state.turn===1 ? 'containerT1' : 'containerT2');
-        cont.innerHTML = '';
-        const active = app.getActiveCands();
-        
-        active.forEach(c => {
-            const div = document.createElement('div');
-            div.className = 'matrix-card';
-            div.innerHTML = `<div style="font-weight:700; margin-bottom:10px; color:${c.color}">${c.name}</div>`;
-            
-            if(app.state.turn===1) {
-                const m = app.state.matrixT1[c.id];
-                div.innerHTML += `
-                    <div class="matrix-row"><span>De Lula 22:</span> <input class="matrix-input t-l" data-id="${c.id}" value="${m.l}"></div>
-                    <div class="matrix-row"><span>De Bolso 22:</span> <input class="matrix-input t-b" data-id="${c.id}" value="${m.b}"></div>
-                    <div class="matrix-row"><span>De Outros:</span> <input class="matrix-input t-o" data-id="${c.id}" value="${m.o}"></div>
-                `;
-            } else {
-                div.innerHTML += `<div style="font-size:0.8rem; color:#666;">Ajuste automático por afinidade no T2</div>`;
-            }
-            cont.appendChild(div);
-        });
-    },
-
-    applyTransfers: () => {
-        if(app.state.turn===1) {
-            document.querySelectorAll('.t-l').forEach(i => app.state.matrixT1[i.dataset.id].l = parseFloat(i.value));
-            document.querySelectorAll('.t-b').forEach(i => app.state.matrixT1[i.dataset.id].b = parseFloat(i.value));
-            document.querySelectorAll('.t-o').forEach(i => app.state.matrixT1[i.dataset.id].o = parseFloat(i.value));
-        }
-        app.closeModals();
-        app.runSimulation();
-    },
-
-    openRegModal: () => {
-        document.getElementById('regModal').style.display = 'flex';
-        const grid = document.getElementById('regGrid');
+        const grid = document.getElementById(t===1?'gridT1':'gridT2');
         grid.innerHTML = '';
         const active = app.getActiveCands();
-        const t = app.state.turn;
 
+        active.forEach(c => {
+            const div = document.createElement('div'); div.className='matrix-card';
+            div.innerHTML = `<div style="font-weight:700; margin-bottom:10px; color:${c.color}">${c.name}</div>`;
+            if(t===1) {
+                const m = app.state.mxT1[c.id];
+                div.innerHTML += `
+                    <div class="mx-row"><span>De Lula 22</span> <input class="mx-input l" data-id="${c.id}" value="${m.l}"></div>
+                    <div class="mx-row"><span>De Bolso 22</span> <input class="mx-input b" data-id="${c.id}" value="${m.b}"></div>
+                    <div class="mx-row"><span>De Outros</span> <input class="mx-input o" data-id="${c.id}" value="${m.o}"></div>
+                `;
+            } else {
+                div.innerHTML += `<div style="font-size:0.8rem; color:#666">Transferência automática por afinidade.</div>`;
+            }
+            grid.appendChild(div);
+        });
+    },
+
+    applyTransf: () => {
+        if(app.state.turn===1) {
+            document.querySelectorAll('.mx-input.l').forEach(i => app.state.mxT1[i.dataset.id].l = parseFloat(i.value));
+            document.querySelectorAll('.mx-input.b').forEach(i => app.state.mxT1[i.dataset.id].b = parseFloat(i.value));
+            document.querySelectorAll('.mx-input.o').forEach(i => app.state.mxT1[i.dataset.id].o = parseFloat(i.value));
+        }
+        app.toggleModal('modalTransf', false); app.runSim();
+    },
+
+    openReg: () => {
+        app.toggleModal('modalReg', true);
+        const grid = document.getElementById('gridReg'); grid.innerHTML = '';
+        const t = app.state.turn;
+        const active = app.getActiveCands();
+        
         UFS.forEach(u => {
-            const box = document.createElement('div');
-            box.className = 'st-box';
-            let html = `<div style="font-weight:800; margin-bottom:5px; font-size:0.8rem;">${u.n}</div>`;
+            const d = document.createElement('div'); d.className='st-card';
+            let h = `<div style="font-weight:700; margin-bottom:5px; font-size:0.8rem;">${u.n}</div>`;
             active.forEach(c => {
-                const val = app.state.regMult[t][c.id][u.id];
-                html += `
-                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; margin-bottom:2px;">
+                const v = app.state.reg[t][c.id][u.id];
+                h += `
+                    <div class="mx-row">
                         <span style="color:${c.color}">${c.name}</span>
-                        <input class="matrix-input r-in" data-cid="${c.id}" data-uid="${u.id}" value="${val}" style="width:40px;">
+                        <input class="mx-input reg-in" data-cid="${c.id}" data-uid="${u.id}" value="${v}">
                     </div>
                 `;
             });
-            box.innerHTML = html;
-            grid.appendChild(box);
+            d.innerHTML = h; grid.appendChild(d);
         });
     },
 
-    applyRegional: () => {
+    applyReg: () => {
         const t = app.state.turn;
-        document.querySelectorAll('.r-in').forEach(i => {
-            app.state.regMult[t][i.dataset.cid][i.dataset.uid] = parseFloat(i.value);
+        document.querySelectorAll('.reg-in').forEach(i => {
+            app.state.reg[t][i.dataset.cid][i.dataset.uid] = parseFloat(i.value);
         });
-        app.closeModals();
-        app.runSimulation();
-    },
-
-    closeModals: () => {
-        document.querySelectorAll('.modal-overlay').forEach(m => m.style.display='none');
+        app.toggleModal('modalReg', false); app.runSim();
     }
 };
 
