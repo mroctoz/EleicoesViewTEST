@@ -3,678 +3,840 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlas Simulador 2026 - High Res</title>
+    <title>Atlas Intel Simulator V25 - 2026</title>
     
-    <!-- Leaflet -->
+    <!-- Leaflet & Libs -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <!-- Fonts & Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
-    <!-- Color Picker -->
     <link href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
 
     <style>
         :root {
-            --bg-dark: #0f172a;
-            --bg-panel: #1e293b;
-            --bg-hover: #334155;
-            --accent: #3b82f6;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --border: rgba(255,255,255,0.1);
+            --bg-app: #0e1217;
+            --bg-panel: #161b22;
+            --bg-hover: #222831;
+            --border: #30363d;
+            --accent: #2f81f7;
+            --text-main: #f0f6fc;
+            --text-sub: #8b949e;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; font-family: 'Inter', sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; outline: none; }
         
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            height: 100vh;
-            width: 100vw;
-            overflow: hidden;
-            display: flex;
-        }
+        body { background: var(--bg-app); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; }
 
-        /* LAYOUT */
-        #sidebar-left, #sidebar-right {
-            width: 380px;
-            background: var(--bg-panel);
-            display: flex;
-            flex-direction: column;
-            border-right: 1px solid var(--border);
-            z-index: 20;
-            box-shadow: 5px 0 20px rgba(0,0,0,0.3);
+        /* SIDEBARS */
+        .sidebar {
+            width: 380px; background: var(--bg-panel); display: flex; flex-direction: column;
+            border-right: 1px solid var(--border); z-index: 100; box-shadow: 4px 0 20px rgba(0,0,0,0.4);
         }
-        #sidebar-right { border-left: 1px solid var(--border); border-right: none; }
+        .sidebar-right { border-left: 1px solid var(--border); border-right: none; width: 400px; }
 
-        #main-map {
-            flex: 1;
-            background: #0b0f19;
-            position: relative;
+        .header {
+            padding: 20px; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, #161b22 0%, #0d1117 100%);
         }
+        .brand { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; }
+        .brand span { color: var(--accent); }
 
-        /* HEADER */
-        .brand-header {
-            padding: 20px;
-            background: linear-gradient(to bottom, #1e293b, #162032);
-            border-bottom: 1px solid var(--border);
-            text-align: center;
+        /* TABS */
+        .tabs { display: flex; margin-top: 15px; background: #0d1117; padding: 4px; border-radius: 8px; border: 1px solid var(--border); }
+        .tab {
+            flex: 1; text-align: center; padding: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+            border-radius: 6px; color: var(--text-sub); transition: 0.2s;
         }
-        .brand-logo {
-            font-size: 1.8rem; font-weight: 900; letter-spacing: -1px;
-            background: linear-gradient(135deg, #fff, #94a3b8);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
-        .brand-sub {
-            font-size: 0.75rem; color: var(--accent); font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-top: 5px;
-        }
+        .tab.active { background: var(--accent); color: white; }
 
-        /* CONTROLS */
-        .scroll-area { flex: 1; overflow-y: auto; padding: 20px; }
-        .scroll-area::-webkit-scrollbar { width: 6px; }
-        .scroll-area::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+        /* SCROLL AREA */
+        .scroll-content { flex: 1; overflow-y: auto; padding: 20px; }
+        .scroll-content::-webkit-scrollbar { width: 6px; }
+        .scroll-content::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
 
-        .section-title {
-            font-size: 0.7rem; font-weight: 700; color: var(--text-muted);
-            text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;
-        }
-
-        .toggle-group {
-            display: flex; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 8px; margin-bottom: 25px;
-        }
-        .toggle-btn {
-            flex: 1; text-align: center; padding: 8px; font-size: 0.8rem; font-weight: 600;
-            color: var(--text-muted); cursor: pointer; border-radius: 6px; transition: 0.2s;
-        }
-        .toggle-btn.active { background: var(--accent); color: white; box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3); }
-
-        /* CANDIDATE CARD */
-        .cand-card {
+        /* CANDIDATE ROW */
+        .cand-control {
             background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-            border-radius: 8px; padding: 12px; margin-bottom: 10px;
-            transition: transform 0.2s;
+            padding: 12px; border-radius: 8px; margin-bottom: 12px;
         }
-        .cand-card:hover { border-color: rgba(255,255,255,0.2); }
         .cand-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .cand-name-group { display: flex; align-items: center; gap: 8px; }
-        .color-dot { width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.5); }
-        .cand-name { font-weight: 700; font-size: 0.9rem; }
-        .cand-party { font-size: 0.7rem; color: var(--text-muted); }
+        .cand-info { display: flex; align-items: center; gap: 10px; }
+        .color-box { width: 16px; height: 16px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(255,255,255,0.5); }
+        
         .cand-input {
-            background: transparent; border: none; color: white; font-weight: 800; font-size: 1.1rem;
-            width: 60px; text-align: right;
+            width: 55px; background: #0d1117; border: 1px solid var(--border); color: white;
+            padding: 4px; border-radius: 4px; text-align: right; font-weight: 700;
+        }
+        
+        input[type=range] {
+            width: 100%; -webkit-appearance: none; background: transparent; height: 4px; cursor: pointer;
+        }
+        input[type=range]::-webkit-slider-runnable-track { background: #30363d; height: 4px; border-radius: 2px; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 16px; width: 16px; background: #f0f6fc;
+            border-radius: 50%; margin-top: -6px; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
 
-        input[type=range] {
-            width: 100%; height: 4px; background: #334155; border-radius: 2px; -webkit-appearance: none; cursor: pointer;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%; background: white; margin-top: -5px; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        /* T2 SELECTORS */
+        .t2-select-group { margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        select {
+            width: 100%; background: #0d1117; color: white; border: 1px solid var(--border);
+            padding: 10px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;
         }
 
         /* BUTTONS */
         .btn {
-            width: 100%; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; border: none;
-            display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; font-size: 0.9rem;
+            width: 100%; padding: 12px; border-radius: 6px; border: none; font-weight: 700; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem;
+            transition: transform 0.1s;
         }
-        .btn-primary { background: var(--accent); color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); margin-top: 10px; }
-        .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
-        .btn-secondary { background: #334155; color: white; margin-bottom: 10px; font-size: 0.8rem; }
-        .btn-secondary:hover { background: #475569; }
+        .btn-primary { background: var(--accent); color: white; margin-top: 10px; }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-sub); margin-top: 10px; }
+        .btn-outline:hover { border-color: var(--text-main); color: var(--text-main); }
 
-        /* RESULTS BAR */
-        .result-row { margin-bottom: 15px; }
-        .res-top { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 5px; font-size: 0.9rem; }
-        .res-bar-bg { background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; overflow: hidden; }
-        .res-bar-fill { height: 100%; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        /* MAP AREA */
+        #map-container { flex: 1; position: relative; background: #0e1217; }
+        #map { width: 100%; height: 100%; z-index: 1; background: #0e1217; }
+        
+        /* OVERLAYS */
+        .loader {
+            position: absolute; inset: 0; background: rgba(14, 18, 23, 0.95); z-index: 999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .spinner {
+            width: 40px; height: 40px; border: 4px solid #30363d; border-top-color: var(--accent);
+            border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 15px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .map-control-btn {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            background: var(--bg-panel); padding: 10px 20px; border-radius: 20px;
+            border: 1px solid var(--border); color: white; font-weight: 600; cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 500; display: none;
+        }
+        .map-control-btn:hover { background: var(--accent); border-color: var(--accent); }
+
+        /* LEGEND */
+        .legend {
+            position: absolute; bottom: 30px; left: 30px; z-index: 500;
+            background: var(--bg-panel); padding: 12px; border-radius: 8px; border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .legend-title { font-size: 0.7rem; font-weight: 700; color: var(--text-sub); text-transform: uppercase; margin-bottom: 8px; }
+        .legend-scale { display: flex; gap: 2px; }
+        .legend-step { width: 25px; height: 12px; }
+        .legend-labels { display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--text-sub); margin-top: 4px; }
+
+        /* RESULTS PANEL */
+        .res-header { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border); }
+        .res-title { font-size: 1.2rem; font-weight: 800; }
+        .res-sub { color: var(--accent); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; }
+        
+        .res-row { margin-bottom: 15px; }
+        .res-info { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.9rem; font-weight: 600; }
+        .progress-bg { height: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; overflow: hidden; }
+        .progress-fill { height: 100%; }
 
         /* MODAL */
         .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000;
-            display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px);
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000;
+            display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px);
         }
         .modal {
-            background: #1e293b; width: 600px; max-height: 80vh; border-radius: 12px;
-            border: 1px solid var(--border); display: flex; flex-direction: column;
+            width: 800px; max-height: 85vh; background: var(--bg-panel); border: 1px solid var(--border);
+            border-radius: 12px; display: flex; flex-direction: column;
         }
         .modal-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
         .modal-body { padding: 20px; overflow-y: auto; }
-        .config-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 6px; }
-        .config-input { width: 70px; background: #0f172a; border: 1px solid #475569; color: white; padding: 5px; border-radius: 4px; text-align: center; }
-
-        /* TOOLTIP & LEGEND */
-        .leaflet-tooltip { 
-            background: #1e293b !important; border: 1px solid var(--border) !important; color: white !important; 
-            border-radius: 8px !important; padding: 0 !important; box-shadow: 0 10px 25px rgba(0,0,0,0.5) !important;
-        }
-        .tt-content { padding: 10px; min-width: 150px; }
-        .tt-title { font-weight: 800; border-bottom: 1px solid var(--border); padding-bottom: 5px; margin-bottom: 5px; }
-        
-        .legend-box {
-            position: absolute; bottom: 30px; right: 410px; background: #1e293b; padding: 15px; border-radius: 8px; border: 1px solid var(--border); z-index: 400;
-        }
-        .gradient-bar { width: 200px; height: 10px; background: linear-gradient(to right, #333, #fff); margin: 5px 0; border-radius: 5px; }
+        .state-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .state-item { background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; border: 1px solid var(--border); }
+        .state-label { font-size: 0.8rem; font-weight: 700; color: var(--text-sub); margin-bottom: 5px; display: block; }
     </style>
 </head>
 <body>
 
-<!-- SIDEBAR LEFT: CONTROLS -->
-<aside id="sidebar-left">
-    <div class="brand-header">
-        <div class="brand-logo">BRASIL 2026</div>
-        <div class="brand-sub">SIMULADOR ELEITORAL</div>
-    </div>
-
-    <div class="scroll-area">
-        <div class="section-title">Turno</div>
-        <div class="toggle-group">
-            <div class="toggle-btn active" id="t1-btn" onclick="app.setTurn(1)">1º TURNO</div>
-            <div class="toggle-btn" id="t2-btn" onclick="app.setTurn(2)">2º TURNO</div>
-        </div>
-
-        <div class="section-title" style="display:flex; justify-content:space-between;">
-            <span>Candidatos & Projeção (%)</span>
-            <span id="total-pct" style="color:var(--accent)">100%</span>
-        </div>
-        <div id="candidates-container"></div>
-        
-        <button class="btn btn-primary" onclick="app.runSimulation()">
-            <i class="fas fa-bolt"></i> ATUALIZAR MAPA
-        </button>
-
-        <div style="margin-top: 30px; border-top: 1px solid var(--border); padding-top: 20px;">
-            <div class="section-title">Configurações Avançadas</div>
-            <button class="btn btn-secondary" onclick="app.openModal('regional')">
-                <i class="fas fa-map-marked-alt"></i> Força Regional / Estadual
-            </button>
-            <button class="btn btn-secondary" onclick="app.openModal('transfer')">
-                <i class="fas fa-exchange-alt"></i> Matriz de Transferência
-            </button>
-        </div>
-    </div>
-</aside>
-
-<!-- MAIN MAP -->
-<div id="main-map"></div>
-<div class="legend-box">
-    <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; color:var(--text-muted)">Intensidade do Voto</div>
-    <div class="gradient-bar" id="legend-grad"></div>
-    <div style="display:flex; justify-content:space-between; font-size:0.7rem;">
-        <span>Equilibrado</span>
-        <span>Dominante (+70%)</span>
-    </div>
+<div id="loader" class="loader">
+    <div class="spinner"></div>
+    <div style="font-weight: 600; color: var(--text-sub);">Carregando Malha Digital...</div>
 </div>
 
-<!-- SIDEBAR RIGHT: RESULTS -->
-<aside id="sidebar-right">
-    <div class="brand-header">
-        <div class="brand-logo" style="font-size:1.4rem;">RESULTADOS</div>
-        <div class="brand-sub" id="region-title">NACIONAL</div>
-    </div>
-    <div class="scroll-area" id="results-container">
-        <!-- Results injected here -->
-    </div>
-</aside>
-
-<!-- MODAL -->
-<div class="modal-overlay" id="config-modal">
+<div class="modal-overlay" id="configModal">
     <div class="modal">
         <div class="modal-header">
-            <h3 id="modal-title">Configurações</h3>
-            <button onclick="app.closeModal()" style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;">&times;</button>
+            <h3>Força Regional (Multiplicadores)</h3>
+            <button onclick="app.toggleModal(false)" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
         </div>
-        <div class="modal-body" id="modal-content"></div>
-        <div style="padding:20px; border-top:1px solid var(--border);">
-            <button class="btn btn-primary" onclick="app.saveConfig()">SALVAR E RECALCULAR</button>
+        <div class="modal-body">
+            <div style="margin-bottom: 15px; font-size: 0.85rem; color: var(--text-sub);">
+                Ajuste a força de cada candidato por estado. 1.0 é o padrão. 2.0 dobra a força, 0.5 divide pela metade.
+                Valores salvos separadamente para 1º e 2º turno.
+            </div>
+            <div id="modalStatesContainer" class="state-grid"></div>
+        </div>
+        <div style="padding:20px; border-top:1px solid var(--border); text-align:right;">
+            <button class="btn btn-primary" style="width: auto; display: inline-flex;" onclick="app.saveConfig()">Aplicar e Recalcular</button>
         </div>
     </div>
 </div>
+
+<aside class="sidebar">
+    <div class="header">
+        <div class="brand"><i class="fas fa-globe-americas"></i> ATLAS <span>V25</span></div>
+        <div class="tabs">
+            <div class="tab active" id="tab-t1" onclick="app.setTurn(1)">1º TURNO</div>
+            <div class="tab" id="tab-t2" onclick="app.setTurn(2)">2º TURNO</div>
+        </div>
+    </div>
+
+    <div class="scroll-content" id="controlsArea">
+        <!-- T2 Selectors (Hidden by default) -->
+        <div id="t2-selectors" class="t2-select-group" style="display:none;">
+            <div>
+                <label style="font-size:0.7rem; color:#888; display:block; margin-bottom:4px;">Candidato A</label>
+                <select id="sel-c1" onchange="app.updateT2Candidates()"></select>
+            </div>
+            <div>
+                <label style="font-size:0.7rem; color:#888; display:block; margin-bottom:4px;">Candidato B</label>
+                <select id="sel-c2" onchange="app.updateT2Candidates()"></select>
+            </div>
+        </div>
+
+        <div id="candidatesList"></div>
+
+        <div style="margin-top:20px; padding:15px; background:rgba(255,255,255,0.05); border-radius:8px; text-align:center;">
+            <div style="font-size:0.7rem; color:#888;">TOTAL DA PROJEÇÃO</div>
+            <div id="totalPct" style="font-size:1.4rem; font-weight:800; color: var(--accent);">100%</div>
+        </div>
+
+        <button class="btn btn-outline" onclick="app.toggleModal(true)">
+            <i class="fas fa-sliders-h"></i> Configurar Força Regional
+        </button>
+        
+        <button class="btn btn-primary" onclick="app.runSimulation()">
+            <i class="fas fa-bolt"></i> RODAR SIMULAÇÃO
+        </button>
+    </div>
+</aside>
+
+<div id="map-container">
+    <button id="btnBackMap" class="map-control-btn" onclick="app.resetToNational()">
+        <i class="fas fa-arrow-left"></i> Voltar para Brasil
+    </button>
+    <div id="map"></div>
+    
+    <div class="legend">
+        <div class="legend-title">Intensidade do Voto</div>
+        <div class="legend-scale" id="legendColors">
+            <!-- JS injects colors -->
+        </div>
+        <div class="legend-labels">
+            <span>50%</span>
+            <span>+80%</span>
+        </div>
+    </div>
+</div>
+
+<aside class="sidebar sidebar-right">
+    <div class="header">
+        <div class="brand">RESULTADOS</div>
+    </div>
+    <div class="scroll-content" id="resultsArea">
+        <!-- JS Injects -->
+    </div>
+</aside>
 
 <script>
 // =============================================================================
-// 1. DATA: BASE 2022 (Internal Data for Standalone Functionality)
+// DATA & CONFIG
 // =============================================================================
-// Represents approximate LULA vs BOLSONARO split in 2022 by state.
-// L = Left Base, R = Right Base. used to calculate swings.
-const BASE_2022 = {
-    '12': { uf: 'AC', l: 29, r: 71 }, '27': { uf: 'AL', l: 58, r: 42 },
-    '13': { uf: 'AM', l: 51, r: 49 }, '16': { uf: 'AP', l: 45, r: 55 },
-    '29': { uf: 'BA', l: 72, r: 28 }, '23': { uf: 'CE', l: 70, r: 30 },
-    '53': { uf: 'DF', l: 41, r: 59 }, '32': { uf: 'ES', l: 42, r: 58 },
-    '52': { uf: 'GO', l: 41, r: 59 }, '21': { uf: 'MA', l: 71, r: 29 },
-    '31': { uf: 'MG', l: 50.2, r: 49.8 }, '50': { uf: 'MS', l: 40, r: 60 },
-    '51': { uf: 'MT', l: 35, r: 65 }, '15': { uf: 'PA', l: 52, r: 48 },
-    '25': { uf: 'PB', l: 66, r: 34 }, '26': { uf: 'PE', l: 67, r: 33 },
-    '22': { uf: 'PI', l: 76, r: 24 }, '41': { uf: 'PR', l: 37, r: 63 },
-    '33': { uf: 'RJ', l: 43, r: 57 }, '24': { uf: 'RN', l: 65, r: 35 },
-    '11': { uf: 'RO', l: 29, r: 71 }, '14': { uf: 'RR', l: 24, r: 76 },
-    '43': { uf: 'RS', l: 43, r: 57 }, '42': { uf: 'SC', l: 30, r: 70 },
-    '28': { uf: 'SE', l: 67, r: 33 }, '35': { uf: 'SP', l: 45, r: 55 },
-    '17': { uf: 'TO', l: 51, r: 49 }
+const UFS = [
+    {id:'12',sigla:'AC',name:'Acre'}, {id:'27',sigla:'AL',name:'Alagoas'}, {id:'13',sigla:'AM',name:'Amazonas'},
+    {id:'16',sigla:'AP',name:'Amapá'}, {id:'29',sigla:'BA',name:'Bahia'}, {id:'23',sigla:'CE',name:'Ceará'},
+    {id:'53',sigla:'DF',name:'Distrito Federal'}, {id:'32',sigla:'ES',name:'Espírito Santo'}, {id:'52',sigla:'GO',name:'Goiás'},
+    {id:'21',sigla:'MA',name:'Maranhão'}, {id:'31',sigla:'MG',name:'Minas Gerais'}, {id:'50',sigla:'MS',name:'Mato Grosso do Sul'},
+    {id:'51',sigla:'MT',name:'Mato Grosso'}, {id:'15',sigla:'PA',name:'Pará'}, {id:'25',sigla:'PB',name:'Paraíba'},
+    {id:'26',sigla:'PE',name:'Pernambuco'}, {id:'22',sigla:'PI',name:'Piauí'}, {id:'41',sigla:'PR',name:'Paraná'},
+    {id:'33',sigla:'RJ',name:'Rio de Janeiro'}, {id:'24',sigla:'RN',name:'Rio Grande do Norte'}, {id:'11',sigla:'RO',name:'Rondônia'},
+    {id:'14',sigla:'RR',name:'Roraima'}, {id:'43',sigla:'RS',name:'Rio Grande do Sul'}, {id:'42',sigla:'SC',name:'Santa Catarina'},
+    {id:'28',sigla:'SE',name:'Sergipe'}, {id:'35',sigla:'SP',name:'São Paulo'}, {id:'17',sigla:'TO',name:'Tocantins'}
+];
+
+// Base Bias 2022 (Simplified Left vs Right score for simulation base)
+// > 0.5 = Right leaning, < 0.5 = Left leaning
+const STATE_BIAS = {
+    '12': 0.70, '27': 0.40, '13': 0.52, '16': 0.55, '29': 0.28, '23': 0.30,
+    '53': 0.58, '32': 0.58, '52': 0.60, '21': 0.29, '31': 0.50, '50': 0.60,
+    '51': 0.65, '15': 0.48, '25': 0.35, '26': 0.33, '22': 0.24, '41': 0.63,
+    '33': 0.57, '24': 0.35, '11': 0.70, '14': 0.76, '43': 0.55, '42': 0.69,
+    '28': 0.33, '35': 0.55, '17': 0.50
 };
 
-// =============================================================================
-// 2. CONFIG & STATE
-// =============================================================================
-const CANDIDATES_DB = [
-    { id: 'LULA', name: 'Lula da Silva', party: 'PT', color: '#E12525', base: 'l', t1_val: 42, t2_val: 50 },
-    { id: 'FLAVIO', name: 'Flávio Bolsonaro', party: 'PL', color: '#1E3A8A', base: 'r', t1_val: 30, t2_val: 45 },
-    { id: 'CAIADO', name: 'Ronaldo Caiado', party: 'UNIÃO', color: '#0EA5E9', base: 'r', t1_val: 8, t2_val: 0 },
-    { id: 'RENAN', name: 'Renan Santos', party: 'MISSÃO', color: '#D97706', base: 'n', t1_val: 8, t2_val: 0 },
-    { id: 'ZEMA', name: 'Romeu Zema', party: 'NOVO', color: '#F97316', base: 'r', t1_val: 6, t2_val: 0 },
-    { id: 'RATINHO', name: 'Ratinho Jr', party: 'PSD', color: '#FACC15', base: 'r', t1_val: 4, t2_val: 0 },
-    { id: 'CIRO', name: 'Ciro Gomes', party: 'PDT', color: '#9333EA', base: 'l', t1_val: 2, t2_val: 0 }
+const DEFAULT_CANDS = [
+    { id: 'LULA', name: 'Lula', party: 'PT', color: '#E12525', t1: 42, t2: 48 },
+    { id: 'FLAVIO', name: 'Flávio B.', party: 'PL', color: '#102e6b', t1: 32, t2: 52 },
+    { id: 'ZEMA', name: 'Zema', party: 'NOVO', color: '#FF8C00', t1: 8, t2: 0 },
+    { id: 'CAIADO', name: 'Caiado', party: 'UNIÃO', color: '#2684FF', t1: 6, t2: 0 },
+    { id: 'RENAN', name: 'Renan', party: 'MISSÃO', color: '#FFD700', t1: 5, t2: 0 },
+    { id: 'RATINHO', name: 'Ratinho', party: 'PSD', color: '#128C7E', t1: 4, t2: 0 },
+    { id: 'CIRO', name: 'Ciro', party: 'PDT', color: '#A020F0', t1: 3, t2: 0 }
 ];
 
 const app = {
     map: null,
-    layer: null,
-    turn: 1,
-    activeCandidates: [],
-    // Simulation Parameters
-    multipliers: { // Specific regional boosts (1.0 = normal)
-        'CAIADO': { '52': 3.5, '50': 1.5, '51': 1.5 }, // Strong in GO/Centro-Oeste
-        'ZEMA': { '31': 2.8, '32': 1.2 }, // Strong in MG
-        'RATINHO': { '41': 3.0 }, // Strong in PR
-        'FLAVIO': { '33': 1.3, '42': 1.2 }, // Strong in RJ, SC
-        'LULA': { '23': 1.1, '29': 1.1 }, // Bonus in Northeast home bases
-        'RENAN': { '35': 1.3 } // Urban SP bias
-    },
-    // Transfer Matrix (Where do votes go in Turn 2 or general redistribution)
-    // Structure: Source -> { Target: ratio }
-    transfers: {
-        'CAIADO': { 'FLAVIO': 0.8, 'LULA': 0.1 },
-        'ZEMA': { 'FLAVIO': 0.75, 'LULA': 0.1 },
-        'RATINHO': { 'FLAVIO': 0.7, 'LULA': 0.15 },
-        'RENAN': { 'LULA': 0.3, 'FLAVIO': 0.3 }, // Null/Blank remainder
-        'CIRO': { 'LULA': 0.6, 'FLAVIO': 0.2 }
+    layers: { states: null, cities: null },
+    geoData: { full: null },
+    state: {
+        turn: 1,
+        candidates: JSON.parse(JSON.stringify(DEFAULT_CANDS)), // Deep copy
+        t2_selection: ['LULA', 'FLAVIO'],
+        multipliers: {}, // { turn: { candId: { stateId: val } } }
+        view: 'national', // or 'state'
+        activeStateId: null,
+        simulationCache: {} // Store simulation results
     },
 
     init: async () => {
         // Init Map
-        app.map = L.map('main-map', { center: [-15, -55], zoom: 4, zoomControl: false, background: '#0b0f19' });
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { opacity: 0.3 }).addTo(app.map);
+        app.map = L.map('map', { 
+            center: [-15, -55], zoom: 4, 
+            zoomControl: false, attributionControl: false,
+            preferCanvas: true 
+        });
         
-        // Load GeoJSON (Brazil States)
-        const res = await fetch('https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson');
-        const data = await res.json();
-        
-        // Fix IDs
-        const ufMap = {'AC':'12','AL':'27','AM':'13','AP':'16','BA':'29','CE':'23','DF':'53','ES':'32','GO':'52','MA':'21','MG':'31','MS':'50','MT':'51','PA':'15','PB':'25','PE':'26','PI':'22','PR':'41','RJ':'33','RN':'24','RO':'11','RR':'14','RS':'43','SC':'42','SE':'28','SP':'35','TO':'17'};
-        data.features.forEach(f => f.properties.id = ufMap[f.properties.sigla]);
+        // Dark Base Layer
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { opacity: 1 }).addTo(app.map);
 
-        app.geoData = data;
-        app.setupUI();
-        app.runSimulation();
+        // Init Legend
+        app.renderLegend();
+        
+        // Init Multipliers Structure
+        app.initMultipliers();
+
+        // UI Setup
+        app.renderCandidates();
+        app.populateT2Selectors();
+
+        // Load Data
+        await app.loadGeoJSON();
     },
 
-    setupUI: () => {
-        app.renderCandidateList();
-    },
-
-    setTurn: (t) => {
-        app.turn = t;
-        document.getElementById('t1-btn').className = `toggle-btn ${t==1?'active':''}`;
-        document.getElementById('t2-btn').className = `toggle-btn ${t==2?'active':''}`;
-        
-        // Logic: Turn 2 usually only has top 2 from Turn 1 config, or user manually sets it.
-        // For this simulator, we just filter the list for simplicity or reset values.
-        if (t === 2) {
-            // Auto-select top 2 based on default values
-            const sorted = [...CANDIDATES_DB].sort((a,b) => b.t1_val - a.t1_val);
-            app.activeCandidates = sorted.slice(0, 2).map(c => ({...c, val: 50})); // Reset to 50-50 start
-        } else {
-            app.activeCandidates = CANDIDATES_DB.map(c => ({...c, val: c.t1_val}));
-        }
-        app.renderCandidateList();
-        app.runSimulation();
-    },
-
-    renderCandidateList: () => {
-        const container = document.getElementById('candidates-container');
-        container.innerHTML = '';
-        
-        // Only show relevant candidates
-        const list = app.turn === 1 ? CANDIDATES_DB : app.activeCandidates;
-        
-        // Update global active list reference if strictly T1
-        if (app.turn === 1) app.activeCandidates = JSON.parse(JSON.stringify(CANDIDATES_DB)).map(c => ({...c, val: c.t1_val}));
-
-        app.activeCandidates.forEach((cand, idx) => {
-            const el = document.createElement('div');
-            el.className = 'cand-card';
-            el.innerHTML = `
-                <div class="cand-header">
-                    <div class="cand-name-group">
-                        <div class="color-dot" style="background:${cand.color}" id="dot-${idx}"></div>
-                        <div>
-                            <div class="cand-name">${cand.name}</div>
-                            <div class="cand-party">${cand.party}</div>
-                        </div>
-                    </div>
-                    <input type="number" class="cand-input" value="${cand.val}" data-idx="${idx}" onchange="app.updateVal(this, ${idx})">
-                    <span style="font-size:0.8rem">%</span>
-                </div>
-                <input type="range" min="0" max="100" value="${cand.val}" oninput="app.updateVal(this, ${idx})">
-            `;
-            
-            // Color Picker Bind
-            el.querySelector(`#dot-${idx}`).addEventListener('click', (e) => {
-                const pickr = Pickr.create({
-                    el: e.target, theme: 'nano', default: cand.color,
-                    components: { preview: true, hue: true, interaction: { save: true } }
-                });
-                pickr.on('save', (color) => {
-                    cand.color = color.toHEXA().toString();
-                    e.target.style.background = cand.color;
-                    app.runSimulation();
-                    pickr.destroyAndRemove();
+    initMultipliers: () => {
+        // Initialize structure for all turns, candidates and states
+        [1, 2].forEach(t => {
+            app.state.multipliers[t] = {};
+            app.state.candidates.forEach(c => {
+                app.state.multipliers[t][c.id] = {};
+                UFS.forEach(uf => {
+                    app.state.multipliers[t][c.id][uf.id] = 1.0;
                 });
             });
-
-            container.appendChild(el);
         });
-        app.updateTotal();
     },
 
-    updateVal: (el, idx) => {
-        let v = parseFloat(el.value);
-        if (v < 0) v = 0; if (v > 100) v = 100;
-        
-        // Sync inputs
-        const parent = el.closest('.cand-card');
-        parent.querySelector('input[type=number]').value = v;
-        parent.querySelector('input[type=range]').value = v;
-        
-        app.activeCandidates[idx].val = v;
-        app.updateTotal();
+    loadGeoJSON: async () => {
+        try {
+            // Downloading Municipal GeoJSON (Optimized or standard)
+            // Using a reliable source for Brazil Muns.
+            const url = "https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json";
+            const res = await fetch(url);
+            const data = await res.json();
+            
+            // Pre-process Data: Add State ID to properties for easier filtering
+            // The file usually has id: "1100015" -> first 2 digits are state
+            data.features.forEach(f => {
+                const id = f.properties.id || f.properties.codarea;
+                f.properties.ufId = id.toString().substring(0, 2);
+                // Assign a persistent "Bias" seed for simulation
+                f.properties.bias = app.calculateCityBias(id, f.properties.ufId);
+            });
+
+            app.geoData.full = data;
+
+            // Load State Boundaries for National View (Faster)
+            const resStates = await fetch('https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson');
+            const dataStates = await resStates.json();
+            // Fix IDs in state file
+            const ufMap = {}; UFS.forEach(u => ufMap[u.sigla] = u.id);
+            dataStates.features.forEach(f => f.properties.id = ufMap[f.properties.sigla]);
+            
+            app.geoData.states = dataStates;
+
+            app.runSimulation(); // Run first sim
+            document.getElementById('loader').style.display = 'none';
+
+        } catch (e) {
+            console.error(e);
+            alert("Erro ao carregar mapa. Recarregue a página.");
+        }
     },
 
-    updateTotal: () => {
-        const sum = app.activeCandidates.reduce((a,b) => a + b.val, 0);
-        const el = document.getElementById('total-pct');
-        el.innerText = sum.toFixed(1) + "%";
-        el.style.color = Math.abs(sum - 100) < 0.5 ? '#4ade80' : '#f87171';
+    // A deterministic "random" bias generator for cities
+    calculateCityBias: (cityId, ufId) => {
+        // Base bias from state
+        const stateBase = STATE_BIAS[ufId] || 0.5;
+        // Pseudo-random deviation based on city ID (-0.15 to +0.15)
+        const seed = parseInt(cityId) * 9301 + 49297;
+        const rnd = ((seed % 1000) / 1000) * 0.3 - 0.15;
+        return stateBase + rnd; // Higher = Right, Lower = Left
     },
 
     // =========================================================================
-    // 3. SIMULATION ENGINE
+    // SIMULATION ENGINE
     // =========================================================================
     runSimulation: () => {
-        const results = {}; // { stateId: { candId: votes_pct } }
+        const turn = app.state.turn;
+        const activeCands = app.getActiveCandidates();
+        const results = {}; // { cityId: { candId: pct, winner: candId, margin: pct } }
         
-        // Get National Totals set by user
-        const nationalTargets = {};
-        app.activeCandidates.forEach(c => nationalTargets[c.id] = c.val);
+        // Prepare calculation constants
+        const grandTotalInput = activeCands.reduce((a,b) => a+b.val, 0);
+        
+        // 1. Calculate Per City
+        app.geoData.full.features.forEach(f => {
+            const cityId = f.properties.id;
+            const ufId = f.properties.ufId;
+            const bias = f.properties.bias; // 0 (Left) to 1 (Right)
 
-        // -----------------------------
-        // ALGORITHM
-        // -----------------------------
-        Object.entries(BASE_2022).forEach(([id, baseData]) => {
-            const stateResults = {};
-            let stateTotalWeight = 0;
+            let cityVotes = {};
+            let totalScore = 0;
 
-            // Step 1: Calculate "Raw Strength" per candidate in this state
-            app.activeCandidates.forEach(c => {
-                // Base correlation: Leftists correlate with Lula22, Rightists with Bolso22
-                let baseScore = c.base === 'l' ? baseData.l : (c.base === 'r' ? baseData.r : 50);
+            activeCands.forEach(c => {
+                // Determine Ideological Alignment (Simulated)
+                // PT/Left: Stronger when bias is low. PL/Right: Stronger when bias is high.
+                // We map candidates roughly to a spectrum.
+                let alignment = 0.5; // Neutral
+                if(['LULA','CIRO','RENAN'].includes(c.id)) alignment = 0; // Left-ish
+                if(['FLAVIO','CAIADO','ZEMA','RATINHO'].includes(c.id)) alignment = 1; // Right-ish
                 
-                // Regional Multiplier
-                let multiplier = 1.0;
-                if (app.multipliers[c.id] && app.multipliers[c.id][id]) {
-                    multiplier = app.multipliers[c.id][id];
-                }
-
-                // National Swing (User Input)
-                // We normalize the user input against a theoretical average
-                const nationalSwing = c.val; 
-
-                // Raw formula: Base * Multiplier * SwingFactor
-                // This is a heuristic to distribute the user's national % into the map
-                let score = (baseScore / 50) * multiplier * nationalSwing;
+                // Distance from city bias
+                const dist = 1 - Math.abs(bias - alignment);
                 
-                stateResults[c.id] = score;
-                stateTotalWeight += score;
+                // Base Score based on User Input (National Strength)
+                let score = c.val * (dist * 1.5); // 1.5 factor accentuates geography
+
+                // Apply Regional Multiplier
+                const mult = app.state.multipliers[turn][c.id][ufId] || 1.0;
+                score *= mult;
+
+                cityVotes[c.id] = score;
+                totalScore += score;
             });
 
-            // Step 2: Normalize to 100% (excluding blanks/nulls logic for simplicity)
-            const finalState = {};
-            app.activeCandidates.forEach(c => {
-                finalState[c.id] = (stateResults[c.id] / stateTotalWeight) * 100;
+            // Normalize to 100%
+            let maxVal = -1;
+            let winner = null;
+            const finalPcts = {};
+
+            activeCands.forEach(c => {
+                const pct = totalScore > 0 ? (cityVotes[c.id] / totalScore) * 100 : 0;
+                finalPcts[c.id] = pct;
+                if(pct > maxVal) { maxVal = pct; winner = c.id; }
             });
 
-            // Step 3 (Turn 2 Only): Apply Transfers if simulation logic requires it
-            // Note: In this simple UI, Turn 2 is manually set by user sliders mostly, 
-            // but if we wanted to automate "Turn 1 to Turn 2", we would use app.transfers here.
-            // For now, the "Raw Strength" logic works for both scenarios based on user inputs.
-
-            results[id] = finalState;
+            results[cityId] = {
+                pcts: finalPcts,
+                winner: winner,
+                max: maxVal
+            };
         });
 
-        app.simulationResults = results;
+        app.state.simulationCache = results;
         app.renderMap();
-        app.renderSideResults();
+        app.renderResultsPanel();
     },
 
     // =========================================================================
-    // 4. RENDERING
+    // MAP RENDERING
     // =========================================================================
     renderMap: () => {
-        if(app.layer) app.map.removeLayer(app.layer);
-        
-        app.layer = L.geoJSON(app.geoData, {
-            style: (feature) => {
-                const id = feature.properties.id;
-                const res = app.simulationResults[id];
-                
-                // Find Winner
-                let winner = null;
-                let max = -1;
-                app.activeCandidates.forEach(c => {
-                    if(res[c.id] > max) { max = res[c.id]; winner = c; }
+        if(app.layers.states) app.map.removeLayer(app.layers.states);
+        if(app.layers.cities) app.map.removeLayer(app.layers.cities);
+
+        const isNational = app.state.view === 'national';
+        const results = app.state.simulationCache;
+        const activeCands = app.getActiveCandidates();
+
+        // Helper to get color
+        const getStyle = (id, isStateLayer) => {
+            let winnerObj, pct;
+
+            if (isStateLayer) {
+                // Aggregate city results to state
+                // Simplified: Just use a pre-calc or on-the-fly average
+                // For speed in this demo, we'll re-sim state level quickly or just use the multipliers logic
+                // But to be consistent, we should aggregate. 
+                // Let's grab a representative city or just use the bias logic for the state color.
+                // Better: Just use the simulation logic on the state ID directly.
+                // (Simulating state logic)
+                const ufId = id;
+                let scores = {}; let tot = 0;
+                activeCands.forEach(c => {
+                    const mult = app.state.multipliers[app.state.turn][c.id][ufId] || 1.0;
+                    // State Bias logic
+                    const bias = STATE_BIAS[ufId] || 0.5;
+                    let alignment = ['LULA','CIRO'].includes(c.id) ? 0 : 1;
+                    const dist = 1 - Math.abs(bias - alignment);
+                    const s = c.val * (dist * 1.5) * mult;
+                    scores[c.id] = s; tot += s;
                 });
-
-                if (!winner) return { fillColor: '#333', color: '#444' };
-
-                // Opacity based on strength (50% to 80%)
-                // Scale: 30% margin = weak, 70% = strong
-                // Visualization: Mix color with black or white
-                // For a "TV Look", we often just use solid colors or slight gradients. 
-                // Let's use opacity for intensity.
-                
-                let intensity = (max - 20) / 60; // Normalize
-                if (intensity < 0.2) intensity = 0.2;
-                if (intensity > 1) intensity = 1;
-
-                // Better Visual: Mix with base color
-                return {
-                    fillColor: winner.color,
-                    fillOpacity: 0.6 + (intensity * 0.4), // 0.6 to 1.0
-                    color: 'rgba(255,255,255,0.3)',
-                    weight: 1
-                };
-            },
-            onEachFeature: (f, l) => {
-                l.on('click', () => app.showStateDetails(f.properties.id, f.properties.name));
-                
-                // Tooltip
-                const id = f.properties.id;
-                const res = app.simulationResults[id];
-                const sorted = app.activeCandidates.map(c => ({...c, pct: res[c.id]})).sort((a,b)=>b.pct - a.pct);
-                
-                let html = `<div class="tt-content"><div class="tt-title">${f.properties.name}</div>`;
-                sorted.slice(0, 3).forEach(c => {
-                    html += `<div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:2px;">
-                        <span style="color:${c.color}">${c.name}</span>
-                        <b>${c.pct.toFixed(1)}%</b>
-                    </div>`;
+                let max=-1; let w=null;
+                activeCands.forEach(c=>{ 
+                    let p = (scores[c.id]/tot)*100; 
+                    if(p>max){max=p; w=c;}
                 });
-                html += `</div>`;
-                l.bindTooltip(html, { sticky: true });
+                winnerObj = w; pct = max;
+
+            } else {
+                // City Level
+                const r = results[id];
+                if(!r) return { fillColor: '#222', fillOpacity:1, stroke:false };
+                winnerObj = activeCands.find(c => c.id === r.winner);
+                pct = r.max;
             }
-        }).addTo(app.map);
-    },
 
-    renderSideResults: () => {
-        app.updateSidePanel("NACIONAL", app.calculateNationalAggregates());
-    },
+            if(!winnerObj) return { fillColor: '#333' };
 
-    calculateNationalAggregates: () => {
-        // Aggregate state results weighted by population/votes (Simplified: Assume uniform weight or use 2022 voters count)
-        // For a true sim, we need voters count. Let's add a rough weight map based on 2022 valid votes ~120M
-        const WEIGHTS = { '35': 27, '31': 13, '33': 10, '29': 9, '43': 7, '41': 7, '26': 5, '23': 5, '52': 4, '15': 4, '42': 4, '21': 3, '25': 2.5, '32': 2.3, '13': 2.2, '24': 2, '51': 1.9, '22': 1.9, '53': 1.8, '50': 1.5, '28': 1.3, '11': 0.9, '17': 0.8, '27': 1.7, '12': 0.5, '16': 0.4, '14': 0.3 };
-        
-        const totals = {};
-        let totalWeight = 0;
+            // Atlas Style: Solid Color, "Steps"
+            // < 50% (Impossible in 2 cand, but possible in 1) -> Lightest
+            // Steps: 20, 30, 40, 50, 60, 70, 80
+            const color = winnerObj.color;
+            let mix = '#ffffff';
+            let ratio = 0; // 0 = Pure Color, 1 = White
 
-        Object.keys(app.simulationResults).forEach(id => {
-            const w = WEIGHTS[id] || 1;
-            totalWeight += w;
-            const res = app.simulationResults[id];
-            app.activeCandidates.forEach(c => {
-                totals[c.id] = (totals[c.id] || 0) + (res[c.id] * w);
-            });
-        });
+            if(pct < 30) ratio = 0.8;
+            else if(pct < 40) ratio = 0.6;
+            else if(pct < 50) ratio = 0.4;
+            else if(pct < 60) ratio = 0.2; // Atlas standard win
+            else if(pct < 70) ratio = 0.1;
+            else ratio = 0; // Strong hold
 
-        // Normalize
-        const final = [];
-        app.activeCandidates.forEach(c => {
-            final.push({ ...c, pct: totals[c.id] / totalWeight });
-        });
-        return final.sort((a,b) => b.pct - a.pct);
-    },
+            // In T2 (2 candidates), standard is usually >50. So 50-55 is light, 55-60 mid, 60+ dark.
+            if(app.state.turn === 2) {
+                if(pct < 52) ratio = 0.6;
+                else if(pct < 56) ratio = 0.4;
+                else if(pct < 60) ratio = 0.2;
+                else ratio = 0;
+            }
 
-    showStateDetails: (id, name) => {
-        const res = app.simulationResults[id];
-        const data = app.activeCandidates.map(c => ({...c, pct: res[c.id]})).sort((a,b) => b.pct - a.pct);
-        app.updateSidePanel(name, data);
-    },
+            const finalColor = app.mixColors(color, '#ffffff', ratio);
 
-    updateSidePanel: (title, data) => {
-        document.getElementById('region-title').innerText = title;
-        const c = document.getElementById('results-container');
-        c.innerHTML = '';
+            return {
+                fillColor: finalColor,
+                fillOpacity: 1, // 100% Opacity requested
+                color: isStateLayer ? '#ffffff' : 'rgba(0,0,0,0.1)', // Border
+                weight: isStateLayer ? 1 : 0.5
+            };
+        };
 
-        data.forEach(item => {
-            const row = document.createElement('div');
-            row.className = 'result-row';
-            row.innerHTML = `
-                <div class="res-top">
-                    <span style="display:flex; align-items:center; gap:6px;">
-                        <div style="width:10px; height:10px; background:${item.color}; border-radius:50%"></div>
-                        ${item.name}
-                    </span>
-                    <span>${item.pct.toFixed(2)}%</span>
-                </div>
-                <div class="res-bar-bg">
-                    <div class="res-bar-fill" style="width:${item.pct}%; background:${item.color}"></div>
-                </div>
-            `;
-            c.appendChild(row);
-        });
-    },
-
-    // =========================================================================
-    // 5. MODAL & ADVANCED CONFIG
-    // =========================================================================
-    openModal: (type) => {
-        const modal = document.getElementById('config-modal');
-        const content = document.getElementById('modal-content');
-        const title = document.getElementById('modal-title');
-        modal.style.display = 'flex';
-        content.innerHTML = '';
-
-        if (type === 'regional') {
-            title.innerText = "Multiplicadores Estaduais";
-            // Create inputs for key states for each candidate
-            app.activeCandidates.forEach(cand => {
-                const header = document.createElement('div');
-                header.innerHTML = `<h4 style="margin:15px 0 5px 0; color:${cand.color}">${cand.name}</h4>`;
-                content.appendChild(header);
-
-                // Key States List (Simplified)
-                const keyStates = ['35','31','33','29','43','52','26','41']; 
-                const names = {'35':'SP','31':'MG','33':'RJ','29':'BA','43':'RS','52':'GO','26':'PE','41':'PR'};
-
-                const grid = document.createElement('div');
-                grid.style.display = 'grid'; grid.style.gridTemplateColumns = '1fr 1fr'; grid.style.gap = '10px';
-                
-                keyStates.forEach(sid => {
-                    const currentVal = (app.multipliers[cand.id] && app.multipliers[cand.id][sid]) || 1.0;
-                    grid.innerHTML += `
-                        <div class="config-row">
-                            <span>${names[sid]}</span>
-                            <input type="number" step="0.1" class="config-input region-input" 
-                                data-cand="${cand.id}" data-state="${sid}" value="${currentVal}">
-                        </div>
-                    `;
-                });
-                content.appendChild(grid);
-            });
-        } else if (type === 'transfer') {
-            title.innerText = "Matriz de Transferência (Turno 1 -> 2)";
-            content.innerHTML = `<p style="font-size:0.8rem; color:#aaa; margin-bottom:10px;">Define para onde vão os votos em cenários hipotéticos.</p>`;
+        if (isNational) {
+            // Render States
+            app.layers.states = L.geoJSON(app.geoData.states, {
+                style: (f) => getStyle(f.properties.id, true),
+                onEachFeature: (f, l) => {
+                    l.on('click', () => app.zoomToState(f.properties.id));
+                    // Simple Tooltip
+                    l.bindTooltip(`<b>${f.properties.name}</b>`, {sticky:true});
+                }
+            }).addTo(app.map);
+            app.map.setView([-15, -55], 4);
+            document.getElementById('btnBackMap').style.display = 'none';
+        } else {
+            // Render Municipalities for selected State (or all if careful)
+            // Filtering for performance
+            const stateFeats = app.geoData.full.features.filter(f => f.properties.ufId === app.state.activeStateId);
             
-            // Logic: Source Candidate -> Target Candidate input
-            CANDIDATES_DB.forEach(src => {
-                const wrap = document.createElement('div');
-                wrap.innerHTML = `<div style="margin-top:10px; font-weight:bold; color:${src.color}">Eleitores de ${src.name} migram para:</div>`;
-                
-                const subGrid = document.createElement('div');
-                subGrid.style.display = 'grid'; subGrid.style.gap = '5px';
-
-                ['LULA', 'FLAVIO'].forEach(targetId => {
-                    const target = CANDIDATES_DB.find(c => c.id === targetId);
-                    if(src.id === targetId) return;
-
-                    const val = (app.transfers[src.id] && app.transfers[src.id][targetId]) || 0;
-                    subGrid.innerHTML += `
-                        <div class="config-row">
-                            <span style="font-size:0.8rem">${target.name}</span>
-                            <input type="number" step="0.1" max="1" class="config-input transfer-input"
-                                data-src="${src.id}" data-target="${targetId}" value="${val}">
-                        </div>
-                    `;
-                });
-                wrap.appendChild(subGrid);
-                content.appendChild(wrap);
-            });
+            app.layers.cities = L.geoJSON({type:"FeatureCollection", features:stateFeats}, {
+                style: (f) => getStyle(f.properties.id, false),
+                onEachFeature: (f, l) => {
+                    // Detailed Tooltip
+                    const r = results[f.properties.id];
+                    let content = `<div style="padding:5px; min-width:120px;"><b>${f.properties.name}</b><hr style="border-color:#444; margin:5px 0;">`;
+                    if(r) {
+                        const sorted = activeCands.map(c => ({...c, p: r.pcts[c.id]})).sort((a,b)=>b.p-a.p);
+                        sorted.forEach(c => {
+                            content += `<div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:3px;">
+                                <span style="color:${c.color}">${c.name}</span>
+                                <span>${c.p.toFixed(1)}%</span>
+                            </div>`;
+                        });
+                    }
+                    content += `</div>`;
+                    l.bindTooltip(content, {sticky:true, className:'custom-tt'});
+                }
+            }).addTo(app.map);
+            
+            // Fit bounds
+            app.map.fitBounds(app.layers.cities.getBounds());
+            document.getElementById('btnBackMap').style.display = 'block';
         }
     },
 
-    closeModal: () => {
-        document.getElementById('config-modal').style.display = 'none';
+    zoomToState: (ufId) => {
+        app.state.view = 'state';
+        app.state.activeStateId = ufId;
+        app.renderMap();
+        app.renderResultsPanel(); // Update side panel to show State results
+    },
+
+    resetToNational: () => {
+        app.state.view = 'national';
+        app.state.activeStateId = null;
+        app.renderMap();
+        app.renderResultsPanel();
+    },
+
+    // =========================================================================
+    // UI HANDLERS
+    // =========================================================================
+    setTurn: (t) => {
+        app.state.turn = t;
+        document.getElementById('tab-t1').className = `tab ${t===1?'active':''}`;
+        document.getElementById('tab-t2').className = `tab ${t===2?'active':''}`;
+        
+        document.getElementById('t2-selectors').style.display = t===2 ? 'grid' : 'none';
+        
+        app.renderCandidates();
+        app.runSimulation();
+    },
+
+    getActiveCandidates: () => {
+        if(app.state.turn === 1) {
+            // In T1, use val property mapping from t1 config
+            return app.state.candidates.map(c => ({...c, val: c.t1}));
+        } else {
+            // In T2, filter by selection and use t2 config
+            const s = app.state.t2_selection;
+            return app.state.candidates
+                .filter(c => s.includes(c.id))
+                .map(c => ({...c, val: c.t2}));
+        }
+    },
+
+    renderCandidates: () => {
+        const list = document.getElementById('candidatesList');
+        list.innerHTML = '';
+        const active = app.getActiveCandidates();
+        let total = 0;
+
+        active.forEach((c, idx) => {
+            total += c.val;
+            const div = document.createElement('div');
+            div.className = 'cand-control';
+            div.innerHTML = `
+                <div class="cand-header">
+                    <div class="cand-info">
+                        <div class="color-box" style="background:${c.color}" id="cp-${c.id}"></div>
+                        <div style="font-weight:700;">${c.name}</div>
+                        <div style="font-size:0.75rem; color:#888;">${c.party}</div>
+                    </div>
+                    <input type="number" class="cand-input" value="${c.val}" 
+                        onchange="app.updateVal('${c.id}', this.value)">
+                </div>
+                <input type="range" min="0" max="100" value="${c.val}" 
+                    oninput="app.updateVal('${c.id}', this.value)">
+            `;
+            list.appendChild(div);
+
+            // Color Picker
+            setTimeout(() => {
+                const pickr = Pickr.create({
+                    el: `#cp-${c.id}`, theme: 'nano', default: c.color,
+                    components: { preview:true, hue:true, interaction:{save:true} }
+                });
+                pickr.on('save', (color) => {
+                    const hex = color.toHEXA().toString();
+                    app.state.candidates.find(x => x.id === c.id).color = hex;
+                    div.querySelector('.color-box').style.background = hex;
+                    app.runSimulation();
+                });
+            }, 0);
+        });
+
+        document.getElementById('totalPct').innerText = total + "%";
+        document.getElementById('totalPct').style.color = total === 100 ? 'var(--accent)' : '#d9534f';
+    },
+
+    updateVal: (id, val) => {
+        val = parseInt(val);
+        const t = app.state.turn;
+        const c = app.state.candidates.find(x => x.id === id);
+        if(t === 1) c.t1 = val;
+        else c.t2 = val;
+        
+        // Re-render only numbers to avoid flickering or full re-render
+        app.renderCandidates();
+    },
+
+    populateT2Selectors: () => {
+        const s1 = document.getElementById('sel-c1');
+        const s2 = document.getElementById('sel-c2');
+        const opts = app.state.candidates.map(c => `<option value="${c.id}">${c.name} (${c.party})</option>`).join('');
+        s1.innerHTML = opts; s2.innerHTML = opts;
+        
+        // Set Defaults
+        s1.value = app.state.t2_selection[0];
+        s2.value = app.state.t2_selection[1];
+    },
+
+    updateT2Candidates: () => {
+        const v1 = document.getElementById('sel-c1').value;
+        const v2 = document.getElementById('sel-c2').value;
+        if(v1 === v2) { alert("Escolha candidatos diferentes"); return; }
+        app.state.t2_selection = [v1, v2];
+        app.setTurn(2); // Refresh
+    },
+
+    // =========================================================================
+    // RESULTS PANEL
+    // =========================================================================
+    renderResultsPanel: () => {
+        const area = document.getElementById('resultsArea');
+        const title = app.state.view === 'national' ? 'BRASIL' : UFS.find(u=>u.id===app.state.activeStateId).name;
+        const activeCands = app.getActiveCandidates();
+        
+        // Calculate Totals for the View
+        let totals = {}; activeCands.forEach(c => totals[c.id]=0);
+        let count = 0;
+
+        if(app.state.view === 'national') {
+            // Aggregate all city simulation results
+            // Note: This is unweighted (each city = 1 vote). 
+            // IMPROVEMENT: Weight by simplified population factor if available, 
+            // but for visual consistency with sliders, we'll just sum.
+            // Actually, best to use the sliders as the "National Truth" and just display them for National View
+            // But for State view, we need the calc.
+            activeCands.forEach(c => totals[c.id] = c.val); 
+            count = 100;
+        } else {
+            // Aggregate cities in state
+            const stateId = app.state.activeStateId;
+            const features = app.geoData.full.features.filter(f => f.properties.ufId === stateId);
+            features.forEach(f => {
+                const r = app.state.simulationCache[f.properties.id];
+                if(r) {
+                    activeCands.forEach(c => totals[c.id] += r.pcts[c.id]);
+                }
+            });
+            count = features.length;
+        }
+
+        const sorted = activeCands.map(c => ({
+            ...c,
+            // If national, use input. If state, use average of cities (simplified)
+            avg: app.state.view === 'national' ? c.val : (totals[c.id] / count)
+        })).sort((a,b) => b.avg - a.avg);
+
+        let html = `
+            <div class="res-header">
+                <div class="res-title">${title}</div>
+                <div class="res-sub">${app.state.turn}º TURNO</div>
+            </div>
+        `;
+
+        sorted.forEach(c => {
+            html += `
+                <div class="res-row">
+                    <div class="res-info">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <div style="width:12px;height:12px;background:${c.color};border-radius:2px;"></div>
+                            ${c.name}
+                        </div>
+                        <div>${c.avg.toFixed(2)}%</div>
+                    </div>
+                    <div class="progress-bg">
+                        <div class="progress-fill" style="width:${c.avg}%; background:${c.color}"></div>
+                    </div>
+                </div>
+            `;
+        });
+
+        area.innerHTML = html;
+    },
+
+    // =========================================================================
+    // MODAL & CONFIG
+    // =========================================================================
+    toggleModal: (show) => {
+        document.getElementById('configModal').style.display = show ? 'flex' : 'none';
+        if(show) app.renderModalStates();
+    },
+
+    renderModalStates: () => {
+        const container = document.getElementById('modalStatesContainer');
+        container.innerHTML = '';
+        const t = app.state.turn;
+        
+        UFS.forEach(uf => {
+            const item = document.createElement('div');
+            item.className = 'state-item';
+            
+            let inputs = '';
+            app.getActiveCandidates().forEach(c => {
+                const curr = app.state.multipliers[t][c.id][uf.id];
+                inputs += `
+                    <div style="display:flex; justify-content:space-between; margin-top:5px; font-size:0.8rem;">
+                        <span style="color:${c.color}">${c.name}</span>
+                        <input type="number" step="0.1" class="cand-input" style="width:40px; padding:2px;"
+                            value="${curr}" data-cand="${c.id}" data-uf="${uf.id}">
+                    </div>
+                `;
+            });
+
+            item.innerHTML = `<span class="state-label">${uf.name} (${uf.sigla})</span>${inputs}`;
+            container.appendChild(item);
+        });
     },
 
     saveConfig: () => {
-        // Save Regional
-        document.querySelectorAll('.region-input').forEach(inp => {
-            const c = inp.dataset.cand;
-            const s = inp.dataset.state;
-            if(!app.multipliers[c]) app.multipliers[c] = {};
-            app.multipliers[c][s] = parseFloat(inp.value);
+        const t = app.state.turn;
+        const inputs = document.querySelectorAll('#modalStatesContainer input');
+        inputs.forEach(inp => {
+            const cId = inp.dataset.cand;
+            const ufId = inp.dataset.uf;
+            app.state.multipliers[t][cId][ufId] = parseFloat(inp.value);
         });
-
-        // Save Transfers (Conceptually - mostly for logic expansion)
-        document.querySelectorAll('.transfer-input').forEach(inp => {
-            const s = inp.dataset.src;
-            const t = inp.dataset.target;
-            if(!app.transfers[s]) app.transfers[s] = {};
-            app.transfers[s][t] = parseFloat(inp.value);
-        });
-
-        app.closeModal();
+        app.toggleModal(false);
         app.runSimulation();
+    },
+
+    // =========================================================================
+    // UTILS
+    // =========================================================================
+    renderLegend: () => {
+        const el = document.getElementById('legendColors');
+        // Create 5 steps of grayscale to white or something representing intensity
+        // Actually, Atlas legend usually shows one solid color per box for ranges
+        // But since we have dynamic colors, we show Opacity/Mix steps metaphor
+        el.innerHTML = '';
+        for(let i=0; i<6; i++) {
+            const opacity = 0.4 + (i*0.1);
+            const d = document.createElement('div');
+            d.className = 'legend-step';
+            d.style.background = `rgba(255,255,255,${opacity})`; // Representing intensity
+            el.appendChild(d);
+        }
+    },
+
+    mixColors: (color1, color2, weight) => {
+        function d2h(d) { return d.toString(16); }
+        function h2d(h) { return parseInt(h, 16); }
+        weight = (typeof(weight) !== 'undefined') ? weight : 50; 
+        var color = "#";
+        for(var i = 0; i <= 5; i += 2) { 
+            var v1 = h2d(color1.substr(i + 1, 2));
+            var v2 = h2d(color2.substr(i + 1, 2));
+            var val = d2h(Math.floor(v2 + (v1 - v2) * (1 - weight))); 
+            while(val.length < 2) { val = '0' + val; }
+            color += val; 
+        }
+        return color;
     }
 };
 
 // Start
 app.init();
-
 </script>
 </body>
 </html>
