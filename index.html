@@ -310,14 +310,14 @@ const CONFIG_PESOS = {
         { src: 'LULA', dest: 'LULA', ratio: 0.9, regionBonus: {'12': 0.9} }, // Nordeste/Norte
         { src: 'LULA', dest: 'LULA', ratio: 0.9, regionBonus: {'14': 0.9} }, // Nordeste/Norte
 
-        { src: 'JAIR', dest: 'FLAVIO', ratio: 0.8, regionBonus: {'33': 1.1} }, // RJ
+        { src: 'JAIR', dest: 'FLAVIO', ratio: 0.8, regionBonus: {'33': 1.3} }, // RJ
         { src: 'JAIR', dest: 'CAIADO', ratio: 0.1, regionBonus: {'52': 2.2} }, // Goiás
         { src: 'JAIR', dest: 'RATINHO', ratio: 0.05, regionBonus: {'41': 2.2} }, // Paraná
         { src: 'JAIR', dest: 'RENAN', ratio: 0.05, regionBonus: {'42': 1.2} }, // SC
 
         { src: 'RENAN', dest: 'RENAN', ratio: 1, regionBonus: {'51': 1.1} }, // MT
         { src: 'RENAN', dest: 'RENAN', ratio: 1, regionBonus: {'17': 0.8} }, // TO
-        { src: 'RENAN', dest: 'RENAN', ratio: 1, regionBonus: {'16': 0.9} }, // TO
+        { src: 'RENAN', dest: 'RENAN', ratio: 1, regionBonus: {'16': 0.7} }, // AP
         { src: 'FELIPE', dest: 'RENAN', ratio: 0.8, regionBonus: {} },
 
         { src: 'CIRO', dest: 'RENAN', ratio: 0.20, regionBonus: {'35': 1.3} }, // SP
@@ -688,9 +688,20 @@ const app = {
         }).addTo(app.map);
     },
 
-    loadStateCities: async (ufId, ufName) => {
+loadStateCities: async (ufId, ufName) => {
         const loader = document.getElementById('loader');
         loader.classList.remove('hidden');
+        
+        // CORREÇÃO 1: Removemos as camadas IMEDIATAMENTE, antes de carregar os dados.
+        // Isso limpa o "fundo" na hora, evitando que o mapa antigo fique visível.
+        if (app.layers.brazil) {
+            app.map.removeLayer(app.layers.brazil);
+        }
+        if (app.layers.cities) {
+            app.map.removeLayer(app.layers.cities);
+            app.layers.cities = null; // Garante que a referência seja limpa
+        }
+
         try {
             const fullData = await app.fetchGeoJsonCache();
             const stateFeatures = fullData.features.filter(f => {
@@ -698,23 +709,31 @@ const app = {
                 return cod && cod.toString().startsWith(ufId);
             });
 
-            if(app.layers.cities) app.map.removeLayer(app.layers.cities);
-            if(app.layers.brazil) app.map.removeLayer(app.layers.brazil);
-
             app.layers.cities = L.geoJSON({ type: "FeatureCollection", features: stateFeatures }, {
                 smoothFactor: 0.3,
                 style: (f) => app.getStyle(f, 'municipios'),
                 onEachFeature: (f, l) => {
                     const id = f.properties.id || f.properties.codarea;
                     const name = app.data.names[id] || f.properties.name;
-                    l.on('click', (e) => { L.DomEvent.stopPropagation(e); app.selectRegion(id, name); });
+                    l.on('click', (e) => { 
+                        L.DomEvent.stopPropagation(e); 
+                        // Opcional: Se quiser permitir clicar num município para focar nele
+                        app.selectRegion(id, name); 
+                    });
                     app.bindTooltip(l, id, 'municipios', name);
                 }
             }).addTo(app.map);
+            
             app.map.fitBounds(app.layers.cities.getBounds());
             app.selectRegion(ufId, ufName);
-        } catch(e) { console.error(e); } 
-        finally { loader.classList.add('hidden'); }
+
+        } catch(e) { 
+            console.error(e); 
+            // Se der erro, tenta restaurar o mapa do Brasil para não ficar tela preta
+            app.loadBrazilLayer();
+        } finally { 
+            loader.classList.add('hidden'); 
+        }
     },
 
     // =========================================================================
