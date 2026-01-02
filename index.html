@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlas Simulação V26 - Corrigido</title>
+    <title>Atlas Simulação V26 - Final</title>
     
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -400,28 +400,27 @@ const app = {
                 let v = 0;
                 if(src==='LULA' && dest.party==='PT') v = 0.9;
                 else if(src==='JAIR' && dest.party==='PL') v = 0.9;
-                else if(src==='JAIR' && dest.party==='UNIÃO') v = 0.1; // Exemplo de transferência para União
+                else if(src==='JAIR' && dest.party==='UNIÃO') v = 0.1;
                 app.state.t1_matrix[src][dest.id] = v;
             });
         });
 
         app.renderLegend();
         app.renderUI();
-        await app.loadData(); // Garante que o loadData termina antes de prosseguir
+        await app.loadData();
     },
 
     loadData: async () => {
         const loader = document.getElementById('loader');
         try {
             const res = await fetch('data/2022_president.json');
-            if(!res.ok) throw new Error("Base 2022 não encontrada. Certifique-se de que 'data/2022_president.json' está presente.");
+            if(!res.ok) throw new Error("Base 2022 não encontrada.");
             const json = await res.json();
             app.data.base22 = json['1'];
-            // A meta_nomes no JSON original está sob a chave do turno (ex: json['1'].meta_nomes)
             app.data.names = json['1'].meta_nomes || {}; 
 
             await app.loadBrazilLayer();
-            app.runSimulation(); // Roda simulação inicial após carregar tudo
+            app.runSimulation();
         } catch(e) {
             console.error(e);
             alert("Erro ao carregar dados: " + e.message);
@@ -516,13 +515,13 @@ const app = {
         app.openModal(turn === 1 ? "Multiplicadores (1º Turno)" : "Multiplicadores (2º Turno)", html);
     },
 
-    renderModalStateMults: (turn, ufId) => { // ufId é o código IBGE agora
+    renderModalStateMults: (turn, ufId) => {
         const c = document.getElementById('modalStateContent');
         c.innerHTML = '';
         if(!ufId) return;
 
         const store = turn===1 ? app.state.t1_mults : app.state.t2_mults;
-        if(!store[ufId]) store[ufId] = {}; // Inicializa para o IBGE ID
+        if(!store[ufId]) store[ufId] = {};
 
         const cands = turn===1 ? CONFIG.candidates : app.state.t2_finalists.map(id => CONFIG.candidates.find(c=>c.id===id));
 
@@ -543,7 +542,7 @@ const app = {
         });
     },
 
-    updateMult: (turn, ufId, cid, val) => { // ufId é o código IBGE agora
+    updateMult: (turn, ufId, cid, val) => {
         const store = turn===1 ? app.state.t1_mults : app.state.t2_mults;
         store[ufId][cid] = parseInt(val)/100;
     },
@@ -593,7 +592,7 @@ const app = {
             if(app.state.turn === 1) {
                 app.calculateTurn1();
             } else {
-                if(!app.data.round1) app.calculateTurn1(); // Garante que o 1T está calculado
+                if(!app.data.round1) app.calculateTurn1();
                 app.calculateTurn2();
             }
             app.refreshMap();
@@ -614,7 +613,7 @@ const app = {
 
         for(let ibge in base) {
             const votes22 = base[ibge];
-            const ufId = ibge.substring(0,2); // Código IBGE do estado
+            const ufId = ibge.substring(0,2);
             const mVotes = {};
             
             CONFIG.candidates.forEach(cand => {
@@ -624,7 +623,7 @@ const app = {
                     const srcVal = app.getVotes22(votes22, srcKey);
                     sum += srcVal * ratio;
                 }
-                // Aplica Multiplicador Estadual usando o ufId (IBGE)
+                
                 if(app.state.t1_mults[ufId] && app.state.t1_mults[ufId][cand.id]) {
                     sum *= app.state.t1_mults[ufId][cand.id];
                 }
@@ -659,11 +658,11 @@ const app = {
     },
 
     calculateTurn2: () => {
-        if(!app.data.round1) app.calculateTurn1(); // Garante o 1T antes do 2T
+        if(!app.data.round1) app.calculateTurn1();
         
         const r1 = app.data.round1;
         const [id1, id2] = app.state.t2_finalists;
-        if(!id1 || !id2) { console.warn("Finalistas do 2º Turno não definidos."); return; }
+        if(!id1 || !id2) return;
 
         const totalSlider = (app.state.t2_polls[id1]||0) + (app.state.t2_polls[id2]||0);
         const targetPcts = {
@@ -688,15 +687,13 @@ const app = {
                 } else if(cid === id2) { 
                     vB += votos; 
                 } else {
-                    let ratio = 0.5; // Default: 50/50 se não configurado
+                    let ratio = 0.5;
                     if(app.state.t2_migr[cid] !== undefined) ratio = app.state.t2_migr[cid];
-                    
                     vA += votos * ratio;
                     vB += votos * (1 - ratio);
                 }
             }
 
-            // Multiplicadores T2 usando ufId (IBGE)
             if(app.state.t2_mults[ufId]) {
                 if(app.state.t2_mults[ufId][id1]) vA *= app.state.t2_mults[ufId][id1];
                 if(app.state.t2_mults[ufId][id2]) vB *= app.state.t2_mults[ufId][id2];
@@ -744,7 +741,6 @@ const app = {
     // MAPA & VISUALIZAÇÃO
     // =========================================================================
     loadBrazilLayer: async () => {
-        // Se a camada já existe, apenas garante que ela está no mapa e com o estilo correto
         if(app.layers.brazil) { 
             if(!app.map.hasLayer(app.layers.brazil)) app.layers.brazil.addTo(app.map);
             app.layers.brazil.setStyle((f) => app.getStyle(f, 'estados'));
@@ -755,7 +751,7 @@ const app = {
         const data = await res.json();
         data.features.forEach(f => {
             const s = STATES.find(x => x.sigla === f.properties.sigla);
-            if(s) f.properties.id = s.id; // Garante que o ID do estado é o código IBGE
+            if(s) f.properties.id = s.id;
         });
 
         app.layers.brazil = L.geoJSON(data, {
@@ -773,13 +769,12 @@ const app = {
         const loader = document.getElementById('loader');
         loader.classList.remove('hidden');
         
-        // Remove quaisquer camadas existentes do mapa
         if(app.layers.brazil && app.map.hasLayer(app.layers.brazil)) app.map.removeLayer(app.layers.brazil);
         if(app.layers.cities && app.map.hasLayer(app.layers.cities)) app.map.removeLayer(app.layers.cities);
-        app.layers.cities = null; // Zera a referência
+        app.layers.cities = null;
 
         if(!app.data.geoJson) {
-            document.getElementById('loaderMsg').innerText = "Carregando malha municipal (pode demorar)...";
+            document.getElementById('loaderMsg').innerText = "Carregando malha municipal...";
             const r = await fetch("https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json");
             app.data.geoJson = await r.json();
         }
@@ -797,8 +792,6 @@ const app = {
         
         if (app.layers.cities.getBounds().isValid()) {
              app.map.fitBounds(app.layers.cities.getBounds());
-        } else {
-             app.map.setView([-15, -50], 4); // Fallback
         }
         loader.classList.add('hidden');
     },
@@ -807,9 +800,9 @@ const app = {
         if(app.state.view === 'all_cities') return; 
         const loader = document.getElementById('loader');
         loader.classList.remove('hidden');
-        document.getElementById('loaderMsg').innerText = `Carregando municípios de ${ufName}...`;
+        document.getElementById('loaderMsg').innerText = `Carregando ${ufName}...`;
         
-        // Remove quaisquer camadas de municípios ou o mapa do Brasil se estiver ativo
+        // Remove Brasil e Cidades anteriores
         if(app.layers.cities && app.map.hasLayer(app.layers.cities)) {
             app.map.removeLayer(app.layers.cities);
             app.layers.cities = null;
@@ -843,19 +836,16 @@ const app = {
     },
 
     resetMapToStates: () => {
-        // Garante que a camada de municípios é removida
+        // Remove cidades
         if(app.layers.cities && app.map.hasLayer(app.layers.cities)) {
             app.map.removeLayer(app.layers.cities);
             app.layers.cities = null;
         }
-        // Garante que a camada do Brasil é adicionada e estilizada corretamente
+        // Restaura Brasil
         if(app.layers.brazil) {
-            if(!app.map.hasLayer(app.layers.brazil)) {
-                app.layers.brazil.addTo(app.map);
-            }
+            if(!app.map.hasLayer(app.layers.brazil)) app.layers.brazil.addTo(app.map);
             app.layers.brazil.setStyle((f) => app.getStyle(f, 'estados'));
         } else {
-            // Se por algum motivo brazil layer não está carregada, tenta carregar
             app.loadBrazilLayer();
         }
         app.map.setView([-15, -50], 4);
@@ -867,7 +857,6 @@ const app = {
         const dataset = app.state.turn === 1 ? app.data.round1 : app.data.round2;
         if(!dataset) return { fillColor: '#222', weight: 0.2, color: '#444' };
 
-        // Determina se estamos olhando um estado ou um município com base no ID e escopo
         const votes = (id.length === 2 && scope === 'estados') ? dataset.estados[id] : dataset.municipios[id];
         if(!votes) return { fillColor: '#222', weight: 0.2, color: '#ffffff', fillOpacity: 0.5 };
 
@@ -877,8 +866,8 @@ const app = {
             if(votes[c] > max) { max = votes[c]; winner = c; }
         }
 
-        // CORREÇÃO: Outline branco (color: #ffffff) e weight maior
-        if(!winner) return { fillColor: '#222', weight: 0.5, color: '#ffffff', fillOpacity: 1 };
+        // CORREÇÃO: Outline sólido para evitar buracos
+        if(!winner) return { fillColor: '#222', weight: 0.5, color: '#ffffff', opacity: 1, fillOpacity: 1 };
 
         const cand = CONFIG.candidates.find(c => c.id === winner);
         const color = cand ? cand.color : '#555';
@@ -887,10 +876,12 @@ const app = {
         
         return {
             fillColor: discrete,
-            weight: (scope === 'estados') ? 0.8 : 0.5, // Aumentado para visibilidade
-            color: '#ffffff', // Borda branca
-            opacity: 0.5,
-            fillOpacity: 1
+            weight: (scope === 'estados') ? 0.8 : 0.5,
+            color: '#ffffff',
+            opacity: 1, // Borda sólida
+            fillOpacity: 1,
+            lineJoin: 'round',
+            lineCap: 'round'
         };
     },
 
@@ -1002,12 +993,11 @@ const app = {
 
         if (id1 === id2) {
             alert("Os finalistas do 2º Turno devem ser diferentes!");
-            // Tenta reverter para os finalistas anteriores ou um padrão
             if (app.state.t2_finalists.length === 2) {
                 c1.value = app.state.t2_finalists[0];
                 c2.value = app.state.t2_finalists[1];
             } else {
-                c1.value = 'LULA'; c2.value = 'FLAVIO'; // Padrão seguro
+                c1.value = 'LULA'; c2.value = 'FLAVIO';
             }
             app.state.t2_finalists = [c1.value, c2.value];
             return;
@@ -1022,8 +1012,6 @@ const app = {
         
         [obj1, obj2].forEach(cand => {
             const current = app.state.t2_polls[cand.id] !== undefined ? app.state.t2_polls[cand.id] : 50;
-            // app.state.t2_polls[cand.id] = current; // Não precisa inicializar aqui, o input já faz
-
             const div = document.createElement('div');
             div.className = 'slider-box';
             div.innerHTML = `
@@ -1083,13 +1071,11 @@ const app = {
             }
             app.layers.brazil.setStyle((f) => app.getStyle(f, 'estados'));
         } else {
-            // Se a camada do Brasil não existe, tenta carregar
             app.loadBrazilLayer();
         }
         
         app.map.setView([-15, -50], 4);
         
-        // Reinicia o seletor de visualização para "Por Estados"
         document.getElementById('viewModeSelect').value = 'states';
         app.state.view = 'states';
 
