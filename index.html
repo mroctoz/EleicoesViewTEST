@@ -483,10 +483,55 @@ const app = {
         setMult('23', 'LULA', 0.9); // BA
         setMult('21', 'LULA', 0.9); // PE
 
-        app.renderLegend(); // A função agora existe!
+        // ... (Seus códigos do 1º turno estão aqui em cima) ...
+
+        // =================================================================
+        // C. CONFIGURAÇÃO MANUAL DE MULTIPLICADORES - 2º TURNO
+        // =================================================================
+        
+        // 1. Criar função auxiliar para o T2 (igual a do T1, mas aponta para t2_mults)
+        const setMultT2 = (ufId, candId, valor) => {
+            if(!app.state.t2_mults[ufId]) app.state.t2_mults[ufId] = {};
+            app.state.t2_mults[ufId][candId] = valor;
+        };
+
+        // 2. Definir as regras (Exemplo: LULA vs FLAVIO)
+        // Lembre-se: Use o ID do candidato (LULA, FLAVIO, ZEMA, etc)
+
+        // --- NORDESTE (Lula Forte) ---
+        setMultT2('29', 'LULA', 1.15); // Bahia: Lula ganha +15%
+        setMultT2('23', 'LULA', 1.10); // Ceará
+        setMultT2('26', 'LULA', 1.10); // Pernambuco
+        setMultT2('22', 'LULA', 1.15); // Piauí
+
+        // --- SUL/SUDESTE (Flávio Forte) ---
+        setMultT2('42', 'FLAVIO', 1.25); // Santa Catarina: Flávio ganha +20%
+        setMultT2('41', 'FLAVIO', 1.15); // Paraná
+        setMultT2('51', 'FLAVIO', 1.15); // Mato Grosso
+        setMultT2('35', 'FLAVIO', 1.10); // São Paulo (Disputado, leve vantagem)
+        setMultT2('14', 'FLAVIO', 1.25);
+        setMultT2('11', 'FLAVIO', 1.25);
+        setMultT2('12', 'FLAVIO', 1.25);
+        setMultT2('43', 'FLAVIO', 1.20);
+        setMultT2('31', 'FLAVIO', 1.15);
+        setMultT2('27', 'FLAVIO', 1.10);
+        setMultT2('17', 'FLAVIO', 1.10);
+
+        // --- CASO OUTRO CANDIDATO VÁ PARA O 2º TURNO ---
+        // Se o Zema for pro 2º turno, garantir que ele seja forte em MG
+        setMultT2('31', 'ZEMA', 1.40); // Minas Gerais
+
+        // Se o Caiado for pro 2º turno, garantir força em GO
+        setMultT2('52', 'CAIADO', 1.50); // Goiás
+
+        // =================================================================
+        // FIM DA CONFIGURAÇÃO T2
+        // =================================================================
+
+        app.renderLegend();
         app.renderUI();
         await app.loadData();
-    },
+    }, // Fim do init
 
     loadData: async () => {
         const loader = document.getElementById('loader');
