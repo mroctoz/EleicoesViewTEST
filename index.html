@@ -324,8 +324,8 @@ const STATES = [{sigla:'AC', nome:'Acre', id:'12'}, {sigla:'AL', nome:'Alagoas',
 
 const CONFIG = {
     candidates: [
-        { id: 'LULA', name: 'Lula', party: 'PT', val: 40, color: '#E12525', active: true },
-        { id: 'FLAVIO', name: 'Flávio Bolsonaro', party: 'PL', val: 25, color: '#5756d6', active: true },
+        { id: 'LULA', name: 'Lula', party: 'PT', val: 45, color: '#E12525', active: true },
+        { id: 'FLAVIO', name: 'Flávio Bolsonaro', party: 'PL', val: 31, color: '#5756d6', active: true },
         { id: 'TARCISIO', name: 'Tarcísio', party: 'REP', val: 15, color: '#28a745', active: false }, // Novo Candidato Inativo
         { id: 'RENAN', name: 'Renan Santos', party: 'MISSÃO', val: 3, color: '#D4AF37', active: true },
         { id: 'CAIADO', name: 'Ronaldo Caiado', party: 'UNIÃO', val: 8, color: '#009EE3', active: true },
@@ -377,8 +377,8 @@ const app = {
             app.state.t1_matrix[src] = {}; CONFIG.candidates.forEach(dest => app.state.t1_matrix[src][dest.id] = 0);
         });
         // JAIR MATRIX (Distribuição da Direita)
-        app.state.t1_matrix['JAIR']['FLAVIO'] = 0.50;
-        app.state.t1_matrix['JAIR']['TARCISIO'] = 0.35; // Tarcisio herda muito
+        app.state.t1_matrix['JAIR']['FLAVIO'] = 0.80;
+        app.state.t1_matrix['JAIR']['TARCISIO'] = 0.75; // Tarcisio herda muito
         app.state.t1_matrix['JAIR']['CAIADO'] = 0.05;
         app.state.t1_matrix['JAIR']['ZEMA'] = 0.04; 
         app.state.t1_matrix['JAIR']['RATINHO'] = 0.03;
@@ -396,7 +396,7 @@ const app = {
         app.state.t1_matrix['CIRO']['LULA'] = 0.30; 
         app.state.t1_matrix['CIRO']['ZEMA'] = 0.10;
         app.state.t1_matrix['SIMONE']['LULA'] = 0.30; 
-        app.state.t1_matrix['SIMONE']['TARCISIO'] = 0.15;
+        app.state.t1_matrix['SIMONE']['TARCISIO'] = 0.25;
         app.state.t1_matrix['SIMONE']['CAIADO'] = 0.15;
         app.state.t1_matrix['SIMONE']['ZEMA'] = 0.15; 
         app.state.t1_matrix['SIMONE']['ALDO'] = 0.10;
@@ -406,13 +406,15 @@ const app = {
         const setMultT2 = (ufId, cid, val) => { if(!app.state.t2_mults[ufId]) app.state.t2_mults[ufId] = {}; app.state.t2_mults[ufId][cid] = val; };
 
         // Ajustes Regionais (SP gosta de Tarcisio)
-        setMult('35', 'TARCISIO', 2.0); 
-        setMult('52', 'CAIADO', 2.5); 
-        setMult('31', 'ZEMA', 3.0); 
-        setMult('41', 'RATINHO', 3.0);
+        setMult('35', 'TARCISIO', 1.2); 
+        setMult('52', 'CAIADO', 2.5); setMult('52', 'FLAVIO', 1.15); setMult('52', 'TARCISIO', 1.15);
+        setMult('31', 'ZEMA', 3.0);
+        setMult('41', 'RATINHO', 3.0); setMult('41', 'FLAVIO', 1.15); setMult('42', 'FLAVIO', 1.15); setMult('50', 'FLAVIO', 1.10); setMult('50', 'CAIADO', 1.10); setMult('41', 'TARCISIO', 1.15);
+        setMult('50', 'TARCISIO', 1.10); setMult('33', 'TARCISIO', 1.10); setMult('32', 'TARCISIO', 1.10);
 
         setMult('23', 'CIRO', 1.1); setMult('33', 'FLAVIO', 1.1); setMult('35', 'FLAVIO', 1.1);
-        setMultT2('29', 'LULA', 1.05); setMultT2('23', 'LULA', 1.05);
+        setMultT2('29', 'LULA', 1.05); setMultT2('23', 'LULA', 1.05); setMultT2('42', 'FLAVIO', 1.25); setMultT2('41', 'FLAVIO', 1.20); setMultT2('14', 'FLAVIO', 1.30); setMultT2('12', 'FLAVIO', 1.30); setMultT2('11', 'FLAVIO', 1.30); setMultT2('43', 'FLAVIO', 1.10);
+         setMultT2('42', 'TARCISIO', 1.25); setMultT2('41', 'TARCISIO', 1.20); setMultT2('14', 'TARCISIO', 1.30); setMultT2('12', 'TARCISIO', 1.30); setMultT2('11', 'TARCISIO', 1.30); setMultT2('43', 'TARCISIO', 1.10); setMultT2('43', 'TARCISIO', 1.10);
 
         app.renderLegend(); app.renderUI(); await app.loadData();
     },
