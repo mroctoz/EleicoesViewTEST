@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlas Simulação V29 - Final Fixed</title>
+    <title>Atlas Simulação V30 - Stable</title>
     
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -118,11 +118,21 @@
         .slider-box { margin-bottom: 12px; position: relative; transition: opacity 0.3s; }
         .slider-header { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px; align-items: center; }
         
-        .cand-toggle { cursor: pointer; color: var(--text-muted); transition: color 0.2s; margin-right: 8px; font-size: 0.9rem; width: 20px; text-align: center; }
+        .cand-toggle { 
+            cursor: pointer; color: var(--text-muted); transition: color 0.2s; 
+            margin-right: 8px; font-size: 0.9rem; width: 20px; text-align: center;
+            pointer-events: auto !important; /* CRUCIAL: Permite clicar mesmo se o pai estiver desativado */
+            position: relative; z-index: 10;
+        }
         .cand-toggle.active { color: var(--accent-blue); }
         .cand-toggle:hover { color: white; }
         
-        .disabled-cand { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
+        /* Aplica opacidade no container, mas permite cliques no filho (toggle) */
+        .disabled-cand .slider-header > span:last-child, 
+        .disabled-cand input[type=range],
+        .disabled-cand .slider-header span[style] { 
+            opacity: 0.3; pointer-events: none; filter: grayscale(1); 
+        }
 
         input[type=range] { width: 100%; -webkit-appearance: none; background: transparent; }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: #333; border-radius: 2px; }
@@ -325,7 +335,7 @@
 </div>
 
 <script>
-// DADOS
+// DADOS ESTADOS
 const STATES = [{sigla:'AC', nome:'Acre', id:'12'}, {sigla:'AL', nome:'Alagoas', id:'27'}, {sigla:'AP', nome:'Amapá', id:'16'}, {sigla:'AM', nome:'Amazonas', id:'13'}, {sigla:'BA', nome:'Bahia', id:'29'}, {sigla:'CE', nome:'Ceará', id:'23'}, {sigla:'DF', nome:'Distrito Federal', id:'53'}, {sigla:'ES', nome:'Espírito Santo', id:'32'}, {sigla:'GO', nome:'Goiás', id:'52'}, {sigla:'MA', nome:'Maranhão', id:'21'}, {sigla:'MT', nome:'Mato Grosso', id:'51'}, {sigla:'MS', nome:'Mato Grosso do Sul', id:'50'}, {sigla:'MG', nome:'Minas Gerais', id:'31'}, {sigla:'PA', nome:'Pará', id:'15'}, {sigla:'PB', nome:'Paraíba', id:'25'}, {sigla:'PR', nome:'Paraná', id:'41'}, {sigla:'PE', nome:'Pernambuco', id:'26'}, {sigla:'PI', nome:'Piauí', id:'22'}, {sigla:'RJ', nome:'Rio de Janeiro', id:'33'}, {sigla:'RN', nome:'Rio Grande do Norte', id:'24'}, {sigla:'RS', nome:'Rio Grande do Sul', id:'43'}, {sigla:'RO', nome:'Rondônia', id:'11'}, {sigla:'RR', nome:'Roraima', id:'14'}, {sigla:'SC', nome:'Santa Catarina', id:'42'}, {sigla:'SP', nome:'São Paulo', id:'35'}, {sigla:'SE', nome:'Sergipe', id:'28'}, {sigla:'TO', nome:'Tocantins', id:'17'}];
 
 const CONFIG = {
@@ -378,11 +388,10 @@ const app = {
             app.state.activeCandidates[c.id] = true;
         });
 
+        // Configs Padrao
         ['LULA','JAIR','CIRO','SIMONE'].forEach(src => {
             app.state.t1_matrix[src] = {}; CONFIG.candidates.forEach(dest => app.state.t1_matrix[src][dest.id] = 0);
         });
-        
-        // Defaults
         app.state.t1_matrix['JAIR']['FLAVIO'] = 0.85; app.state.t1_matrix['JAIR']['CAIADO'] = 0.07; 
         app.state.t1_matrix['JAIR']['ZEMA'] = 0.07; app.state.t1_matrix['JAIR']['RATINHO'] = 0.07; 
         app.state.t1_matrix['JAIR']['RENAN'] = 0.03; app.state.t1_matrix['JAIR']['CIRO'] = 0.01;
@@ -406,14 +415,16 @@ const app = {
         setMultT2('12', 'FLAVIO', 1.25); setMultT2('43', 'FLAVIO', 1.20); setMultT2('31', 'FLAVIO', 1.10); setMultT2('27', 'FLAVIO', 1.10); setMultT2('17', 'FLAVIO', 1.10);
         setMultT2('31', 'ZEMA', 1); setMultT2('52', 'CAIADO', 1);
 
-        app.renderLegend(); app.renderUI(); await app.loadData();
+        app.renderLegend(); 
+        app.renderUI(); 
+        await app.loadData();
     }, 
 
     loadData: async () => {
         const loader = document.getElementById('loader');
         try {
             const res = await fetch('data/2022_president.json');
-            if(!res.ok) throw new Error("Erro Base");
+            if(!res.ok) throw new Error("Erro carregar base");
             const json = await res.json();
             app.data.base22 = json['1'];
             app.data.names = json['1'].meta_nomes || {}; 
@@ -421,7 +432,12 @@ const app = {
             app.calcCityWeights();
             await app.loadBrazilLayer();
             app.runSimulation();
-        } catch(e) { console.error(e); alert("Erro carregando dados."); } finally { loader.classList.add('hidden'); }
+        } catch(e) { 
+            console.error(e); 
+            alert("Erro ao carregar dados. Verifique o console."); 
+        } finally { 
+            loader.classList.add('hidden'); 
+        }
     },
 
     calcCityWeights: () => {
@@ -444,28 +460,61 @@ const app = {
         }
     },
 
-    // UI & RENDER
-    renderLegend: () => {
-        const el = document.getElementById('legendColors');
-        if(!el) return;
-        el.innerHTML = '';
-        CONFIG.scheme.forEach(s => {
-            if(s.min >= 20) {
-                const d = document.createElement('div');
-                d.className = 'legend-item';
-                d.style.background = s.ref;
-                el.appendChild(d);
-            }
-        });
+    setTurn: (t) => {
+        app.state.turn = t;
+        document.getElementById('tab1').className = `mode-tab ${t===1?'active':''}`;
+        document.getElementById('tab2').className = `mode-tab ${t===2?'active':''}`;
+        document.getElementById('controlsT1').style.display = t===1?'flex':'none';
+        document.getElementById('controlsT2').style.display = t===2?'flex':'none';
+        if(t === 2 && app.state.t2_finalists.length === 0 && app.data.round1) {
+            const nac = app.data.round1.nacional;
+            const sorted = Object.entries(nac).sort((a,b)=>b[1]-a[1]);
+            if(sorted.length >= 2) { app.state.t2_finalists = [sorted[0][0], sorted[1][0]]; app.updateT2UI(); }
+        }
+        app.refreshMap(); 
+        app.updateSidebarRight();
     },
 
-    refreshMap: () => {
-        if(app.layers.brazil) app.layers.brazil.setStyle((f) => app.getStyle(f, 'estados'));
-        if(app.layers.cities) app.layers.cities.setStyle((f) => app.getStyle(f, 'municipios'));
+    handleViewChange: async () => {
+        app.state.view = document.getElementById('viewModeSelect').value;
+        if(app.state.view === 'all_cities') await app.loadAllMunicipalities(); else app.resetMapToStates();
+    },
+
+    // IMPORT/EXPORT
+    exportConfig: () => {
+        const data = JSON.stringify(app.state, null, 2);
+        const blob = new Blob([data], {type: "application/json;charset=utf-8"});
+        saveAs(blob, "atlas_config.json");
+    },
+    importConfig: (input) => {
+        const file = input.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const newState = JSON.parse(e.target.result);
+                app.state = { ...app.state, ...newState };
+                app.renderUI();
+                app.setTurn(app.state.turn);
+                app.runSimulation();
+                alert("Configuração importada com sucesso!");
+            } catch(err) {
+                alert("Erro ao importar JSON: " + err.message);
+            }
+        };
+        reader.readAsText(file);
+        input.value = '';
+    },
+
+    toggleCandidate: (id) => {
+        app.state.activeCandidates[id] = !app.state.activeCandidates[id];
+        app.renderUI(); 
+        app.runSimulation();
     },
 
     renderUI: () => {
-        const c = document.getElementById('slidersT1'); c.innerHTML = '';
+        const c = document.getElementById('slidersT1'); 
+        c.innerHTML = '';
         CONFIG.candidates.forEach(cand => {
             const isActive = app.state.activeCandidates[cand.id];
             const div = document.createElement('div'); 
@@ -473,7 +522,7 @@ const app = {
             div.innerHTML = `
                 <div class="slider-header">
                     <div style="display:flex; align-items:center;">
-                        <span class="cand-toggle ${isActive?'active':''}" onclick="app.toggleCandidate('${cand.id}')">
+                        <span class="cand-toggle ${isActive?'active':''}" onclick="event.stopPropagation(); app.toggleCandidate('${cand.id}')">
                             <i class="fas ${isActive?'fa-eye':'fa-eye-slash'}"></i>
                         </span>
                         <span style="color:${cand.color}; font-weight:700">${cand.name}</span>
@@ -529,12 +578,6 @@ const app = {
     checkT2Total: () => {
         const [id1, id2] = app.state.t2_finalists; const tot = (app.state.t2_polls[id1]||0) + (app.state.t2_polls[id2]||0);
         const el = document.getElementById('totalSimValT2'); el.innerText = tot + "%"; el.style.color = tot===100?'#4ade80':'#facc15';
-    },
-
-    toggleCandidate: (id) => {
-        app.state.activeCandidates[id] = !app.state.activeCandidates[id];
-        app.renderUI(); 
-        app.runSimulation();
     },
 
     // SIMULAÇÃO
@@ -660,7 +703,7 @@ const app = {
         app.data.round2 = res;
     },
 
-    // MAPA
+    // MAP LOGIC
     loadBrazilLayer: async () => {
         if(app.layers.brazil) { 
             if(!app.map.hasLayer(app.layers.brazil)) app.layers.brazil.addTo(app.map);
@@ -737,7 +780,177 @@ const app = {
         app.resetSelection();
     },
 
-    // RIGHT SIDEBAR
+    // UTILS MAP
+    getFeatureId: (f, s) => { 
+        if(!f || !f.properties) return null;
+        const p = f.properties; 
+        if (s === 'municipios') return p.CD_MUN ? String(p.CD_MUN) : (p.id ? String(p.id) : null); 
+        return p.CD_UF ? String(p.CD_UF) : (p.sigla ? STATES.find(x => x.sigla === p.sigla)?.id : String(p.id)); 
+    },
+    getStyle: (f, s) => { 
+        const id = app.getFeatureId(f, s); 
+        const c = app.getColorForId(id, s); 
+        return { fillColor: c.fill, weight: s==='estados'?0.8:0.5, color: '#ffffff', opacity: 1, fillOpacity: 1 }; 
+    },
+    getColorForId: (id, s) => { 
+        if (!id) return { fill: '#333' }; 
+        const d = app.state.turn === 1 ? app.data.round1 : app.data.round2; 
+        if(!d) return { fill: '#333' }; 
+        const v = (id.length === 2 && s === 'estados') ? d.estados[id] : d.municipios[id]; 
+        if(!v) return { fill: '#333' }; 
+        let max = -1, w = null, t = 0; 
+        for(let c in v) { t += v[c]; if(v[c] > max) { max = v[c]; w = c; } } 
+        if(!w) return { fill: '#333' }; 
+        const cand = CONFIG.candidates.find(c => c.id === w); 
+        return { fill: app.getDiscreteColor(cand ? cand.color : '#555', t > 0 ? (max/t)*100 : 0) }; 
+    },
+    getVotes22: (obj, key) => { let sum = 0; for(let k in obj) { if(k.toUpperCase().includes(key)) sum += obj[k]; } return sum; },
+    getDiscreteColor: (hex, pct) => { let config = CONFIG.scheme[0]; for (let i = 0; i < CONFIG.scheme.length; i++) if (pct >= CONFIG.scheme[i].min) config = CONFIG.scheme[i]; return app.mixColor(hex, config.mix, config.ratio); },
+    mixColor: (hex1, hex2, amount) => { const c1 = app.hexToRgb(hex1), c2 = app.hexToRgb(hex2); const r = Math.round(c1.r + (c2.r - c1.r) * amount), g = Math.round(c1.g + (c2.g - c1.g) * amount), b = Math.round(c1.b + (c2.b - c1.b) * amount); return `rgb(${r}, ${g}, ${b})`; },
+    hexToRgb: (hex) => { let c = hex.substring(1).split(''); if(c.length==3) c= [c[0], c[0], c[1], c[1], c[2], c[2]]; c = '0x'+c.join(''); return { r: (c>>16)&255, g: (c>>8)&255, b: c&255 }; },
+    bindTooltip: (l, s) => { 
+        l.bindTooltip(() => { 
+            const id = app.getFeatureId(l.feature, s); 
+            const name = l.feature.properties.NM_MUN || l.feature.properties.NM_UF || l.feature.properties.name; 
+            const d = app.state.turn === 1 ? app.data.round1 : app.data.round2; 
+            if(!d) return "Wait..."; 
+            const v = (id.length===2 && s==='estados') ? d.estados[id] : d.municipios[id]; 
+            if(!v) return "ND"; 
+            const sorted = Object.entries(v).sort((a,b)=>b[1]-a[1]); 
+            const t = sorted.reduce((a,b)=>a+b[1],0); 
+            const w = CONFIG.candidates.find(c=>c.id===sorted[0][0]); 
+            return `<div class="custom-tooltip"><div class="tt-head">${name}</div><div class="tt-body"><div style="color:${w.color}; font-weight:800">${w.name}</div><div>${((sorted[0][1]/t)*100).toFixed(1)}%</div></div></div>`; 
+        }, { sticky: true }); 
+    },
+
+    // RENDER LEGEND
+    renderLegend: () => {
+        const el = document.getElementById('legendColors');
+        if(!el) return;
+        el.innerHTML = '';
+        CONFIG.scheme.forEach(s => {
+            if(s.min >= 20) {
+                const d = document.createElement('div');
+                d.className = 'legend-item';
+                d.style.background = s.ref;
+                el.appendChild(d);
+            }
+        });
+    },
+
+    // EXPORT
+    generateStaticMap: async (format) => {
+        const loader = document.getElementById('loader'); loader.classList.remove('hidden'); document.getElementById('loaderMsg').innerText = "Exportando...";
+        setTimeout(() => {
+            try {
+                let features = [], scope = 'municipios', prefix = null;
+                if (app.state.view === 'states' && !app.state.selectedId) { features = app.data.brazilGeoJson.features; scope = 'estados'; } 
+                else if (app.state.selectedId && app.state.selectedId.length === 2) { 
+                    if(!app.data.geoJson) throw new Error("Load mesh first"); 
+                    prefix = app.state.selectedId; features = app.data.geoJson.features.filter(f => { const id = app.getFeatureId(f, 'municipios'); return id && id.startsWith(prefix); }); scope = 'municipios'; 
+                } else if (app.state.view === 'all_cities') { 
+                    if(!app.data.geoJson) throw new Error("Load mesh first"); features = app.data.geoJson.features; scope = 'municipios'; 
+                } else { features = app.data.brazilGeoJson.features; scope = 'estados'; }
+
+                if (!features.length) throw new Error("No data");
+                let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+                features.forEach(f => { const proc = (c) => c.forEach(p => { if(typeof p[0]==='number') { if(p[0]<minX)minX=p[0];if(p[0]>maxX)maxX=p[0];if(p[1]<minY)minY=p[1];if(p[1]>maxY)maxY=p[1]; } else proc(p); }); if(f.geometry.type==='Polygon') proc(f.geometry.coordinates); else proc(f.geometry.coordinates); });
+                
+                const w = 4096, latD = maxY-minY, lonD = maxX-minX, h = w / (lonD/latD);
+                const proj = (ln, lt) => [(ln-minX)*(w/lonD), (maxY-lt)*(h/latD)];
+                
+                let svg = '';
+                features.forEach(f => {
+                    const id = app.getFeatureId(f, scope), clr = app.getColorForId(id, scope);
+                    let d = '';
+                    const dp = (c) => { let p=''; c.forEach((pt,i) => { const [x,y] = proj(pt[0],pt[1]); p+=(i===0?'M':'L')+x.toFixed(1)+','+y.toFixed(1); }); return p+'Z '; };
+                    if(f.geometry.type==='Polygon') f.geometry.coordinates.forEach(r => d+=dp(r)); else f.geometry.coordinates.forEach(p => p.forEach(r => d+=dp(r)));
+                    svg += `<path d="${d}" fill="${clr.fill}" stroke="#ffffff" stroke-width="${scope==='estados'?2:0.5}" vector-effect="non-scaling-stroke"/>`;
+                });
+                const final = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">${svg}</svg>`;
+                const fname = `mapa_${app.state.selectedName||'Brasil'}_${scope}`;
+                if(format==='svg') saveAs(new Blob([final], {type:"image/svg+xml"}), fname+'.svg');
+                else {
+                    const img = new Image(); img.onload = () => { const cv = document.createElement('canvas'); cv.width=w; cv.height=h; cv.getContext('2d').drawImage(img,0,0); cv.toBlob(b => saveAs(b, fname+'.png')); loader.classList.add('hidden'); };
+                    img.src = 'data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(final))); return;
+                }
+            } catch(e) { console.error(e); alert("Error exporting: " + e.message); }
+            loader.classList.add('hidden');
+        }, 100);
+    },
+
+    // MODALS
+    openModal: (title, html) => { document.getElementById('modalTitle').innerText = title; document.getElementById('modalBody').innerHTML = html; document.getElementById('modalOverlay').classList.add('active'); },
+    closeModal: () => { document.getElementById('modalOverlay').classList.remove('active'); },
+    openMatrixModal: () => { const s = ['LULA','JAIR','CIRO','SIMONE']; let h = `<div style="margin-bottom:15px"><label style="color:#aaa; font-size:0.8rem">VOTOS 2022:</label><select id="modalSrcSelect" onchange="app.renderModalMatrix(this.value)" style="width:100%">${s.map(x => `<option value="${x}">${x}</option>`).join('')}</select></div><div id="modalMatrixContent"></div>`; app.openModal("Matriz", h); app.renderModalMatrix(s[0]); },
+    openMigrationModal: () => {
+        const [id1, id2] = app.state.t2_finalists; const obj1 = CONFIG.candidates.find(c=>c.id===id1); const obj2 = CONFIG.candidates.find(c=>c.id===id2);
+        let html = `<div style="text-align:center; font-size:0.8rem; color:#888; margin-bottom:15px">Migração T1 -> T2.<br>Esq: <b>${obj1.name}</b> | Dir: <b>${obj2.name}</b></div><div id="modalMigContent"></div>`;
+        app.openModal("Transferência", html);
+        const c = document.getElementById('modalMigContent');
+        CONFIG.candidates.forEach(cand => {
+            if(cand.id === id1 || cand.id === id2) return; const ratio = app.state.t2_migr[cand.id] !== undefined ? app.state.t2_migr[cand.id] : 0.5;
+            const div = document.createElement('div'); div.className = 'slider-box';
+            div.innerHTML = `<div class="slider-header"><span style="color:${cand.color}; font-weight:bold">Votos de ${cand.name}</span></div><div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#aaa; margin-bottom:5px;"><span style="color:${obj1.color}">${obj1.name}</span><span style="color:${obj2.color}">${obj2.name}</span></div><input type="range" min="0" max="100" value="${ratio*100}" oninput="app.state.t2_migr['${cand.id}'] = this.value/100;">`;
+            c.appendChild(div);
+        });
+    },
+    
+    // RENDER MODAL CONTENTS
+    renderModalMatrix: (src) => {
+        const c = document.getElementById('modalMatrixContent'); c.innerHTML = '';
+        CONFIG.candidates.forEach(dest => {
+            const val = (app.state.t1_matrix[src][dest.id] || 0) * 100;
+            const div = document.createElement('div'); div.className = 'slider-box';
+            div.innerHTML = `<div class="slider-header"><span style="color:${dest.color}; font-weight:bold">${dest.name}</span><span id="mod_mtx_${src}_${dest.id}">${Math.round(val)}%</span></div><input type="range" min="0" max="100" value="${val}" oninput="app.state.t1_matrix['${src}']['${dest.id}'] = this.value/100; document.getElementById('mod_mtx_${src}_${dest.id}').innerText=this.value+'%';">`;
+            c.appendChild(div);
+        });
+    },
+
+    openStateModal: (turn) => {
+        let html = `<div style="margin-bottom:15px"><label style="color:#aaa; font-size:0.8rem">ESTADO:</label><select id="modalStateSelect" onchange="app.renderModalStateMults(${turn}, this.value)" style="width:100%"><option value="">Selecione...</option>${STATES.map(s => `<option value="${s.id}">${s.nome} (${s.sigla})</option>`).join('')}</select></div><div id="modalStateContent"></div>`;
+        app.openModal(turn === 1 ? "Multiplicadores e Bônus" : "Multiplicadores (2º Turno)", html);
+    },
+
+    renderModalStateMults: (turn, ufId) => {
+        const c = document.getElementById('modalStateContent'); c.innerHTML = ''; if(!ufId) return;
+        const storeMult = turn===1 ? app.state.t1_mults : app.state.t2_mults;
+        const storeBonus = app.state.t1_bonus; 
+        
+        if(!storeMult[ufId]) storeMult[ufId] = {};
+        if(turn === 1 && !storeBonus[ufId]) storeBonus[ufId] = {};
+
+        const cands = turn===1 ? CONFIG.candidates : app.state.t2_finalists.map(id => CONFIG.candidates.find(c=>c.id===id));
+        
+        cands.forEach(cand => {
+            if(!cand || !app.state.activeCandidates[cand.id]) return;
+            const val = storeMult[ufId][cand.id] !== undefined ? storeMult[ufId][cand.id] : 1.0;
+            const bonus = (turn===1 && storeBonus[ufId][cand.id]) ? storeBonus[ufId][cand.id] : 0;
+
+            const div = document.createElement('div'); div.className = 'slider-box';
+            let bonusHtml = '';
+            if(turn === 1) {
+                bonusHtml = `
+                    <div style="margin-top:5px; display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:#aaa;">
+                        <span>Votos Extras:</span>
+                        <input type="number" class="input-bonus" value="${bonus}" 
+                            onchange="app.updateBonus('${ufId}', '${cand.id}', this.value)">
+                    </div>
+                `;
+            }
+
+            div.innerHTML = `
+                <div class="slider-header"><span style="color:${cand.color}; font-weight:bold">${cand.name}</span><span id="mod_mul_${cand.id}">x${val.toFixed(2)}</span></div>
+                <input type="range" min="0" max="300" value="${val*100}" oninput="app.updateMult(${turn}, '${ufId}', '${cand.id}', this.value); document.getElementById('mod_mul_${cand.id}').innerText='x'+(this.value/100).toFixed(2);">
+                ${bonusHtml}
+            `;
+            c.appendChild(div);
+        });
+    },
+
+    updateMult: (turn, ufId, cid, val) => { const store = turn===1 ? app.state.t1_mults : app.state.t2_mults; store[ufId][cid] = parseInt(val)/100; },
+    updateBonus: (ufId, cid, val) => { app.state.t1_bonus[ufId][cid] = parseInt(val) || 0; },
+
     updateSidebarRight: () => {
         const title = document.getElementById('regionName');
         const sub = document.getElementById('regionType');
@@ -810,133 +1023,6 @@ const app = {
         document.getElementById('viewModeSelect').value = 'states'; 
         app.state.view = 'states';
         app.updateSidebarRight();
-    },
-
-    // UTILS MAP
-    getFeatureId: (f, s) => { 
-        if(!f || !f.properties) return null;
-        const p = f.properties; 
-        if (s === 'municipios') return p.CD_MUN ? String(p.CD_MUN) : (p.id ? String(p.id) : null); 
-        return p.CD_UF ? String(p.CD_UF) : (p.sigla ? STATES.find(x => x.sigla === p.sigla)?.id : String(p.id)); 
-    },
-    getStyle: (f, s) => { 
-        const id = app.getFeatureId(f, s); 
-        const c = app.getColorForId(id, s); 
-        return { fillColor: c.fill, weight: s==='estados'?0.8:0.5, color: '#ffffff', opacity: 1, fillOpacity: 1 }; 
-    },
-    getColorForId: (id, s) => { 
-        if (!id) return { fill: '#333' }; 
-        const d = app.state.turn === 1 ? app.data.round1 : app.data.round2; 
-        if(!d) return { fill: '#333' }; 
-        const v = (id.length === 2 && s === 'estados') ? d.estados[id] : d.municipios[id]; 
-        if(!v) return { fill: '#333' }; 
-        let max = -1, w = null, t = 0; 
-        for(let c in v) { t += v[c]; if(v[c] > max) { max = v[c]; w = c; } } 
-        if(!w) return { fill: '#333' }; 
-        const cand = CONFIG.candidates.find(c => c.id === w); 
-        return { fill: app.getDiscreteColor(cand ? cand.color : '#555', t > 0 ? (max/t)*100 : 0) }; 
-    },
-    getVotes22: (obj, key) => { let sum = 0; for(let k in obj) { if(k.toUpperCase().includes(key)) sum += obj[k]; } return sum; },
-    getDiscreteColor: (hex, pct) => { let config = CONFIG.scheme[0]; for (let i = 0; i < CONFIG.scheme.length; i++) if (pct >= CONFIG.scheme[i].min) config = CONFIG.scheme[i]; return app.mixColor(hex, config.mix, config.ratio); },
-    mixColor: (hex1, hex2, amount) => { const c1 = app.hexToRgb(hex1), c2 = app.hexToRgb(hex2); const r = Math.round(c1.r + (c2.r - c1.r) * amount), g = Math.round(c1.g + (c2.g - c1.g) * amount), b = Math.round(c1.b + (c2.b - c1.b) * amount); return `rgb(${r}, ${g}, ${b})`; },
-    hexToRgb: (hex) => { let c = hex.substring(1).split(''); if(c.length==3) c= [c[0], c[0], c[1], c[1], c[2], c[2]]; c = '0x'+c.join(''); return { r: (c>>16)&255, g: (c>>8)&255, b: c&255 }; },
-    bindTooltip: (l, s) => { 
-        l.bindTooltip(() => { 
-            const id = app.getFeatureId(l.feature, s); 
-            const name = l.feature.properties.NM_MUN || l.feature.properties.NM_UF || l.feature.properties.name; 
-            const d = app.state.turn === 1 ? app.data.round1 : app.data.round2; 
-            if(!d) return "Wait..."; 
-            const v = (id.length===2 && s==='estados') ? d.estados[id] : d.municipios[id]; 
-            if(!v) return "ND"; 
-            const sorted = Object.entries(v).sort((a,b)=>b[1]-a[1]); 
-            const t = sorted.reduce((a,b)=>a+b[1],0); 
-            const w = CONFIG.candidates.find(c=>c.id===sorted[0][0]); 
-            return `<div class="custom-tooltip"><div class="tt-head">${name}</div><div class="tt-body"><div style="color:${w.color}; font-weight:800">${w.name}</div><div>${((sorted[0][1]/t)*100).toFixed(1)}%</div></div></div>`; 
-        }, { sticky: true }); 
-    },
-
-    // EXPORT
-    generateStaticMap: async (format) => {
-        const loader = document.getElementById('loader'); loader.classList.remove('hidden'); document.getElementById('loaderMsg').innerText = "Exportando...";
-        setTimeout(() => {
-            try {
-                let features = [], scope = 'municipios', prefix = null;
-                if (app.state.view === 'states' && !app.state.selectedId) { features = app.data.brazilGeoJson.features; scope = 'estados'; } 
-                else if (app.state.selectedId && app.state.selectedId.length === 2) { 
-                    if(!app.data.geoJson) throw new Error("Load mesh first"); 
-                    prefix = app.state.selectedId; features = app.data.geoJson.features.filter(f => { const id = app.getFeatureId(f, 'municipios'); return id && id.startsWith(prefix); }); scope = 'municipios'; 
-                } else if (app.state.view === 'all_cities') { 
-                    if(!app.data.geoJson) throw new Error("Load mesh first"); features = app.data.geoJson.features; scope = 'municipios'; 
-                } else { features = app.data.brazilGeoJson.features; scope = 'estados'; }
-
-                if (!features.length) throw new Error("No data");
-                let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
-                features.forEach(f => { const proc = (c) => c.forEach(p => { if(typeof p[0]==='number') { if(p[0]<minX)minX=p[0];if(p[0]>maxX)maxX=p[0];if(p[1]<minY)minY=p[1];if(p[1]>maxY)maxY=p[1]; } else proc(p); }); if(f.geometry.type==='Polygon') proc(f.geometry.coordinates); else proc(f.geometry.coordinates); });
-                
-                const w = 4096, latD = maxY-minY, lonD = maxX-minX, h = w / (lonD/latD);
-                const proj = (ln, lt) => [(ln-minX)*(w/lonD), (maxY-lt)*(h/latD)];
-                
-                let svg = '';
-                features.forEach(f => {
-                    const id = app.getFeatureId(f, scope), clr = app.getColorForId(id, scope);
-                    let d = '';
-                    const dp = (c) => { let p=''; c.forEach((pt,i) => { const [x,y] = proj(pt[0],pt[1]); p+=(i===0?'M':'L')+x.toFixed(1)+','+y.toFixed(1); }); return p+'Z '; };
-                    if(f.geometry.type==='Polygon') f.geometry.coordinates.forEach(r => d+=dp(r)); else f.geometry.coordinates.forEach(p => p.forEach(r => d+=dp(r)));
-                    svg += `<path d="${d}" fill="${clr.fill}" stroke="#ffffff" stroke-width="${scope==='estados'?2:0.5}" vector-effect="non-scaling-stroke"/>`;
-                });
-                const final = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">${svg}</svg>`;
-                const fname = `mapa_${app.state.selectedName||'Brasil'}_${scope}`;
-                if(format==='svg') saveAs(new Blob([final], {type:"image/svg+xml"}), fname+'.svg');
-                else {
-                    const img = new Image(); img.onload = () => { const cv = document.createElement('canvas'); cv.width=w; cv.height=h; cv.getContext('2d').drawImage(img,0,0); cv.toBlob(b => saveAs(b, fname+'.png')); loader.classList.add('hidden'); };
-                    img.src = 'data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(final))); return;
-                }
-            } catch(e) { console.error(e); alert("Error exporting: " + e.message); }
-            loader.classList.add('hidden');
-        }, 100);
-    },
-
-    // IMPORT/EXPORT CONFIG
-    exportConfig: () => {
-        const data = JSON.stringify(app.state, null, 2);
-        const blob = new Blob([data], {type: "application/json;charset=utf-8"});
-        saveAs(blob, "atlas_config.json");
-    },
-    importConfig: (input) => {
-        const file = input.files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const newState = JSON.parse(e.target.result);
-                app.state = { ...app.state, ...newState };
-                app.renderUI();
-                app.setTurn(app.state.turn);
-                app.runSimulation();
-                alert("Configuração importada com sucesso!");
-            } catch(err) {
-                alert("Erro ao importar JSON: " + err.message);
-            }
-        };
-        reader.readAsText(file);
-        input.value = '';
-    },
-
-    // MODALS
-    openModal: (title, html) => { document.getElementById('modalTitle').innerText = title; document.getElementById('modalBody').innerHTML = html; document.getElementById('modalOverlay').classList.add('active'); },
-    closeModal: () => { document.getElementById('modalOverlay').classList.remove('active'); },
-    openMatrixModal: () => { const s = ['LULA','JAIR','CIRO','SIMONE']; let h = `<div style="margin-bottom:15px"><label style="color:#aaa; font-size:0.8rem">VOTOS 2022:</label><select id="modalSrcSelect" onchange="app.renderModalMatrix(this.value)" style="width:100%">${s.map(x => `<option value="${x}">${x}</option>`).join('')}</select></div><div id="modalMatrixContent"></div>`; app.openModal("Matriz", h); app.renderModalMatrix(s[0]); },
-    openMigrationModal: () => {
-        const [id1, id2] = app.state.t2_finalists; const obj1 = CONFIG.candidates.find(c=>c.id===id1); const obj2 = CONFIG.candidates.find(c=>c.id===id2);
-        let html = `<div style="text-align:center; font-size:0.8rem; color:#888; margin-bottom:15px">Migração T1 -> T2.<br>Esq: <b>${obj1.name}</b> | Dir: <b>${obj2.name}</b></div><div id="modalMigContent"></div>`;
-        app.openModal("Transferência", html);
-        const c = document.getElementById('modalMigContent');
-        CONFIG.candidates.forEach(cand => {
-            if(cand.id === id1 || cand.id === id2) return; const ratio = app.state.t2_migr[cand.id] !== undefined ? app.state.t2_migr[cand.id] : 0.5;
-            const div = document.createElement('div'); div.className = 'slider-box';
-            div.innerHTML = `<div class="slider-header"><span style="color:${cand.color}; font-weight:bold">Votos de ${cand.name}</span></div><div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#aaa; margin-bottom:5px;"><span style="color:${obj1.color}">${obj1.name}</span><span style="color:${obj2.color}">${obj2.name}</span></div><input type="range" min="0" max="100" value="${ratio*100}" oninput="app.state.t2_migr['${cand.id}'] = this.value/100;">`;
-            c.appendChild(div);
-        });
     }
 };
 
