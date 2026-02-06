@@ -171,6 +171,7 @@
     
     .io-buttons { display: flex; gap: 8px; margin-top: 10px; }
     .btn-io { flex: 1; padding: 10px; border: 1px solid #333; background: #151515; color: #aaa; border-radius: 6px; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: all 0.2s; }
+    .btn-io:hover { background: #222; color: #fff; border-color: #555; }
     
     .mode-tabs { display: flex; gap: 8px; margin-top: 15px; }
     .mode-tab { flex: 1; padding: 10px; text-align: center; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); cursor: pointer; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); transition: all 0.2s; }
@@ -262,6 +263,7 @@
                 <h1>Simulação 2026</h1>
             </div>
             <div class="io-buttons">
+                <button class="btn-io" onclick="app.resetToClean()"><i class="fas fa-undo"></i> Resetar</button>
                 <button class="btn-io" onclick="app.exportConfig()"><i class="fas fa-download"></i> Salvar</button>
                 <button class="btn-io" onclick="document.getElementById('fileInput').click()"><i class="fas fa-upload"></i> Abrir</button>
                 <input type="file" id="fileInput" style="display:none" onchange="app.importConfig(this)" accept=".json">
@@ -420,375 +422,64 @@ const DEFAULT_SCENARIO = {
     "ALDO": 1
   },
   "t1_matrix": {
-    "LULA": {
-      "LULA": 0.85,
-      "FLAVIO": 0,
-      "TARCISIO": 0.05,
-      "RENAN": 0,
-      "CAIADO": 0,
-      "ZEMA": 0,
-      "RATINHO": 0.02,
-      "CIRO": 0.05,
-      "ALDO": 0.03
-    },
-    "JAIR": {
-      "LULA": 0,
-      "FLAVIO": 0.75,
-      "TARCISIO": 0.8,
-      "RENAN": 0.02,
-      "CAIADO": 0.05,
-      "ZEMA": 0.04,
-      "RATINHO": 0.03,
-      "CIRO": 0,
-      "ALDO": 0.01
-    },
-    "CIRO": {
-      "LULA": 0.3,
-      "FLAVIO": 0,
-      "TARCISIO": 0.1,
-      "RENAN": 0,
-      "CAIADO": 0,
-      "ZEMA": 0.1,
-      "RATINHO": 0,
-      "CIRO": 0.4,
-      "ALDO": 0
-    },
-    "SIMONE": {
-      "LULA": 0.3,
-      "FLAVIO": 0,
-      "TARCISIO": 0.15,
-      "RENAN": 0,
-      "CAIADO": 0.15,
-      "ZEMA": 0.15,
-      "RATINHO": 0,
-      "CIRO": 0,
-      "ALDO": 0.1
-    }
+    "LULA": { "LULA": 0.85, "FLAVIO": 0, "TARCISIO": 0.05, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0.02, "CIRO": 0.05, "ALDO": 0.03 },
+    "JAIR": { "LULA": 0, "FLAVIO": 0.75, "TARCISIO": 0.8, "RENAN": 0.02, "CAIADO": 0.05, "ZEMA": 0.04, "RATINHO": 0.03, "CIRO": 0, "ALDO": 0.01 },
+    "CIRO": { "LULA": 0.3, "FLAVIO": 0, "TARCISIO": 0.1, "RENAN": 0, "CAIADO": 0, "ZEMA": 0.1, "RATINHO": 0, "CIRO": 0.4, "ALDO": 0 },
+    "SIMONE": { "LULA": 0.3, "FLAVIO": 0, "TARCISIO": 0.15, "RENAN": 0, "CAIADO": 0.15, "ZEMA": 0.15, "RATINHO": 0, "CIRO": 0, "ALDO": 0.1 }
   },
   "t1_matrix_state": {
-    "12": {
-      "JAIR": {
-        "LULA": 0,
-        "FLAVIO": 0.75,
-        "TARCISIO": 0.8,
-        "RENAN": 0.02,
-        "CAIADO": 0.05,
-        "ZEMA": 0.04,
-        "RATINHO": 0.03,
-        "CIRO": 0,
-        "ALDO": 0.01
-      }
-    },
-    "27": {
-      "JAIR": {
-        "LULA": 0,
-        "FLAVIO": 0.75,
-        "TARCISIO": 0.8,
-        "RENAN": 0.02,
-        "CAIADO": 0.05,
-        "ZEMA": 0.04,
-        "RATINHO": 0.03,
-        "CIRO": 0,
-        "ALDO": 0.01
-      }
-    },
-    "31": {
-      "JAIR": {
-        "LULA": 0,
-        "FLAVIO": 0.85,
-        "TARCISIO": 0.87,
-        "RENAN": 0.02,
-        "CAIADO": 0.03,
-        "ZEMA": 0.4,
-        "RATINHO": 0.03,
-        "CIRO": 0,
-        "ALDO": 0.01
-      }
-    },
-    "33": {
-      "JAIR": {
-        "LULA": 0,
-        "FLAVIO": 0.88,
-        "TARCISIO": 0.8,
-        "RENAN": 0.02,
-        "CAIADO": 0.04,
-        "ZEMA": 0.04,
-        "RATINHO": 0.03,
-        "CIRO": 0,
-        "ALDO": 0.01
-      }
-    },
-    "35": {
-      "JAIR": {
-        "LULA": 0,
-        "FLAVIO": 0.83,
-        "TARCISIO": 0.85,
-        "RENAN": 0.06,
-        "CAIADO": 0.04,
-        "ZEMA": 0.04,
-        "RATINHO": 0.03,
-        "CIRO": 0,
-        "ALDO": 0.01
-      }
-    },
+    "12": { "JAIR": { "LULA": 0, "FLAVIO": 0.75, "TARCISIO": 0.8, "RENAN": 0.02, "CAIADO": 0.05, "ZEMA": 0.04, "RATINHO": 0.03, "CIRO": 0, "ALDO": 0.01 } },
+    "27": { "JAIR": { "LULA": 0, "FLAVIO": 0.75, "TARCISIO": 0.8, "RENAN": 0.02, "CAIADO": 0.05, "ZEMA": 0.04, "RATINHO": 0.03, "CIRO": 0, "ALDO": 0.01 } },
+    "31": { "JAIR": { "LULA": 0, "FLAVIO": 0.85, "TARCISIO": 0.87, "RENAN": 0.02, "CAIADO": 0.03, "ZEMA": 0.4, "RATINHO": 0.03, "CIRO": 0, "ALDO": 0.01 } },
+    "33": { "JAIR": { "LULA": 0, "FLAVIO": 0.88, "TARCISIO": 0.8, "RENAN": 0.02, "CAIADO": 0.04, "ZEMA": 0.04, "RATINHO": 0.03, "CIRO": 0, "ALDO": 0.01 } },
+    "35": { "JAIR": { "LULA": 0, "FLAVIO": 0.83, "TARCISIO": 0.85, "RENAN": 0.06, "CAIADO": 0.04, "ZEMA": 0.04, "RATINHO": 0.03, "CIRO": 0, "ALDO": 0.01 } },
     "41": {
-      "JAIR": {
-        "LULA": 0,
-        "FLAVIO": 0.86,
-        "TARCISIO": 0.88,
-        "RENAN": 0.02,
-        "CAIADO": 0.03,
-        "ZEMA": 0.03,
-        "RATINHO": 0.15,
-        "CIRO": 0,
-        "ALDO": 0.01
-      },
-      "LULA": {
-        "LULA": 0.8,
-        "FLAVIO": 0,
-        "TARCISIO": 0.05,
-        "RENAN": 0,
-        "CAIADO": 0,
-        "ZEMA": 0,
-        "RATINHO": 0.05,
-        "CIRO": 0.05,
-        "ALDO": 0.03
-      },
-      "SIMONE": {
-        "LULA": 0.3,
-        "FLAVIO": 0,
-        "TARCISIO": 0.15,
-        "RENAN": 0,
-        "CAIADO": 0.15,
-        "ZEMA": 0.15,
-        "RATINHO": 0.5,
-        "CIRO": 0,
-        "ALDO": 0.1
-      }
+      "JAIR": { "LULA": 0, "FLAVIO": 0.86, "TARCISIO": 0.88, "RENAN": 0.02, "CAIADO": 0.03, "ZEMA": 0.03, "RATINHO": 0.15, "CIRO": 0, "ALDO": 0.01 },
+      "LULA": { "LULA": 0.8, "FLAVIO": 0, "TARCISIO": 0.05, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0.05, "CIRO": 0.05, "ALDO": 0.03 },
+      "SIMONE": { "LULA": 0.3, "FLAVIO": 0, "TARCISIO": 0.15, "RENAN": 0, "CAIADO": 0.15, "ZEMA": 0.15, "RATINHO": 0.5, "CIRO": 0, "ALDO": 0.1 }
     },
-    "42": {
-      "JAIR": {
-        "LULA": 0,
-        "FLAVIO": 0.85,
-        "TARCISIO": 0.88,
-        "RENAN": 0.02,
-        "CAIADO": 0.05,
-        "ZEMA": 0.04,
-        "RATINHO": 0.16,
-        "CIRO": 0,
-        "ALDO": 0.01
-      }
-    },
-    "50": {
-      "JAIR": {
-        "LULA": 0,
-        "FLAVIO": 0.83,
-        "TARCISIO": 0.85,
-        "RENAN": 0.02,
-        "CAIADO": 0.08,
-        "ZEMA": 0.03,
-        "RATINHO": 0.02,
-        "CIRO": 0,
-        "ALDO": 0.01
-      }
-    },
+    "42": { "JAIR": { "LULA": 0, "FLAVIO": 0.85, "TARCISIO": 0.88, "RENAN": 0.02, "CAIADO": 0.05, "ZEMA": 0.04, "RATINHO": 0.16, "CIRO": 0, "ALDO": 0.01 } },
+    "50": { "JAIR": { "LULA": 0, "FLAVIO": 0.83, "TARCISIO": 0.85, "RENAN": 0.02, "CAIADO": 0.08, "ZEMA": 0.03, "RATINHO": 0.02, "CIRO": 0, "ALDO": 0.01 } },
     "52": {
-      "JAIR": {
-        "LULA": 0,
-        "FLAVIO": 0.93,
-        "TARCISIO": 0.97,
-        "RENAN": 0.02,
-        "CAIADO": 0.11,
-        "ZEMA": 0.02,
-        "RATINHO": 0.02,
-        "CIRO": 0,
-        "ALDO": 0.01
-      },
-      "LULA": {
-        "LULA": 0.8,
-        "FLAVIO": 0,
-        "TARCISIO": 0.05,
-        "RENAN": 0,
-        "CAIADO": 0.05,
-        "ZEMA": 0,
-        "RATINHO": 0.02,
-        "CIRO": 0.05,
-        "ALDO": 0.03
-      },
-      "CIRO": {
-        "LULA": 0.3,
-        "FLAVIO": 0,
-        "TARCISIO": 0.1,
-        "RENAN": 0,
-        "CAIADO": 0.15,
-        "ZEMA": 0.1,
-        "RATINHO": 0,
-        "CIRO": 0.4,
-        "ALDO": 0
-      },
-      "SIMONE": {
-        "LULA": 0.3,
-        "FLAVIO": 0,
-        "TARCISIO": 0.15,
-        "RENAN": 0,
-        "CAIADO": 0.34,
-        "ZEMA": 0.15,
-        "RATINHO": 0,
-        "CIRO": 0,
-        "ALDO": 0.1
-      }
+      "JAIR": { "LULA": 0, "FLAVIO": 0.93, "TARCISIO": 0.97, "RENAN": 0.02, "CAIADO": 0.11, "ZEMA": 0.02, "RATINHO": 0.02, "CIRO": 0, "ALDO": 0.01 },
+      "LULA": { "LULA": 0.8, "FLAVIO": 0, "TARCISIO": 0.05, "RENAN": 0, "CAIADO": 0.05, "ZEMA": 0, "RATINHO": 0.02, "CIRO": 0.05, "ALDO": 0.03 },
+      "CIRO": { "LULA": 0.3, "FLAVIO": 0, "TARCISIO": 0.1, "RENAN": 0, "CAIADO": 0.15, "ZEMA": 0.1, "RATINHO": 0, "CIRO": 0.4, "ALDO": 0 },
+      "SIMONE": { "LULA": 0.3, "FLAVIO": 0, "TARCISIO": 0.15, "RENAN": 0, "CAIADO": 0.34, "ZEMA": 0.15, "RATINHO": 0, "CIRO": 0, "ALDO": 0.1 }
     },
-    "53": {
-      "JAIR": {
-        "LULA": 0,
-        "FLAVIO": 0.82,
-        "TARCISIO": 0.8,
-        "RENAN": 0.02,
-        "CAIADO": 0.04,
-        "ZEMA": 0.02,
-        "RATINHO": 0.01,
-        "CIRO": 0,
-        "ALDO": 0.01
-      }
-    }
+    "53": { "JAIR": { "LULA": 0, "FLAVIO": 0.82, "TARCISIO": 0.8, "RENAN": 0.02, "CAIADO": 0.04, "ZEMA": 0.02, "RATINHO": 0.01, "CIRO": 0, "ALDO": 0.01 } }
   },
   "t1_mults": {
-    "21": {
-      "LULA": 0.94
-    },
-    "23": {
-      "CIRO": 1.1
-    },
-    "31": {
-      "ZEMA": 1
-    },
-    "32": {
-      "TARCISIO": 1.1
-    },
-    "33": {
-      "FLAVIO": 1.1,
-      "TARCISIO": 1.1
-    },
-    "35": {
-      "TARCISIO": 1.15,
-      "FLAVIO": 1.1
-    },
-    "41": {
-      "RATINHO": 1,
-      "TARCISIO": 1.1,
-      "FLAVIO": 1.1
-    },
-    "50": {
-      "TARCISIO": 1.1,
-      "FLAVIO": 1.1
-    },
-    "51": {
-      "TARCISIO": 1.1
-    },
-    "52": {
-      "CAIADO": 1,
-      "TARCISIO": 1.1
-    }
+    "21": { "LULA": 0.94 }, "23": { "CIRO": 1.1 }, "31": { "ZEMA": 1 }, "32": { "TARCISIO": 1.1 }, "33": { "FLAVIO": 1.1, "TARCISIO": 1.1 },
+    "35": { "TARCISIO": 1.15, "FLAVIO": 1.1 }, "41": { "RATINHO": 1, "TARCISIO": 1.1, "FLAVIO": 1.1 }, "50": { "TARCISIO": 1.1, "FLAVIO": 1.1 },
+    "51": { "TARCISIO": 1.1 }, "52": { "CAIADO": 1, "TARCISIO": 1.1 }
   },
-  "t2_migr": {
-    "RENAN": 0.55,
-    "CAIADO": 0.64,
-    "ZEMA": 0.72,
-    "RATINHO": 0.66,
-    "CIRO": 0.21,
-    "ALDO": 0.34,
-    "FLAVIO": 0.9
-  },
+  "t2_migr": { "RENAN": 0.55, "CAIADO": 0.64, "ZEMA": 0.72, "RATINHO": 0.66, "CIRO": 0.21, "ALDO": 0.34, "FLAVIO": 0.9 },
   "t2_mults": {
-    "11": {
-      "FLAVIO": 1.2,
-      "TARCISIO": 1.1,
-      "LULA": 0.9
-    },
-    "12": {
-      "FLAVIO": 1.2,
-      "TARCISIO": 1.1,
-      "LULA": 0.9
-    },
-    "13": {
-      "LULA": 0.9,
-      "FLAVIO": 1.1
-    },
-    "14": {
-      "FLAVIO": 1.2,
-      "TARCISIO": 1.1,
-      "LULA": 0.9
-    },
-    "15": {
-      "FLAVIO": 1.1,
-      "LULA": 0.9
-    },
-    "16": {
-      "FLAVIO": 1.1,
-      "LULA": 0.9
-    },
-    "17": {
-      "FLAVIO": 1.1,
-      "LULA": 0.9
-    },
-    "21": {
-      "LULA": 0.95,
-      "FLAVIO": 1.05
-    },
-    "23": {
-      "LULA": 0.9
-    },
-    "29": {
-      "LULA": 1.05
-    },
-    "31": {
-      "FLAVIO": 1.05,
-      "LULA": 0.95
-    },
-    "32": {
-      "FLAVIO": 1.05,
-      "LULA": 0.95
-    },
-    "33": {
-      "FLAVIO": 1.05,
-      "LULA": 0.9
-    },
-    "35": {
-      "FLAVIO": 1.1,
-      "LULA": 0.9
-    },
-    "41": {
-      "FLAVIO": 1.1,
-      "TARCISIO": 1.2,
-      "LULA": 0.9
-    },
-    "42": {
-      "FLAVIO": 1.2,
-      "TARCISIO": 1.2,
-      "LULA": 0.8
-    },
-    "43": {
-      "FLAVIO": 1.1,
-      "LULA": 0.95
-    },
-    "51": {
-      "FLAVIO": 1.12,
-      "TARCISIO": 1.2,
-      "LULA": 0.88
-    }
+    "11": { "FLAVIO": 1.2, "TARCISIO": 1.1, "LULA": 0.9 }, "12": { "FLAVIO": 1.2, "TARCISIO": 1.1, "LULA": 0.9 }, "13": { "LULA": 0.9, "FLAVIO": 1.1 },
+    "14": { "FLAVIO": 1.2, "TARCISIO": 1.1, "LULA": 0.9 }, "15": { "FLAVIO": 1.1, "LULA": 0.9 }, "16": { "FLAVIO": 1.1, "LULA": 0.9 },
+    "17": { "FLAVIO": 1.1, "LULA": 0.9 }, "21": { "LULA": 0.95, "FLAVIO": 1.05 }, "23": { "LULA": 0.9 }, "29": { "LULA": 1.05 },
+    "31": { "FLAVIO": 1.05, "LULA": 0.95 }, "32": { "FLAVIO": 1.05, "LULA": 0.95 }, "33": { "FLAVIO": 1.05, "LULA": 0.9 },
+    "35": { "FLAVIO": 1.1, "LULA": 0.9 }, "41": { "FLAVIO": 1.1, "TARCISIO": 1.2, "LULA": 0.9 }, "42": { "FLAVIO": 1.2, "TARCISIO": 1.2, "LULA": 0.8 },
+    "43": { "FLAVIO": 1.1, "LULA": 0.95 }, "51": { "FLAVIO": 1.12, "TARCISIO": 1.2, "LULA": 0.88 }
   },
-  "active_candidates": {
-    "LULA": true,
-    "FLAVIO": true,
-    "TARCISIO": false,
-    "RENAN": true,
-    "CAIADO": true,
-    "ZEMA": false,
-    "RATINHO": true,
-    "CIRO": false,
-    "ALDO": true
-  },
+  "active_candidates": { "LULA": true, "FLAVIO": true, "TARCISIO": false, "RENAN": true, "CAIADO": true, "ZEMA": false, "RATINHO": true, "CIRO": false, "ALDO": true },
   "t2_mode": "organic"
+};
+
+const CLEAN_SCENARIO = {
+    t1_polls: { "LULA": 30, "FLAVIO": 30, "TARCISIO": 10, "RENAN": 5, "CAIADO": 5, "ZEMA": 5, "RATINHO": 5, "CIRO": 5, "ALDO": 5 },
+    t1_matrix: {
+        "LULA": { "LULA": 1, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 },
+        "JAIR": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 },
+        "CIRO": { "LULA": 0, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 1, "ALDO": 0 },
+        "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 }
+    },
+    t1_matrix_state: {},
+    t1_mults: {},
+    t2_migr: { "LULA":0, "FLAVIO":1, "TARCISIO":1, "RENAN":0.5, "CAIADO":1, "ZEMA":1, "RATINHO":1, "CIRO":0.5, "ALDO":0.5 },
+    t2_mults: {},
+    active_candidates: { "LULA": true, "FLAVIO": true, "TARCISIO": true, "RENAN": true, "CAIADO": true, "ZEMA": true, "RATINHO": true, "CIRO": true, "ALDO": true },
+    t2_mode: "manual"
 };
 
 const app = {
@@ -823,6 +514,14 @@ const app = {
         } else if(tab === 'results') {
             right.classList.add('active');
             left.classList.remove('active');
+        }
+    },
+
+    resetToClean: () => {
+        if(confirm("Deseja resetar todas as configurações para o padrão limpo? Isso removerá as configurações atuais.")) {
+            app.loadScenario(CLEAN_SCENARIO);
+            app.renderUI();
+            app.runSimulation();
         }
     },
 
@@ -993,7 +692,7 @@ const app = {
             c.appendChild(div);
         });
     },
-    updateMult: (turn, ufId, cid, val) => { const store = turn===1 ? app.state.t1_mults : app.state.t2_mults; store[ufId][cid] = parseInt(val)/100; },
+    updateMult: (turn, ufId, cid, val) => { const store = turn===1 ? app.state.t1_mults : app.state.t2_mults; if(!store[ufId]) store[ufId] = {}; store[ufId][cid] = parseInt(val)/100; },
     openMigrationModal: () => {
         const [id1, id2] = app.state.t2_finalists;
         let html = `<div style="text-align:center; font-size:0.8rem; color:#888; margin-bottom:15px">Configure para quem os eleitores migrarão.<br>Esquerda (0%): <b>${CONFIG.candidates.find(c=>c.id===id1).name}</b> | Direita (100%): <b>${CONFIG.candidates.find(c=>c.id===id2).name}</b></div><div id="modalMigContent"></div>`;
