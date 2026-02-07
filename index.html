@@ -791,6 +791,65 @@ const app = {
 };
 
 document.addEventListener('DOMContentLoaded', app.init);
+
+    // CORREÇÃO DOS BOTÕES - Garantir que todos os botões sejam clicáveis
+document.addEventListener('DOMContentLoaded', function() {
+    // Forçar z-index alto em todos os elementos interativos
+    setTimeout(function() {
+        const interactiveElements = [
+            '.mode-tab', '.btn-io', '.btn-primary', '.btn-secondary',
+            '.btn-back', '.map-btn', '.nav-item', 'select',
+            'input[type="checkbox"]', 'input[type="range"]', '.switch input'
+        ];
+        
+        interactiveElements.forEach(selector => {
+            document.querySelectorAll(selector).forEach(el => {
+                el.style.zIndex = '10000';
+                el.style.position = 'relative';
+            });
+        });
+        
+        // Garantir que os botões de turno funcionem
+        document.querySelectorAll('.mode-tab').forEach(tab => {
+            tab.style.cursor = 'pointer';
+            tab.style.pointerEvents = 'auto';
+        });
+        
+        // Garantir que os botões de IO funcionem
+        document.querySelectorAll('.btn-io').forEach(btn => {
+            btn.style.cursor = 'pointer';
+            btn.style.pointerEvents = 'auto';
+        });
+        
+        console.log('Botões corrigidos e prontos para uso');
+    }, 500);
+});
+
+// Função auxiliar para garantir que eventos não sejam bloqueados
+function ensureClickable(element) {
+    if (element) {
+        element.style.pointerEvents = 'auto';
+        element.style.cursor = 'pointer';
+        element.style.zIndex = '10000';
+        element.style.position = 'relative';
+    }
+}
+
+// Aplicar correções para elementos específicos após carregamento
+window.addEventListener('load', function() {
+    // Botões de turno
+    ensureClickable(document.getElementById('tab1'));
+    ensureClickable(document.getElementById('tab2'));
+    
+    // Botões de IO
+    document.querySelectorAll('.btn-io').forEach(ensureClickable);
+    
+    // Botões de mapa
+    document.querySelectorAll('.map-btn').forEach(ensureClickable);
+    
+    // Botões de navegação mobile
+    document.querySelectorAll('.nav-item').forEach(ensureClickable);
+});
 </script>
 </body>
 </html>
