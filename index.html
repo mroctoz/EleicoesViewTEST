@@ -412,57 +412,272 @@ const CONFIG = {
 const DEFAULT_SCENARIO = {
   "t1_polls": {
     "LULA": 47,
-    "FLAVIO": 32,
-    "TARCISIO": 31,
+    "FLAVIO": 34,
+    "TARCISIO": 40,
     "RENAN": 4,
-    "CAIADO": 9,
+    "CAIADO": 8,
     "ZEMA": 6,
-    "RATINHO": 7,
-    "CIRO": 3,
+    "RATINHO": 5,
+    "CIRO": 5,
     "ALDO": 1
   },
   "t1_matrix": {
-    "LULA": { "LULA": 0.85, "FLAVIO": 0, "TARCISIO": 0.05, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0.02, "CIRO": 0.05, "ALDO": 0.03 },
-    "JAIR": { "LULA": 0, "FLAVIO": 0.75, "TARCISIO": 0.8, "RENAN": 0.02, "CAIADO": 0.05, "ZEMA": 0.04, "RATINHO": 0.03, "CIRO": 0, "ALDO": 0.01 },
-    "CIRO": { "LULA": 0.3, "FLAVIO": 0, "TARCISIO": 0.1, "RENAN": 0, "CAIADO": 0, "ZEMA": 0.1, "RATINHO": 0, "CIRO": 0.4, "ALDO": 0 },
-    "SIMONE": { "LULA": 0.3, "FLAVIO": 0, "TARCISIO": 0.15, "RENAN": 0, "CAIADO": 0.15, "ZEMA": 0.15, "RATINHO": 0, "CIRO": 0, "ALDO": 0.1 }
+    "LULA": {
+      "LULA": 1,
+      "FLAVIO": 0,
+      "TARCISIO": 0,
+      "RENAN": 0,
+      "CAIADO": 0,
+      "ZEMA": 0,
+      "RATINHO": 0,
+      "CIRO": 0,
+      "ALDO": 0
+    },
+    "JAIR": {
+      "LULA": 0,
+      "FLAVIO": 1,
+      "TARCISIO": 0.95,
+      "RENAN": 0.05,
+      "CAIADO": 0.75,
+      "ZEMA": 0.7,
+      "RATINHO": 0.65,
+      "CIRO": 0,
+      "ALDO": 0
+    },
+    "CIRO": {
+      "LULA": 0,
+      "FLAVIO": 0,
+      "TARCISIO": 0.15,
+      "RENAN": 0,
+      "CAIADO": 0,
+      "ZEMA": 0,
+      "RATINHO": 0.15,
+      "CIRO": 1,
+      "ALDO": 0
+    },
+    "SIMONE": {
+      "LULA": 0.5,
+      "FLAVIO": 0.4,
+      "TARCISIO": 0.75,
+      "RENAN": 0.25,
+      "CAIADO": 0.35,
+      "ZEMA": 0.35,
+      "RATINHO": 0.35,
+      "CIRO": 0,
+      "ALDO": 0.05
+    }
   },
   "t1_matrix_state": {
-    "12": { "JAIR": { "LULA": 0, "FLAVIO": 0.75, "TARCISIO": 0.8, "RENAN": 0.02, "CAIADO": 0.05, "ZEMA": 0.04, "RATINHO": 0.03, "CIRO": 0, "ALDO": 0.01 } },
-    "27": { "JAIR": { "LULA": 0, "FLAVIO": 0.75, "TARCISIO": 0.8, "RENAN": 0.02, "CAIADO": 0.05, "ZEMA": 0.04, "RATINHO": 0.03, "CIRO": 0, "ALDO": 0.01 } },
-    "31": { "JAIR": { "LULA": 0, "FLAVIO": 0.85, "TARCISIO": 0.87, "RENAN": 0.02, "CAIADO": 0.03, "ZEMA": 0.4, "RATINHO": 0.03, "CIRO": 0, "ALDO": 0.01 } },
-    "33": { "JAIR": { "LULA": 0, "FLAVIO": 0.88, "TARCISIO": 0.8, "RENAN": 0.02, "CAIADO": 0.04, "ZEMA": 0.04, "RATINHO": 0.03, "CIRO": 0, "ALDO": 0.01 } },
-    "35": { "JAIR": { "LULA": 0, "FLAVIO": 0.83, "TARCISIO": 0.85, "RENAN": 0.06, "CAIADO": 0.04, "ZEMA": 0.04, "RATINHO": 0.03, "CIRO": 0, "ALDO": 0.01 } },
+    "31": {
+      "JAIR": {
+        "LULA": 0,
+        "FLAVIO": 0.9,
+        "TARCISIO": 0.95,
+        "RENAN": 0.05,
+        "CAIADO": 0.25,
+        "ZEMA": 1,
+        "RATINHO": 0.25,
+        "CIRO": 0,
+        "ALDO": 0
+      },
+      "CIRO": {
+        "LULA": 0,
+        "FLAVIO": 0,
+        "TARCISIO": 0.15,
+        "RENAN": 0.15,
+        "CAIADO": 0,
+        "ZEMA": 0.85,
+        "RATINHO": 0.15,
+        "CIRO": 1,
+        "ALDO": 0
+      },
+      "SIMONE": {
+        "LULA": 0.5,
+        "FLAVIO": 0.4,
+        "TARCISIO": 0.75,
+        "RENAN": 0.15,
+        "CAIADO": 0.35,
+        "ZEMA": 0.9,
+        "RATINHO": 0.35,
+        "CIRO": 0,
+        "ALDO": 0.05
+      },
+      "LULA": {
+        "LULA": 0.95,
+        "FLAVIO": 0,
+        "TARCISIO": 0,
+        "RENAN": 0,
+        "CAIADO": 0,
+        "ZEMA": 0.2,
+        "RATINHO": 0,
+        "CIRO": 0,
+        "ALDO": 0
+      }
+    },
+    "33": {
+      "JAIR": {
+        "LULA": 0,
+        "FLAVIO": 1,
+        "TARCISIO": 0.95,
+        "RENAN": 0.05,
+        "CAIADO": 0.5,
+        "ZEMA": 0.5,
+        "RATINHO": 0.4,
+        "CIRO": 0,
+        "ALDO": 0
+      }
+    },
+    "35": {
+      "JAIR": {
+        "LULA": 0,
+        "FLAVIO": 1,
+        "TARCISIO": 1,
+        "RENAN": 0.07,
+        "CAIADO": 0.65,
+        "ZEMA": 0.65,
+        "RATINHO": 0.65,
+        "CIRO": 0,
+        "ALDO": 0
+      }
+    },
     "41": {
-      "JAIR": { "LULA": 0, "FLAVIO": 0.86, "TARCISIO": 0.88, "RENAN": 0.02, "CAIADO": 0.03, "ZEMA": 0.03, "RATINHO": 0.15, "CIRO": 0, "ALDO": 0.01 },
-      "LULA": { "LULA": 0.8, "FLAVIO": 0, "TARCISIO": 0.05, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0.05, "CIRO": 0.05, "ALDO": 0.03 },
-      "SIMONE": { "LULA": 0.3, "FLAVIO": 0, "TARCISIO": 0.15, "RENAN": 0, "CAIADO": 0.15, "ZEMA": 0.15, "RATINHO": 0.5, "CIRO": 0, "ALDO": 0.1 }
+      "JAIR": {
+        "LULA": 0,
+        "FLAVIO": 1,
+        "TARCISIO": 0.95,
+        "RENAN": 0.07,
+        "CAIADO": 0.45,
+        "ZEMA": 0.5,
+        "RATINHO": 0.9,
+        "CIRO": 0,
+        "ALDO": 0
+      }
     },
-    "42": { "JAIR": { "LULA": 0, "FLAVIO": 0.85, "TARCISIO": 0.88, "RENAN": 0.02, "CAIADO": 0.05, "ZEMA": 0.04, "RATINHO": 0.16, "CIRO": 0, "ALDO": 0.01 } },
-    "50": { "JAIR": { "LULA": 0, "FLAVIO": 0.83, "TARCISIO": 0.85, "RENAN": 0.02, "CAIADO": 0.08, "ZEMA": 0.03, "RATINHO": 0.02, "CIRO": 0, "ALDO": 0.01 } },
+    "42": {
+      "JAIR": {
+        "LULA": 0,
+        "FLAVIO": 1,
+        "TARCISIO": 0.95,
+        "RENAN": 0.07,
+        "CAIADO": 0.5,
+        "ZEMA": 0.6,
+        "RATINHO": 0.65,
+        "CIRO": 0,
+        "ALDO": 0
+      }
+    },
+    "50": {
+      "JAIR": {
+        "LULA": 0,
+        "FLAVIO": 1,
+        "TARCISIO": 0.95,
+        "RENAN": 0.05,
+        "CAIADO": 0.7,
+        "ZEMA": 0.6,
+        "RATINHO": 0.5,
+        "CIRO": 0,
+        "ALDO": 0
+      },
+      "SIMONE": {
+        "LULA": 0.5,
+        "FLAVIO": 0.4,
+        "TARCISIO": 0.75,
+        "RENAN": 0.25,
+        "CAIADO": 0.5,
+        "ZEMA": 0.35,
+        "RATINHO": 0.35,
+        "CIRO": 0,
+        "ALDO": 0.05
+      }
+    },
+    "51": {
+      "JAIR": {
+        "LULA": 0,
+        "FLAVIO": 1,
+        "TARCISIO": 0.95,
+        "RENAN": 0.05,
+        "CAIADO": 0.85,
+        "ZEMA": 0.65,
+        "RATINHO": 0.55,
+        "CIRO": 0,
+        "ALDO": 0
+      }
+    },
     "52": {
-      "JAIR": { "LULA": 0, "FLAVIO": 0.93, "TARCISIO": 0.97, "RENAN": 0.02, "CAIADO": 0.11, "ZEMA": 0.02, "RATINHO": 0.02, "CIRO": 0, "ALDO": 0.01 },
-      "LULA": { "LULA": 0.8, "FLAVIO": 0, "TARCISIO": 0.05, "RENAN": 0, "CAIADO": 0.05, "ZEMA": 0, "RATINHO": 0.02, "CIRO": 0.05, "ALDO": 0.03 },
-      "CIRO": { "LULA": 0.3, "FLAVIO": 0, "TARCISIO": 0.1, "RENAN": 0, "CAIADO": 0.15, "ZEMA": 0.1, "RATINHO": 0, "CIRO": 0.4, "ALDO": 0 },
-      "SIMONE": { "LULA": 0.3, "FLAVIO": 0, "TARCISIO": 0.15, "RENAN": 0, "CAIADO": 0.34, "ZEMA": 0.15, "RATINHO": 0, "CIRO": 0, "ALDO": 0.1 }
-    },
-    "53": { "JAIR": { "LULA": 0, "FLAVIO": 0.82, "TARCISIO": 0.8, "RENAN": 0.02, "CAIADO": 0.04, "ZEMA": 0.02, "RATINHO": 0.01, "CIRO": 0, "ALDO": 0.01 } }
+      "JAIR": {
+        "LULA": 0,
+        "FLAVIO": 0.95,
+        "TARCISIO": 0.95,
+        "RENAN": 0.05,
+        "CAIADO": 0.95,
+        "ZEMA": 0.35,
+        "RATINHO": 0.35,
+        "CIRO": 0,
+        "ALDO": 0
+      },
+      "CIRO": {
+        "LULA": 0,
+        "FLAVIO": 0,
+        "TARCISIO": 0.15,
+        "RENAN": 0.15,
+        "CAIADO": 0.8,
+        "ZEMA": 0,
+        "RATINHO": 0.15,
+        "CIRO": 1,
+        "ALDO": 0
+      },
+      "SIMONE": {
+        "LULA": 0.5,
+        "FLAVIO": 0.4,
+        "TARCISIO": 0.75,
+        "RENAN": 0.15,
+        "CAIADO": 0.8,
+        "ZEMA": 0.35,
+        "RATINHO": 0.35,
+        "CIRO": 0,
+        "ALDO": 0.05
+      },
+      "LULA": {
+        "LULA": 0.95,
+        "FLAVIO": 0,
+        "TARCISIO": 0,
+        "RENAN": 0,
+        "CAIADO": 0.2,
+        "ZEMA": 0,
+        "RATINHO": 0,
+        "CIRO": 0,
+        "ALDO": 0
+      }
+    }
   },
   "t1_mults": {
-    "21": { "LULA": 0.94 }, "23": { "CIRO": 1.1 }, "31": { "ZEMA": 1 }, "32": { "TARCISIO": 1.1 }, "33": { "FLAVIO": 1.1, "TARCISIO": 1.1 },
-    "35": { "TARCISIO": 1.15, "FLAVIO": 1.1 }, "41": { "RATINHO": 1, "TARCISIO": 1.1, "FLAVIO": 1.1 }, "50": { "TARCISIO": 1.1, "FLAVIO": 1.1 },
-    "51": { "TARCISIO": 1.1 }, "52": { "CAIADO": 1, "TARCISIO": 1.1 }
+    "51": {
+      "FLAVIO": 1.1
+    }
   },
-  "t2_migr": { "RENAN": 0.55, "CAIADO": 0.64, "ZEMA": 0.72, "RATINHO": 0.66, "CIRO": 0.21, "ALDO": 0.34, "FLAVIO": 0.9 },
-  "t2_mults": {
-    "11": { "FLAVIO": 1.2, "TARCISIO": 1.1, "LULA": 0.9 }, "12": { "FLAVIO": 1.2, "TARCISIO": 1.1, "LULA": 0.9 }, "13": { "LULA": 0.9, "FLAVIO": 1.1 },
-    "14": { "FLAVIO": 1.2, "TARCISIO": 1.1, "LULA": 0.9 }, "15": { "FLAVIO": 1.1, "LULA": 0.9 }, "16": { "FLAVIO": 1.1, "LULA": 0.9 },
-    "17": { "FLAVIO": 1.1, "LULA": 0.9 }, "21": { "LULA": 0.95, "FLAVIO": 1.05 }, "23": { "LULA": 0.9 }, "29": { "LULA": 1.05 },
-    "31": { "FLAVIO": 1.05, "LULA": 0.95 }, "32": { "FLAVIO": 1.05, "LULA": 0.95 }, "33": { "FLAVIO": 1.05, "LULA": 0.9 },
-    "35": { "FLAVIO": 1.1, "LULA": 0.9 }, "41": { "FLAVIO": 1.1, "TARCISIO": 1.2, "LULA": 0.9 }, "42": { "FLAVIO": 1.2, "TARCISIO": 1.2, "LULA": 0.8 },
-    "43": { "FLAVIO": 1.1, "LULA": 0.95 }, "51": { "FLAVIO": 1.12, "TARCISIO": 1.2, "LULA": 0.88 }
+  "t2_migr": {
+    "LULA": 0,
+    "FLAVIO": 0.94,
+    "TARCISIO": 1,
+    "RENAN": 0.81,
+    "CAIADO": 0.7,
+    "ZEMA": 0.81,
+    "RATINHO": 1,
+    "CIRO": 0.5,
+    "ALDO": 0.28
   },
-  "active_candidates": { "LULA": true, "FLAVIO": true, "TARCISIO": false, "RENAN": true, "CAIADO": true, "ZEMA": false, "RATINHO": true, "CIRO": false, "ALDO": true },
+  "t2_mults": {},
+  "active_candidates": {
+    "LULA": true,
+    "FLAVIO": true,
+    "TARCISIO": false,
+    "RENAN": true,
+    "CAIADO": true,
+    "ZEMA": true,
+    "RATINHO": false,
+    "CIRO": false,
+    "ALDO": true
+  },
   "t2_mode": "organic"
 };
 
