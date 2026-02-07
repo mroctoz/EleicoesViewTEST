@@ -1062,3 +1062,39 @@ input:checked + .slider:before {
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* CORREÇÃO DOS BOTÕES DE TURNO - ESTILO ESPECÍFICO */
+.mode-tabs {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    background: rgba(15, 23, 42, 0.5);
+    padding: 6px;
+    border-radius: var(--border-radius-md);
+}
+
+.mode-tab {
+    flex: 1;
+    padding: 12px;
+    text-align: center;
+    border-radius: var(--border-radius-sm);
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    transition: all var(--transition-fast);
+}
+
+.mode-tab:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+}
+
+.mode-tab.active {
+    background: var(--gradient-primary);
+    color: white;
+    border-color: transparent;
+    box-shadow: var(--shadow-glow);
+}
