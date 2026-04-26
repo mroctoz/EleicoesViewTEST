@@ -1,3 +1,4 @@
+--- START OF FILE index (24).html ---
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -10,19 +11,113 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <!-- Fonts & Icons -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
 <!-- Export Libraries -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
 <link rel="stylesheet" href="style.css">
+
+<style id="presentation-styles">
+    /* ESTILOS DA APRESENTAÇÃO (BROADCAST VIEW) */
+    #presentationOverlay {
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: radial-gradient(circle at 50% 40%, #2c3e50 0%, #0a0e14 100%);
+        z-index: 999999; display: none; flex-direction: column; color: #fff;
+        font-family: 'Inter', sans-serif; overflow: hidden;
+    }
+    #presentationOverlay::before {
+        content: ''; position: absolute; top:0; left:0; right:0; bottom:0;
+        background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.02) 2px, rgba(255,255,255,0.02) 4px);
+        pointer-events: none; opacity: 0.5;
+    }
+    #presentationOverlay.active { display: flex; }
+    
+    .pres-header { text-align: center; padding: 30px 40px; position: relative; z-index: 10; display: flex; justify-content: space-between; align-items: flex-start;}
+    .pres-header-center { position: absolute; left: 50%; transform: translateX(-50%); text-align: center; }
+    .pres-region { font-size: 1.8rem; font-weight: 300; letter-spacing: 2px; text-transform: uppercase; color: #e2e8f0; }
+    .pres-year { font-size: 4rem; font-weight: 900; line-height: 1; text-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+    .pres-turn { font-size: 1.2rem; font-weight: 400; font-style: italic; color: #a0aec0; margin-top: -5px; }
+
+    .pres-content { flex: 1; display: flex; justify-content: center; align-items: center; position: relative; z-index: 10; padding: 0 50px; }
+    
+    .pres-map-container { flex: 0 0 45%; height: 75%; display: flex; justify-content: center; align-items: center; }
+    .pres-map-container svg { width: 100%; height: 100%; filter: drop-shadow(0px 15px 25px rgba(0,0,0,0.6)); }
+
+    .pres-candidate-main { flex: 0 0 25%; display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .pres-photo-wrapper { position: relative; width: 280px; height: 380px; margin-bottom: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
+    .pres-photo-wrapper::after {
+        content: ''; position: absolute; inset: 0;
+        box-shadow: inset 0 0 0 4px rgba(255,255,255,0.8); pointer-events: none;
+    }
+    .pres-photo { width: 100%; height: 100%; object-fit: cover; background: #333; filter: grayscale(15%); transition: filter 0.3s; }
+    .pres-party-badge {
+        position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%);
+        padding: 8px 16px; border-radius: 4px; font-weight: 900; font-size: 1.2rem; display: flex; align-items: center; gap: 6px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5); border: 2px solid #fff;
+    }
+    .pres-cand-name { font-size: 2rem; font-weight: 800; text-transform: uppercase; line-height: 1.1; margin-bottom: 5px; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
+    .pres-cand-vice { font-size: 0.9rem; color: #cbd5e1; margin-bottom: 15px; font-weight: 600; }
+    .pres-cand-pct { font-size: 4.5rem; font-weight: 900; line-height: 1; text-shadow: 0 4px 15px rgba(0,0,0,0.6); margin-bottom: 5px; }
+    .pres-cand-votes { font-size: 1.1rem; color: #94a3b8; font-weight: 500; }
+
+    .pres-bottom { position: absolute; bottom: 30px; left: 0; width: 100%; display: flex; justify-content: center; gap: 60px; z-index: 10; }
+    .pres-bottom-cand { display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .pres-bottom-photo { width: 80px; height: 80px; border-radius: 50%; border: 3px solid #fff; object-fit: cover; margin-bottom: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); position: relative;}
+    .pres-bottom-party { position: absolute; bottom: -5px; background: #fff; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #000; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+    .pres-bottom-name { font-size: 1.1rem; font-weight: 800; text-transform: uppercase; text-shadow: 0 2px 5px rgba(0,0,0,0.8); margin-bottom: 2px; }
+    .pres-bottom-pct { font-size: 1.8rem; font-weight: 900; text-shadow: 0 2px 5px rgba(0,0,0,0.8); }
+
+    /* Controles da apresentação */
+    .pres-controls { position: absolute; top: 30px; right: 40px; display: flex; gap: 15px; z-index: 50;}
+    .pres-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; font-size: 1.2rem; backdrop-filter: blur(5px); }
+    .pres-btn:hover { background: rgba(255,255,255,0.3); transform: scale(1.1); }
+    .pres-nav-area { position: absolute; top: 0; height: 100%; width: 10vw; z-index: 20; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
+    .pres-nav-area:hover { opacity: 1; background: rgba(0,0,0,0.1); }
+    .pres-nav-area i { font-size: 3rem; text-shadow: 0 0 20px rgba(0,0,0,0.8); }
+    .pres-nav-left { left: 0; }
+    .pres-nav-right { right: 0; }
+    
+    .pres-loading { position: absolute; inset: 0; background: #000; display: flex; align-items: center; justify-content: center; z-index: 100; font-size: 2rem; flex-direction: column; gap: 20px;}
+</style>
     
 </head>
 <body>
 <div id="loader">
 <div class="spinner"></div>
 <h3 id="loaderMsg">Carregando Dados...</h3>
+</div>
+
+<!-- VIEW DE APRESENTAÇÃO (NOVO) -->
+<div id="presentationOverlay">
+    <div class="pres-controls">
+        <button class="pres-btn" onclick="presentation.close()" title="Sair da Apresentação"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="pres-nav-area pres-nav-left" onclick="presentation.prev()"><i class="fas fa-chevron-left"></i></div>
+    <div class="pres-nav-area pres-nav-right" onclick="presentation.next()"><i class="fas fa-chevron-right"></i></div>
+    
+    <div class="pres-header">
+        <div class="pres-region" id="presRegion">BRASIL</div>
+        <div class="pres-header-center">
+            <div class="pres-year">2026</div>
+            <div class="pres-turn" id="presTurn">no 1º turno</div>
+        </div>
+        <div style="width: 200px"></div> <!-- Spacer balance -->
+    </div>
+    
+    <div class="pres-content">
+        <div class="pres-candidate-main" id="presCand1"></div>
+        <div class="pres-map-container" id="presMap"></div>
+        <div class="pres-candidate-main" id="presCand2"></div>
+    </div>
+    
+    <div class="pres-bottom" id="presBottom"></div>
+    
+    <div id="presLoader" class="pres-loading hidden">
+        <div class="spinner"></div>
+        <h3>Processando Mapas...</h3>
+    </div>
 </div>
 
 <div id="modalOverlay" class="modal-overlay">
@@ -49,6 +144,7 @@
                 <button class="btn-io" onclick="app.resetToClean()"><i class="fas fa-undo"></i> Resetar</button>
                 <button class="btn-io" onclick="app.exportConfig()"><i class="fas fa-download"></i> Salvar</button>
                 <button class="btn-io" onclick="document.getElementById('fileInput').click()"><i class="fas fa-upload"></i> Abrir</button>
+                <button class="btn-io" style="background: var(--accent-blue);" onclick="presentation.open()"><i class="fas fa-tv"></i> Apresentar</button>
                 <input type="file" id="fileInput" style="display:none" onchange="app.importConfig(this)" accept=".json">
             </div>
             <div class="mode-tabs">
@@ -164,22 +260,36 @@
 </div>
 
 <script>
-const STATES = [{sigla:'AC', nome:'Acre', id:'12'}, {sigla:'AL', nome:'Alagoas', id:'27'}, {sigla:'AP', nome:'Amapá', id:'16'}, {sigla:'AM', nome:'Amazonas', id:'13'}, {sigla:'BA', nome:'Bahia', id:'29'}, {sigla:'CE', nome:'Ceará', id:'23'}, {sigla:'DF', nome:'Distrito Federal', id:'53'}, {sigla:'ES', nome:'Espírito Santo', id:'32'}, {sigla:'GO', nome:'Goiás', id:'52'}, {sigla:'MA', nome:'Maranhão', id:'21'}, {sigla:'MT', nome:'Mato Grosso', id:'51'}, {sigla:'MS', nome:'Mato Grosso do Sul', id:'50'}, {sigla:'MG', nome:'Minas Gerais', id:'31'}, {sigla:'PA', nome:'Pará', id:'15'}, {sigla:'PB', nome:'Paraíba', id:'25'}, {sigla:'PR', nome:'Paraná', id:'41'}, {sigla:'PE', nome:'Pernambuco', id:'26'}, {sigla:'PI', nome:'Piauí', id:'22'}, {sigla:'RJ', nome:'Rio de Janeiro', id:'33'}, {sigla:'RN', nome:'Rio Grande do Norte', id:'24'}, {sigla:'RS', nome:'Rio Grande do Sul', id:'43'}, {sigla:'RO', nome:'Rondônia', id:'11'}, {sigla:'RR', nome:'Roraima', id:'14'}, {sigla:'SC', nome:'Santa Catarina', id:'42'}, {sigla:'SP', nome:'São Paulo', id:'35'}, {sigla:'SE', nome:'Sergipe', id:'28'}, {sigla:'TO', nome:'Tocantins', id:'17'}];
+const STATES =[{sigla:'AC', nome:'Acre', id:'12'}, {sigla:'AL', nome:'Alagoas', id:'27'}, {sigla:'AP', nome:'Amapá', id:'16'}, {sigla:'AM', nome:'Amazonas', id:'13'}, {sigla:'BA', nome:'Bahia', id:'29'}, {sigla:'CE', nome:'Ceará', id:'23'}, {sigla:'DF', nome:'Distrito Federal', id:'53'}, {sigla:'ES', nome:'Espírito Santo', id:'32'}, {sigla:'GO', nome:'Goiás', id:'52'}, {sigla:'MA', nome:'Maranhão', id:'21'}, {sigla:'MT', nome:'Mato Grosso', id:'51'}, {sigla:'MS', nome:'Mato Grosso do Sul', id:'50'}, {sigla:'MG', nome:'Minas Gerais', id:'31'}, {sigla:'PA', nome:'Pará', id:'15'}, {sigla:'PB', nome:'Paraíba', id:'25'}, {sigla:'PR', nome:'Paraná', id:'41'}, {sigla:'PE', nome:'Pernambuco', id:'26'}, {sigla:'PI', nome:'Piauí', id:'22'}, {sigla:'RJ', nome:'Rio de Janeiro', id:'33'}, {sigla:'RN', nome:'Rio Grande do Norte', id:'24'}, {sigla:'RS', nome:'Rio Grande do Sul', id:'43'}, {sigla:'RO', nome:'Rondônia', id:'11'}, {sigla:'RR', nome:'Roraima', id:'14'}, {sigla:'SC', nome:'Santa Catarina', id:'42'}, {sigla:'SP', nome:'São Paulo', id:'35'}, {sigla:'SE', nome:'Sergipe', id:'28'}, {sigla:'TO', nome:'Tocantins', id:'17'}];
+
+// Integração de Fotos Realistas dos candidatos (Wikimedia Commons e Placeholders)
+const CANDIDATE_PHOTOS = {
+    'LULA': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Luiz_In%C3%A1cio_Lula_da_Silva_em_2022.jpg/400px-Luiz_In%C3%A1cio_Lula_da_Silva_em_2022.jpg',
+    'FLAVIO': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Fl%C3%A1vio_Bolsonaro_em_2023_%28cortado%29.jpg/400px-Fl%C3%A1vio_Bolsonaro_em_2023_%28cortado%29.jpg',
+    'TARCISIO': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/2022-12-07_Entrevista_com_Tarc%C3%ADsio_de_Freitas_%2852550186989%29_%28cropped%29.jpg/400px-2022-12-07_Entrevista_com_Tarc%C3%ADsio_de_Freitas_%2852550186989%29_%28cropped%29.jpg',
+    'RENAN': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Renan_Santos.jpg/400px-Renan_Santos.jpg',
+    'CAIADO': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/2023-10-31_Ronaldo_Caiado_%2853301037341%29_%28cropped%29.jpg/400px-2023-10-31_Ronaldo_Caiado_%2853301037341%29_%28cropped%29.jpg',
+    'ZEMA': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/2023-11-21_Romeu_Zema_%2853347900827%29_%28cropped%29.jpg/400px-2023-11-21_Romeu_Zema_%2853347900827%29_%28cropped%29.jpg',
+    'RATINHO': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Carlos_Massa_Ratinho_J%C3%BAnior.jpg/400px-Carlos_Massa_Ratinho_J%C3%BAnior.jpg',
+    'CIRO': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Ciro_Gomes_no_Sindicato_dos_Metal%C3%BArgicos_do_ABC_2_%28cropped%29.jpg/400px-Ciro_Gomes_no_Sindicato_dos_Metal%C3%BArgicos_do_ABC_2_%28cropped%29.jpg',
+    'ALDO': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Aldo_Rebelo_em_2017.jpg/400px-Aldo_Rebelo_em_2017.jpg',
+    'CURY': 'https://via.placeholder.com/400x500/2ebf98/ffffff.png?text=A.+CURY'
+};
 
 const CONFIG = {
-    candidates: [
-        { id: 'LULA', name: 'Lula', party: 'PT', val: 40, color: '#E12525', active: true },
-        { id: 'FLAVIO', name: 'Flávio Bolsonaro', party: 'PL', val: 25, color: '#5756d6', active: true },
-        { id: 'TARCISIO', name: 'Tarcísio', party: 'REP', val: 15, color: '#28a745', active: false }, 
-        { id: 'RENAN', name: 'Renan Santos', party: 'MISSÃO', val: 3, color: '#D4AF37', active: true },
-        { id: 'CAIADO', name: 'Ronaldo Caiado', party: 'UNIÃO', val: 8, color: '#009EE3', active: true },
-        { id: 'ZEMA', name: 'Romeu Zema', party: 'NOVO', val: 6, color: '#F58220', active: true },
-        { id: 'RATINHO', name: 'Ratinho Jr', party: 'PSD', val: 4, color: '#FAA21B', active: false },
-        { id: 'CIRO', name: 'Ciro Gomes', party: 'PDT', val: 2, color: '#003399', active: false },
-        { id: 'ALDO', name: 'Aldo Rebelo', party: 'DC', val: 1, color: '#006400', active: true },
-        { id: 'CURY', name: 'Ausguto Cury', party: 'AVANTE', val: 1, color: '#2ebf98', active: true }
+    candidates:[
+        { id: 'LULA', name: 'Lula', party: 'PT', val: 40, color: '#E12525', active: true, icon: 'fa-star' },
+        { id: 'FLAVIO', name: 'Flávio Bolsonaro', party: 'PL', val: 25, color: '#5756d6', active: true, icon: 'fa-flag' },
+        { id: 'TARCISIO', name: 'Tarcísio', party: 'REP', val: 15, color: '#28a745', active: false, icon: 'fa-shield-alt' }, 
+        { id: 'RENAN', name: 'Renan Santos', party: 'MISSÃO', val: 3, color: '#D4AF37', active: true, icon: 'fa-bolt' },
+        { id: 'CAIADO', name: 'Ronaldo Caiado', party: 'UNIÃO', val: 8, color: '#009EE3', active: true, icon: 'fa-dove' },
+        { id: 'ZEMA', name: 'Romeu Zema', party: 'NOVO', val: 6, color: '#F58220', active: true, icon: 'fa-sun' },
+        { id: 'RATINHO', name: 'Ratinho Jr', party: 'PSD', val: 4, color: '#FAA21B', active: false, icon: 'fa-building' },
+        { id: 'CIRO', name: 'Ciro Gomes', party: 'PDT', val: 2, color: '#003399', active: false, icon: 'fa-hand-paper' },
+        { id: 'ALDO', name: 'Aldo Rebelo', party: 'DC', val: 1, color: '#006400', active: true, icon: 'fa-leaf' },
+        { id: 'CURY', name: 'Augusto Cury', party: 'AVANTE', val: 1, color: '#2ebf98', active: true, icon: 'fa-book' }
     ],
-    scheme: [
+    scheme:[
         { min: 0, mix: '#ffffff', ratio: 0.85, ref: '#E6E6E6' },
         { min: 20, mix: '#ffffff', ratio: 0.85, ref: '#E6E6E6' },
         { min: 30, mix: '#ffffff', ratio: 0.65, ref: '#CCCCCC' },
@@ -195,178 +305,19 @@ const CONFIG = {
 
 const DEFAULT_SCENARIO = {
   "t1_polls": {
-    "LULA": 47,
-    "FLAVIO": 40,
-    "TARCISIO": 0,
-    "RENAN": 6,
-    "CAIADO": 4,
-    "ZEMA": 3,
-    "RATINHO": 0,
-    "CIRO": 0,
-    "ALDO": 1
+    "LULA": 47, "FLAVIO": 40, "TARCISIO": 0, "RENAN": 6, "CAIADO": 4, "ZEMA": 3, "RATINHO": 0, "CIRO": 0, "ALDO": 1
   },
   "t1_matrix": {
-    "LULA": {
-      "LULA": 1,
-      "FLAVIO": 0.01,
-      "TARCISIO": 0.03,
-      "RENAN": 0.01,
-      "CAIADO": 0,
-      "ZEMA": 0,
-      "RATINHO": 0,
-      "CIRO": 0,
-      "ALDO": 0.01
-    },
-    "JAIR": {
-      "LULA": 0.01,
-      "FLAVIO": 1,
-      "TARCISIO": 1,
-      "RENAN": 0.03,
-      "CAIADO": 0.2,
-      "ZEMA": 0.1,
-      "RATINHO": 0.05,
-      "CIRO": 0,
-      "ALDO": 0
-    },
-    "CIRO": {
-      "LULA": 0,
-      "FLAVIO": 0,
-      "TARCISIO": 0,
-      "RENAN": 0,
-      "CAIADO": 0,
-      "ZEMA": 0,
-      "RATINHO": 0,
-      "CIRO": 1,
-      "ALDO": 0
-    },
-    "SIMONE": {
-      "LULA": 0.5,
-      "FLAVIO": 0.5,
-      "TARCISIO": 0.9,
-      "RENAN": 0.2,
-      "CAIADO": 0,
-      "ZEMA": 0,
-      "RATINHO": 0,
-      "CIRO": 0,
-      "ALDO": 0.02,
-      "CURY": 0.1
-    }
+    "LULA": { "LULA": 1, "FLAVIO": 0.01, "TARCISIO": 0.03, "RENAN": 0.01, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0.01 },
+    "JAIR": { "LULA": 0.01, "FLAVIO": 1, "TARCISIO": 1, "RENAN": 0.03, "CAIADO": 0.2, "ZEMA": 0.1, "RATINHO": 0.05, "CIRO": 0, "ALDO": 0 },
+    "CIRO": { "LULA": 0, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 1, "ALDO": 0 },
+    "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "TARCISIO": 0.9, "RENAN": 0.2, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0.02, "CURY": 0.1 }
   },
-  "t1_matrix_state": {
-    "31": {
-      "JAIR": {
-        "LULA": 0.01,
-        "FLAVIO": 1,
-        "TARCISIO": 1,
-        "RENAN": 0.03,
-        "CAIADO": 0.05,
-        "ZEMA": 0.25,
-        "RATINHO": 0.05,
-        "CIRO": 0,
-        "ALDO": 0
-      }
-    },
-    "41": {
-      "JAIR": {
-        "LULA": 0.01,
-        "FLAVIO": 1,
-        "TARCISIO": 1,
-        "RENAN": 0.03,
-        "CAIADO": 0.1,
-        "ZEMA": 0.1,
-        "RATINHO": 0.2,
-        "CIRO": 0,
-        "ALDO": 0
-      }
-    },
-    "50": {
-      "LULA": {
-        "LULA": 1,
-        "FLAVIO": 0,
-        "TARCISIO": 0,
-        "RENAN": 0,
-        "CAIADO": 0.05,
-        "ZEMA": 0,
-        "RATINHO": 0,
-        "CIRO": 0,
-        "ALDO": 0
-      }
-    },
-    "51": {
-      "LULA": {
-        "LULA": 1,
-        "FLAVIO": 0,
-        "TARCISIO": 0,
-        "RENAN": 0,
-        "CAIADO": 0.05,
-        "ZEMA": 0,
-        "RATINHO": 0,
-        "CIRO": 0,
-        "ALDO": 0
-      }
-    },
-    "52": {
-      "LULA": {
-        "LULA": 1,
-        "FLAVIO": 0,
-        "TARCISIO": 0,
-        "RENAN": 0,
-        "CAIADO": 0.1,
-        "ZEMA": 0,
-        "RATINHO": 0,
-        "CIRO": 0,
-        "ALDO": 0
-      },
-      "JAIR": {
-        "LULA": 0.01,
-        "FLAVIO": 1,
-        "TARCISIO": 1,
-        "RENAN": 0.03,
-        "CAIADO": 0.25,
-        "ZEMA": 0.1,
-        "RATINHO": 0.05,
-        "CIRO": 0,
-        "ALDO": 0
-      }
-    },
-    "53": {
-      "LULA": {
-        "LULA": 1,
-        "FLAVIO": 0,
-        "TARCISIO": 0,
-        "RENAN": 0,
-        "CAIADO": 0.05,
-        "ZEMA": 0,
-        "RATINHO": 0,
-        "CIRO": 0,
-        "ALDO": 0
-      }
-    }
-  },
+  "t1_matrix_state": {},
   "t1_mults": {},
-  "t2_migr": {
-    "LULA": 0,
-    "FLAVIO": 1,
-    "TARCISIO": 1,
-    "RENAN": 0.83,
-    "CAIADO": 0.78,
-    "ZEMA": 0.84,
-    "RATINHO": 1,
-    "CIRO": 0.5,
-    "ALDO": 0.5
-  },
+  "t2_migr": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 1, "RENAN": 0.83, "CAIADO": 0.78, "ZEMA": 0.84, "RATINHO": 1, "CIRO": 0.5, "ALDO": 0.5 },
   "t2_mults": {},
-  "active_candidates": {
-    "LULA": true,
-    "FLAVIO": true,
-    "TARCISIO": false,
-    "RENAN": true,
-    "CAIADO": true,
-    "ZEMA": true,
-    "RATINHO": false,
-    "CIRO": false,
-    "ALDO": true
-  },
+  "active_candidates": { "LULA": true, "FLAVIO": true, "TARCISIO": false, "RENAN": true, "CAIADO": true, "ZEMA": true, "RATINHO": false, "CIRO": false, "ALDO": true },
   "t2_mode": "organic"
 };
 
@@ -386,11 +337,214 @@ const CLEAN_SCENARIO = {
     t2_mode: "manual"
 };
 
+// -- APRESENTAÇÃO LOGIC --
+const presentation = {
+    slides:[],
+    currentIndex: 0,
+    isActive: false,
+
+    open: async () => {
+        if(!app.data.base22) return;
+        const loader = document.getElementById('loader');
+        loader.classList.remove('hidden');
+        document.getElementById('loaderMsg').innerText = "Carregando Dados Cartográficos...";
+
+        // Ensure we have cities for state views
+        if(!app.data.geoJson) {
+            try {
+                const r = await fetch("https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json");
+                app.data.geoJson = await r.json();
+            } catch(e) {
+                console.error("Failed to load cities", e);
+            }
+        }
+
+        // Build Slides: Brasil + all active states
+        presentation.slides =[{ id: 'BR', name: 'BRASIL', type: 'nacional' }];
+        STATES.forEach(s => presentation.slides.push({ id: s.id, name: s.nome, type: 'estado' }));
+        
+        presentation.currentIndex = 0;
+        presentation.isActive = true;
+        document.getElementById('presentationOverlay').classList.add('active');
+        
+        document.addEventListener('keydown', presentation.handleKeydown);
+        
+        loader.classList.add('hidden');
+        presentation.renderSlide();
+    },
+
+    close: () => {
+        presentation.isActive = false;
+        document.getElementById('presentationOverlay').classList.remove('active');
+        document.removeEventListener('keydown', presentation.handleKeydown);
+    },
+
+    prev: () => {
+        if(presentation.currentIndex > 0) {
+            presentation.currentIndex--;
+            presentation.renderSlide();
+        } else {
+            presentation.currentIndex = presentation.slides.length - 1;
+            presentation.renderSlide();
+        }
+    },
+
+    next: () => {
+        if(presentation.currentIndex < presentation.slides.length - 1) {
+            presentation.currentIndex++;
+            presentation.renderSlide();
+        } else {
+            presentation.currentIndex = 0;
+            presentation.renderSlide();
+        }
+    },
+
+    handleKeydown: (e) => {
+        if(e.key === 'ArrowRight') presentation.next();
+        if(e.key === 'ArrowLeft') presentation.prev();
+        if(e.key === 'Escape') presentation.close();
+    },
+
+    renderSlide: () => {
+        const slide = presentation.slides[presentation.currentIndex];
+        document.getElementById('presRegion').innerText = slide.name;
+        document.getElementById('presTurn').innerText = `no ${app.state.turn}º turno`;
+
+        const dataset = app.state.turn === 1 ? app.data.round1 : app.data.round2;
+        if(!dataset) return;
+
+        let votes = {};
+        if(slide.type === 'nacional') votes = dataset.nacional;
+        else votes = dataset.estados[slide.id] || {};
+
+        const sorted = Object.entries(votes).sort((a,b) => b[1] - a[1]);
+        const total = sorted.reduce((a,b) => a+b[1], 0);
+
+        // Filter out those with 0 votes if inactive
+        const validSorted = sorted.filter(([cid, v]) => {
+            const cand = CONFIG.candidates.find(c=>c.id===cid);
+            return cand && !(app.state.turn===1 && app.state.active_candidates[cid] === false && v === 0);
+        });
+
+        // Top 2 Candidates
+        presentation.renderMainCand('presCand1', validSorted[0], total);
+        presentation.renderMainCand('presCand2', validSorted[1], total);
+
+        // Bottom Candidates
+        const bottomContainer = document.getElementById('presBottom');
+        bottomContainer.innerHTML = '';
+        for(let i=2; i < Math.min(validSorted.length, 6); i++) {
+            presentation.renderBottomCand(bottomContainer, validSorted[i], total);
+        }
+
+        // Draw Map
+        presentation.drawMap(slide);
+    },
+
+    renderMainCand: (elementId, data, total) => {
+        const el = document.getElementById(elementId);
+        if(!data) { el.innerHTML = ''; return; }
+        
+        const cand = CONFIG.candidates.find(c=>c.id===data[0]);
+        const pct = total > 0 ? (data[1]/total)*100 : 0;
+        const photoUrl = CANDIDATE_PHOTOS[cand.id] || `https://via.placeholder.com/300x400/${cand.color.substring(1)}/ffffff.png?text=${cand.name}`;
+
+        el.innerHTML = `
+            <div class="pres-photo-wrapper">
+                <img src="${photoUrl}" class="pres-photo" onerror="this.src='https://via.placeholder.com/300x400/333/fff?text=${cand.name}'">
+                <div class="pres-party-badge" style="background: ${cand.color};">
+                    <i class="fas ${cand.icon}"></i> ${cand.party}
+                </div>
+            </div>
+            <div class="pres-cand-name">${cand.name}</div>
+            <div class="pres-cand-vice">VICE NÃO DEFINIDO</div>
+            <div class="pres-cand-pct" style="color: ${cand.color}">${pct.toFixed(2)}%</div>
+            <div class="pres-cand-votes">Votos: ${data[1].toLocaleString('pt-BR')}</div>
+        `;
+    },
+
+    renderBottomCand: (container, data, total) => {
+        if(!data) return;
+        const cand = CONFIG.candidates.find(c=>c.id===data[0]);
+        const pct = total > 0 ? (data[1]/total)*100 : 0;
+        const photoUrl = CANDIDATE_PHOTOS[cand.id] || `https://via.placeholder.com/100x100/${cand.color.substring(1)}/ffffff.png?text=${cand.id.substring(0,3)}`;
+
+        const div = document.createElement('div');
+        div.className = 'pres-bottom-cand';
+        div.innerHTML = `
+            <div class="pres-bottom-photo-wrapper" style="position:relative;">
+                <img src="${photoUrl}" class="pres-bottom-photo" onerror="this.src='https://via.placeholder.com/100/333/fff'">
+                <div class="pres-bottom-party" style="border: 2px solid ${cand.color}">
+                    <i class="fas ${cand.icon}" style="color: ${cand.color}"></i>
+                </div>
+            </div>
+            <div class="pres-bottom-name">${cand.name.split(' ')[0]}</div>
+            <div class="pres-bottom-pct" style="color: ${cand.color}">${pct.toFixed(2)}%</div>
+        `;
+        container.appendChild(div);
+    },
+
+    drawMap: (slide) => {
+        const container = document.getElementById('presMap');
+        let features =[];
+        let scope = '';
+
+        if(slide.type === 'nacional') {
+            if(!app.data.brazilGeoJson) return;
+            features = app.data.brazilGeoJson.features;
+            scope = 'estados';
+        } else {
+            if(!app.data.geoJson) return;
+            features = app.data.geoJson.features.filter(f => app.getFeatureId(f, 'municipios').startsWith(slide.id));
+            scope = 'municipios';
+        }
+
+        if(features.length === 0) { container.innerHTML = ''; return; }
+
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        features.forEach(f => {
+            const scan = (coords) => {
+                coords.forEach(pt => {
+                    if(typeof pt[0]==='number') {
+                        if(pt[0]<minX) minX=pt[0]; if(pt[0]>maxX) maxX=pt[0];
+                        if(pt[1]<minY) minY=pt[1]; if(pt[1]>maxY) maxY=pt[1];
+                    } else scan(pt);
+                });
+            };
+            if(f.geometry && f.geometry.coordinates) scan(f.geometry.coordinates);
+        });
+
+        const w = 800;
+        const latD = maxY - minY;
+        const lonD = maxX - minX;
+        const h = w / (lonD/latD);
+        const proj = (x,y) => [(x-minX)*(w/lonD), (maxY-y)*(h/latD)];
+
+        let svg = '';
+        features.forEach(f => {
+            const id = app.getFeatureId(f, scope);
+            const col = app.getColorForId(id, scope).fill;
+            let d = '';
+            const draw = (r) => {
+                let p=''; r.forEach((pt,i)=>{ const[px,py]=proj(pt[0],pt[1]); p+=(i===0?'M':'L')+px.toFixed(1)+','+py.toFixed(1); }); return p+'Z ';
+            };
+            if(f.geometry.type==='Polygon') f.geometry.coordinates.forEach(r=>d+=draw(r));
+            else if(f.geometry.type==='MultiPolygon') f.geometry.coordinates.forEach(p=>p.forEach(r=>d+=draw(r)));
+            
+            svg += `<path d="${d}" fill="${col}" stroke="rgba(255,255,255,0.4)" stroke-width="${scope==='estados'? 1 : 0.2}"/>`;
+        });
+
+        container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">${svg}</svg>`;
+    }
+};
+
+// -- FIM APRESENTAÇÃO LOGIC --
+
 const app = {
     map: null,
     layers: { brazil: null, cities: null },
     data: { base22: null, round1: null, round2: null, geoJson: null, names: {}, brazilGeoJson: null },
-    state: { turn: 1, view: 'states', selectedId: null, selectedName: "Brasil", t1_polls: {}, t1_matrix: {}, t1_matrix_state: {}, t1_mults: {}, t2_finalists: [], t2_polls: {}, t2_migr: {}, t2_mults: {}, active_candidates: {}, t2_mode: 'manual' },
+    state: { turn: 1, view: 'states', selectedId: null, selectedName: "Brasil", t1_polls: {}, t1_matrix: {}, t1_matrix_state: {}, t1_mults: {}, t2_finalists:[], t2_polls: {}, t2_migr: {}, t2_mults: {}, active_candidates: {}, t2_mode: 'manual' },
 
     init: async () => {
         app.map = L.map('map', { center: [-15, -50], zoom: 4, zoomControl: false, preferCanvas: true, background: '#1a1a1a', renderer: L.canvas({ tolerance: 0, padding: 0.5 }) });
@@ -400,7 +554,6 @@ const app = {
         app.renderLegend(); app.renderUI(); await app.loadData();
     },
 
-    // --- MOBILE NAVIGATION LOGIC ---
     mobileNav: (tab) => {
         const left = document.getElementById('sidebarConfig');
         const right = document.getElementById('sidebarResults');
@@ -410,27 +563,21 @@ const app = {
         document.getElementById('nav' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
 
         if(tab === 'map') {
-            left.classList.remove('active');
-            right.classList.remove('active');
+            left.classList.remove('active'); right.classList.remove('active');
         } else if(tab === 'config') {
-            left.classList.add('active');
-            right.classList.remove('active');
+            left.classList.add('active'); right.classList.remove('active');
         } else if(tab === 'results') {
-            right.classList.add('active');
-            left.classList.remove('active');
+            right.classList.add('active'); left.classList.remove('active');
         }
     },
 
     resetToClean: () => {
         if(confirm("Deseja resetar todas as configurações para o padrão limpo? Isso removerá as configurações atuais.")) {
-            app.loadScenario(CLEAN_SCENARIO);
-            app.renderUI();
-            app.runSimulation();
+            app.loadScenario(CLEAN_SCENARIO); app.renderUI(); app.runSimulation();
         }
     },
 
-    loadScenario: (config) => {
-        ['t1_polls','t1_matrix','t1_matrix_state','t1_mults','t2_migr','t2_mults','active_candidates'].forEach(k => { if(config[k]) app.state[k] = JSON.parse(JSON.stringify(config[k])); });
+    loadScenario: (config) => {['t1_polls','t1_matrix','t1_matrix_state','t1_mults','t2_migr','t2_mults','active_candidates'].forEach(k => { if(config[k]) app.state[k] = JSON.parse(JSON.stringify(config[k])); });
         if(config.t2_mode) { app.state.t2_mode = config.t2_mode; if(document.getElementById('t2ModeSwitch')) document.getElementById('t2ModeSwitch').checked = (config.t2_mode === 'organic'); }
     },
 
@@ -467,13 +614,15 @@ const app = {
     loadAllMunicipalities: async () => { const loader = document.getElementById('loader'); loader.classList.remove('hidden'); if(app.layers.brazil && app.map.hasLayer(app.layers.brazil)) app.map.removeLayer(app.layers.brazil); if(app.layers.cities) app.map.removeLayer(app.layers.cities); app.layers.cities = null; if(!app.data.geoJson) { const r = await fetch("https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json"); app.data.geoJson = await r.json(); } app.layers.cities = L.geoJSON(app.data.geoJson, { style: (f) => app.getStyle(f, 'municipios'), onEachFeature: (f, l) => { l.on('click', (e) => { L.DomEvent.stopPropagation(e); app.selectRegion(app.getFeatureId(f,'municipios'), f.properties.NM_MUN||f.properties.name); }); app.bindTooltip(l, 'municipios'); } }).addTo(app.map); if (app.layers.cities.getBounds().isValid()) app.map.fitBounds(app.layers.cities.getBounds()); loader.classList.add('hidden'); },
     loadStateCities: async (ufId, ufName) => { if(app.state.view === 'all_cities') return; const loader = document.getElementById('loader'); loader.classList.remove('hidden'); document.getElementById('loaderMsg').innerText = `Carregando ${ufName}...`; if(app.layers.cities) { app.map.removeLayer(app.layers.cities); app.layers.cities = null; } if(app.layers.brazil) app.map.removeLayer(app.layers.brazil); if(!app.data.geoJson) { const r = await fetch("https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json"); app.data.geoJson = await r.json(); } const feats = app.data.geoJson.features.filter(f => app.getFeatureId(f, 'municipios').startsWith(ufId)); app.layers.cities = L.geoJSON({ type:"FeatureCollection", features:feats }, { style: (f) => app.getStyle(f, 'municipios'), onEachFeature: (f, l) => { l.on('click', (e) => { L.DomEvent.stopPropagation(e); app.selectRegion(app.getFeatureId(f,'municipios'), f.properties.NM_MUN||f.properties.name); }); app.bindTooltip(l, 'municipios'); } }).addTo(app.map); if (app.layers.cities.getBounds().isValid()) app.map.fitBounds(app.layers.cities.getBounds()); app.selectRegion(ufId, ufName); loader.classList.add('hidden'); },
     resetMapToStates: () => { if(app.layers.cities) { app.map.removeLayer(app.layers.cities); app.layers.cities = null; } if(app.layers.brazil) { if(!app.map.hasLayer(app.layers.brazil)) app.layers.brazil.addTo(app.map); app.layers.brazil.setStyle((f) => app.getStyle(f, 'estados')); } else app.loadBrazilLayer(); app.map.setView([-15, -50], 4); app.resetSelection(); },
+    
     getStyle: (feature, scope) => { const id = app.getFeatureId(feature, scope); return { fillColor: app.getColorForId(id, scope).fill, weight: scope === 'estados' ? 0.8 : 0.5, color: '#ffffff', opacity: 1, fillOpacity: 1 }; },
     getColorForId: (id, scope) => { if (!id) return { fill: '#333' }; const dataset = app.state.turn === 1 ? app.data.round1 : app.data.round2; if(!dataset) return { fill: '#333' }; const votes = (id.length === 2 && scope === 'estados') ? dataset.estados[id] : dataset.municipios[id]; if(!votes) return { fill: '#333' }; let max = -1, winner = null, total = 0; for(let c in votes) { total += votes[c]; if(votes[c] > max) { max = votes[c]; winner = c; } } const cand = CONFIG.candidates.find(c => c.id === winner); return { fill: app.getDiscreteColor(cand ? cand.color : '#555', total > 0 ? (max/total)*100 : 0) }; },
-    generateStaticMap: async (format) => { const loader = document.getElementById('loader'); loader.classList.remove('hidden'); setTimeout(() => { try { let features = []; let scope = 'municipios'; if (app.state.view === 'states' && !app.state.selectedId) { features = app.data.brazilGeoJson.features; scope = 'estados'; } else if (app.state.selectedId && app.state.selectedId.length === 2) { features = app.data.geoJson.features.filter(f => app.getFeatureId(f, 'municipios').startsWith(app.state.selectedId)); scope = 'municipios'; } else if (app.state.view === 'all_cities') { features = app.data.geoJson.features; scope = 'municipios'; } else { features = app.data.brazilGeoJson.features; scope = 'estados'; } if (features.length === 0) throw new Error("Nenhum dado."); let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity; features.forEach(f => { const scan = (coords) => { coords.forEach(pt => { if(typeof pt[0]==='number'){ if(pt[0]<minX)minX=pt[0]; if(pt[0]>maxX)maxX=pt[0]; if(pt[1]<minY)minY=pt[1]; if(pt[1]>maxY)maxY=pt[1]; } else scan(pt); }); }; if(f.geometry.type.includes('Polygon')) scan(f.geometry.coordinates); }); const w = 4096, latD = maxY - minY, lonD = maxX - minX, h = w / (lonD/latD); const proj = (x,y) => [(x-minX)*(w/lonD), (maxY-y)*(h/latD)]; let svg = ''; features.forEach(f => { const id = app.getFeatureId(f, scope); const col = app.getColorForId(id, scope).fill; let d = ''; const draw = (r) => { let p=''; r.forEach((pt,i)=>{ const[px,py]=proj(pt[0],pt[1]); p+=(i===0?'M':'L')+px.toFixed(1)+','+py.toFixed(1); }); return p+'Z '; }; if(f.geometry.type==='Polygon') f.geometry.coordinates.forEach(r=>d+=draw(r)); else if(f.geometry.type==='MultiPolygon') f.geometry.coordinates.forEach(p=>p.forEach(r=>d+=draw(r))); svg+=`<path d="${d}" fill="${col}" stroke="#fff" stroke-width="${scope==='estados'?2:0.5}"/>`; }); const finalSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">${svg}</svg>`; const fname = `mapa_${app.state.selectedName}_${scope}`; if(format==='svg') saveAs(new Blob([finalSvg],{type:"image/svg+xml;charset=utf-8"}), `${fname}.svg`); else { const img=new Image(); img.onload=()=>{const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0);c.toBlob(b=>saveAs(b,`${fname}.png`));}; img.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(finalSvg))); } } catch(e){ alert(e.message); } loader.classList.add('hidden'); }, 100); },
+    
+    generateStaticMap: async (format) => { const loader = document.getElementById('loader'); loader.classList.remove('hidden'); setTimeout(() => { try { let features =[]; let scope = 'municipios'; if (app.state.view === 'states' && !app.state.selectedId) { features = app.data.brazilGeoJson.features; scope = 'estados'; } else if (app.state.selectedId && app.state.selectedId.length === 2) { features = app.data.geoJson.features.filter(f => app.getFeatureId(f, 'municipios').startsWith(app.state.selectedId)); scope = 'municipios'; } else if (app.state.view === 'all_cities') { features = app.data.geoJson.features; scope = 'municipios'; } else { features = app.data.brazilGeoJson.features; scope = 'estados'; } if (features.length === 0) throw new Error("Nenhum dado."); let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity; features.forEach(f => { const scan = (coords) => { coords.forEach(pt => { if(typeof pt[0]==='number'){ if(pt[0]<minX)minX=pt[0]; if(pt[0]>maxX)maxX=pt[0]; if(pt[1]<minY)minY=pt[1]; if(pt[1]>maxY)maxY=pt[1]; } else scan(pt); }); }; if(f.geometry && f.geometry.type.includes('Polygon')) scan(f.geometry.coordinates); }); const w = 4096, latD = maxY - minY, lonD = maxX - minX, h = w / (lonD/latD); const proj = (x,y) =>[(x-minX)*(w/lonD), (maxY-y)*(h/latD)]; let svg = ''; features.forEach(f => { const id = app.getFeatureId(f, scope); const col = app.getColorForId(id, scope).fill; let d = ''; const draw = (r) => { let p=''; r.forEach((pt,i)=>{ const[px,py]=proj(pt[0],pt[1]); p+=(i===0?'M':'L')+px.toFixed(1)+','+py.toFixed(1); }); return p+'Z '; }; if(f.geometry.type==='Polygon') f.geometry.coordinates.forEach(r=>d+=draw(r)); else if(f.geometry.type==='MultiPolygon') f.geometry.coordinates.forEach(p=>p.forEach(r=>d+=draw(r))); svg+=`<path d="${d}" fill="${col}" stroke="#fff" stroke-width="${scope==='estados'?2:0.5}"/>`; }); const finalSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">${svg}</svg>`; const fname = `mapa_${app.state.selectedName}_${scope}`; if(format==='svg') saveAs(new Blob([finalSvg],{type:"image/svg+xml;charset=utf-8"}), `${fname}.svg`); else { const img=new Image(); img.onload=()=>{const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0);c.toBlob(b=>saveAs(b,`${fname}.png`));}; img.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(finalSvg))); } } catch(e){ alert(e.message); } loader.classList.add('hidden'); }, 100); },
     getDiscreteColor: (hex, pct) => { let config = CONFIG.scheme[0]; for (let i = 0; i < CONFIG.scheme.length; i++) if (pct >= CONFIG.scheme[i].min) config = CONFIG.scheme[i]; return app.mixColor(hex, config.mix, config.ratio); },
     mixColor: (hex1, hex2, amount) => { const c1 = app.hexToRgb(hex1), c2 = app.hexToRgb(hex2); return `rgb(${Math.round(c1.r + (c2.r - c1.r) * amount)}, ${Math.round(c1.g + (c2.g - c1.g) * amount)}, ${Math.round(c1.b + (c2.b - c1.b) * amount)})`; },
     hexToRgb: (hex) => { let c = hex.substring(1).split(''); if(c.length==3) c= [c[0], c[0], c[1], c[1], c[2], c[2]]; c = '0x'+c.join(''); return { r: (c>>16)&255, g: (c>>8)&255, b: c&255 }; },
-    bindTooltip: (l, s) => { l.bindTooltip(() => { const id = app.getFeatureId(l.feature, s); const dataset = app.state.turn === 1 ? app.data.round1 : app.data.round2; if(!dataset) return "Dados indisponíveis"; const votes = (id.length===2 && s==='estados') ? dataset.estados[id] : dataset.municipios[id]; if(!votes) return `Sem dados`; const sorted = Object.entries(votes).sort((a,b)=>b[1]-a[1]); const wObj = CONFIG.candidates.find(c=>c.id===sorted[0][0]); return `<div class="custom-tooltip"><div class="tt-head">${l.feature.properties.NM_MUN || l.feature.properties.NM_UF || l.feature.properties.name}</div><div class="tt-body"><div style="color:${wObj.color}; font-weight:800">${wObj.name}</div><div>${((sorted[0][1]/(sorted.reduce((a,b)=>a+b[1],0)||1))*100).toFixed(1)}%</div></div></div>`; }, { sticky: true }); },
+    bindTooltip: (l, s) => { l.bindTooltip(() => { const id = app.getFeatureId(l.feature, s); const dataset = app.state.turn === 1 ? app.data.round1 : app.data.round2; if(!dataset) return "Dados indisponíveis"; const votes = (id.length===2 && s==='estados') ? dataset.estados[id] : dataset.municipios[id]; if(!votes) return `Sem dados`; const sorted = Object.entries(votes).sort((a,b)=>b[1]-a[1]); const wObj = CONFIG.candidates.find(c=>c.id===sorted[0][0]); return `<div class="custom-tooltip"><div class="tt-head">${l.feature.properties.NM_MUN || l.feature.properties.NM_UF || l.feature.properties.name}</div><div class="tt-body"><div style="color:${wObj.color}; font-weight:800"><i class="fas ${wObj.icon}"></i> ${wObj.name}</div><div>${((sorted[0][1]/(sorted.reduce((a,b)=>a+b[1],0)||1))*100).toFixed(1)}%</div></div></div>`; }, { sticky: true }); },
     refreshMap: () => { if(app.layers.brazil) app.layers.brazil.setStyle((f) => app.getStyle(f, 'estados')); if(app.layers.cities) app.layers.cities.setStyle((f) => app.getStyle(f, 'municipios')); },
     renderLegend: () => { const el = document.getElementById('legendColors'); el.innerHTML = ''; CONFIG.scheme.forEach(s => { if(s.min >= 20) { const d = document.createElement('div'); d.className = 'legend-item'; d.style.background = s.ref; el.appendChild(d); } }); },
     
@@ -482,7 +631,7 @@ const app = {
         CONFIG.candidates.forEach(cand => {
             const isActive = app.state.active_candidates[cand.id] !== false;
             const div = document.createElement('div'); div.className = `slider-box ${isActive ? '' : 'inactive'}`;
-            div.innerHTML = `<div class="slider-header"><div class="slider-check-group"><input type="checkbox" ${isActive ? 'checked' : ''} onchange="app.toggleCandidate('${cand.id}', this.checked)"><span style="color:${cand.color}; font-weight:700">${cand.name}</span></div><span id="val_t1_${cand.id}">${app.state.t1_polls[cand.id]}%</span></div><input type="range" min="0" max="100" value="${app.state.t1_polls[cand.id]}" ${isActive ? '' : 'disabled'} oninput="app.updateT1Poll('${cand.id}', this.value)">`;
+            div.innerHTML = `<div class="slider-header"><div class="slider-check-group"><input type="checkbox" ${isActive ? 'checked' : ''} onchange="app.toggleCandidate('${cand.id}', this.checked)"><span style="color:${cand.color}; font-weight:700"><i class="fas ${cand.icon}"></i> ${cand.name}</span></div><span id="val_t1_${cand.id}">${app.state.t1_polls[cand.id]}%</span></div><input type="range" min="0" max="100" value="${app.state.t1_polls[cand.id]}" ${isActive ? '' : 'disabled'} oninput="app.updateT1Poll('${cand.id}', this.value)">`;
             c.appendChild(div);
         });
         const c1 = document.getElementById('candFinal1'), c2 = document.getElementById('candFinal2');
@@ -501,17 +650,16 @@ const app = {
         if(!c1.value || !c2.value) return;
         if (c1.value === c2.value) { const active = CONFIG.candidates.filter(c => app.state.active_candidates[c.id]!==false); if(active.length > 1) c2.value = active.find(c => c.id !== c1.value).id; }
         app.state.t2_finalists = [c1.value, c2.value];
-        const slidersDiv = document.getElementById('slidersT2'); slidersDiv.innerHTML = '';
-        [CONFIG.candidates.find(c=>c.id===c1.value), CONFIG.candidates.find(c=>c.id===c2.value)].forEach(cand => {
+        const slidersDiv = document.getElementById('slidersT2'); slidersDiv.innerHTML = '';[CONFIG.candidates.find(c=>c.id===c1.value), CONFIG.candidates.find(c=>c.id===c2.value)].forEach(cand => {
             if(!cand) return;
             const current = app.state.t2_polls[cand.id] !== undefined ? app.state.t2_polls[cand.id] : 50;
             const div = document.createElement('div'); div.className = `slider-box ${app.state.t2_mode === 'organic' ? 'inactive' : ''}`;
-            div.innerHTML = `<div class="slider-header"><span style="color:${cand.color}; font-weight:700">${cand.name}</span><span id="val_t2_${cand.id}">${current}%</span></div><input type="range" min="0" max="100" value="${current}" ${app.state.t2_mode === 'organic' ? 'disabled' : ''} oninput="app.state.t2_polls['${cand.id}'] = parseInt(this.value); document.getElementById('val_t2_${cand.id}').innerText=this.value+'%'; app.checkT2Total();">`;
+            div.innerHTML = `<div class="slider-header"><span style="color:${cand.color}; font-weight:700"><i class="fas ${cand.icon}"></i> ${cand.name}</span><span id="val_t2_${cand.id}">${current}%</span></div><input type="range" min="0" max="100" value="${current}" ${app.state.t2_mode === 'organic' ? 'disabled' : ''} oninput="app.state.t2_polls['${cand.id}'] = parseInt(this.value); document.getElementById('val_t2_${cand.id}').innerText=this.value+'%'; app.checkT2Total();">`;
             slidersDiv.appendChild(div);
         });
         app.checkT2Total();
     },
-    checkT2Total: () => { const [id1, id2] = app.state.t2_finalists; const tot = (app.state.t2_polls[id1]||0) + (app.state.t2_polls[id2]||0); const el = document.getElementById('totalSimValT2'); el.innerText = tot + "%"; el.style.color = tot===100?'#4ade80':'#facc15'; },
+    checkT2Total: () => { const[id1, id2] = app.state.t2_finalists; const tot = (app.state.t2_polls[id1]||0) + (app.state.t2_polls[id2]||0); const el = document.getElementById('totalSimValT2'); el.innerText = tot + "%"; el.style.color = tot===100?'#4ade80':'#facc15'; },
     
     selectRegion: (id, name) => {
         app.state.selectedId = id; app.state.selectedName = name;
@@ -547,7 +695,7 @@ const app = {
             if(app.state.turn===1 && app.state.active_candidates[cand.id] === false && v === 0) return;
             const pct = total > 0 ? (v/total)*100 : 0;
             const row = document.createElement('div'); row.className = 'cand-row';
-            row.innerHTML = `<div class="cand-color" style="background:${cand.color}"></div><div class="cand-info"><div class="cand-head"><span>${cand.name}</span><span style="color:${cand.color}">${pct.toFixed(2)}%</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%; background:${cand.color}"></div></div><div style="text-align:right; font-size:0.7rem; color:#666; margin-top:3px;">${v.toLocaleString()} votos</div></div>`;
+            row.innerHTML = `<div class="cand-color" style="background:${cand.color}"></div><div class="cand-info"><div class="cand-head"><span><i class="fas ${cand.icon}"></i> ${cand.name}</span><span style="color:${cand.color}">${pct.toFixed(2)}%</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%; background:${cand.color}"></div></div><div style="text-align:right; font-size:0.7rem; color:#666; margin-top:3px;">${v.toLocaleString()} votos</div></div>`;
             list.appendChild(row);
         });
     },
@@ -556,7 +704,7 @@ const app = {
     closeModal: () => { document.getElementById('modalOverlay').classList.remove('active'); },
     
     openMatrixModal: () => {
-        const sources = ['LULA','JAIR','CIRO','SIMONE'];
+        const sources =['LULA','JAIR','CIRO','SIMONE'];
         let html = `<div style="display:flex; gap:10px; margin-bottom:15px;"><div style="flex:1"><label style="color:#aaa; font-size:0.8rem">FONTE (2022):</label><select id="modalSrcSelect" onchange="app.renderModalMatrix()" style="width:100%">${sources.map(s => `<option value="${s}">${s}</option>`).join('')}</select></div><div style="flex:1"><label style="color:#aaa; font-size:0.8rem">ESTADO:</label><select id="modalUfSelect" onchange="app.renderModalMatrix()" style="width:100%"><option value="">Nacional (Padrão)</option>${STATES.map(s => `<option value="${s.id}">${s.sigla}</option>`).join('')}</select></div></div><div id="modalMatrixContent"></div><div style="font-size:0.7rem; color:#666; margin-top:10px;">* Se um Estado for selecionado, os valores substituem a regra nacional para aquele estado.</div>`;
         app.openModal("Matriz de Herança", html); app.renderModalMatrix();
     },
@@ -568,7 +716,7 @@ const app = {
             let val = ufId ? (app.state.t1_matrix_state[ufId] && app.state.t1_matrix_state[ufId][src] ? app.state.t1_matrix_state[ufId][src][dest.id] : app.state.t1_matrix[src][dest.id]) : app.state.t1_matrix[src][dest.id];
             val = (val||0) * 100;
             const div = document.createElement('div'); div.className = 'slider-box';
-            div.innerHTML = `<div class="slider-header"><span style="color:${dest.color}; font-weight:bold">${dest.name}</span><span id="mod_mtx_${dest.id}">${Math.round(val)}%</span></div><input type="range" min="0" max="100" value="${val}" oninput="app.updateMatrixValue('${src}', '${ufId}', '${dest.id}', this.value); document.getElementById('mod_mtx_${dest.id}').innerText=this.value+'%';">`;
+            div.innerHTML = `<div class="slider-header"><span style="color:${dest.color}; font-weight:bold"><i class="fas ${dest.icon}"></i> ${dest.name}</span><span id="mod_mtx_${dest.id}">${Math.round(val)}%</span></div><input type="range" min="0" max="100" value="${val}" oninput="app.updateMatrixValue('${src}', '${ufId}', '${dest.id}', this.value); document.getElementById('mod_mtx_${dest.id}').innerText=this.value+'%';">`;
             c.appendChild(div);
         });
     },
@@ -592,13 +740,13 @@ const app = {
             if(!cand || (turn===1 && app.state.active_candidates[cand.id] === false)) return;
             const val = store[ufId][cand.id] !== undefined ? store[ufId][cand.id] : 1.0;
             const div = document.createElement('div'); div.className = 'slider-box';
-            div.innerHTML = `<div class="slider-header"><span style="color:${cand.color}; font-weight:bold">${cand.name}</span><span id="mod_mul_${cand.id}">x${val.toFixed(2)}</span></div><input type="range" min="0" max="300" value="${val*100}" oninput="app.updateMult(${turn}, '${ufId}', '${cand.id}', this.value); document.getElementById('mod_mul_${cand.id}').innerText='x'+(this.value/100).toFixed(2);">`;
+            div.innerHTML = `<div class="slider-header"><span style="color:${cand.color}; font-weight:bold"><i class="fas ${cand.icon}"></i> ${cand.name}</span><span id="mod_mul_${cand.id}">x${val.toFixed(2)}</span></div><input type="range" min="0" max="300" value="${val*100}" oninput="app.updateMult(${turn}, '${ufId}', '${cand.id}', this.value); document.getElementById('mod_mul_${cand.id}').innerText='x'+(this.value/100).toFixed(2);">`;
             c.appendChild(div);
         });
     },
     updateMult: (turn, ufId, cid, val) => { const store = turn===1 ? app.state.t1_mults : app.state.t2_mults; if(!store[ufId]) store[ufId] = {}; store[ufId][cid] = parseInt(val)/100; },
     openMigrationModal: () => {
-        const [id1, id2] = app.state.t2_finalists;
+        const[id1, id2] = app.state.t2_finalists;
         let html = `<div style="text-align:center; font-size:0.8rem; color:#888; margin-bottom:15px">Configure para quem os eleitores migrarão.<br>Esquerda (0%): <b>${CONFIG.candidates.find(c=>c.id===id1).name}</b> | Direita (100%): <b>${CONFIG.candidates.find(c=>c.id===id2).name}</b></div><div id="modalMigContent"></div>`;
         app.openModal("Transferência de Votos", html);
         const c = document.getElementById('modalMigContent');
@@ -648,10 +796,11 @@ const app = {
             }
         }
         app.data.round1 = res;
+        if (presentation.isActive) presentation.renderSlide();
     },
     calculateTurn2: () => {
         if(!app.data.round1) app.calculateTurn1(); const r1 = app.data.round1;
-        const [id1, id2] = app.state.t2_finalists; if(!id1 || !id2) return;
+        const[id1, id2] = app.state.t2_finalists; if(!id1 || !id2) return;
         const isOrganic = app.state.t2_mode === 'organic';
         const res = { municipios: {}, estados: {}, nacional: {} }; let tempNacional = {[id1]:0, [id2]:0}, grandTotal = 0;
         for(let ibge in r1.municipios) {
@@ -662,7 +811,6 @@ const app = {
                 else { let ratio = app.state.t2_migr[cid] !== undefined ? app.state.t2_migr[cid] : 0.5; vA += votos * (1 - ratio); vB += votos * ratio; }
             }
             if(app.state.t2_mults[ufId]) { if(app.state.t2_mults[ufId][id1]) vA *= app.state.t2_mults[ufId][id1]; if(app.state.t2_mults[ufId][id2]) vB *= app.state.t2_mults[ufId][id2]; }
-            // FIX BUG DECIMAIS
             vA = Math.round(vA); vB = Math.round(vB);
             tempNacional[id1] += vA; tempNacional[id2] += vB; grandTotal += (vA + vB); res.municipios[ibge] = { [id1]: vA, [id2]: vB };
         }
@@ -672,8 +820,7 @@ const app = {
             const corrections = {}; [id1, id2].forEach(id => { const currPct = tempNacional[id] / (grandTotal||1); corrections[id] = (app.state.t2_polls[id]<=0) ? 0 : (currPct>0 ? targetPcts[id]/currPct : 1); });
             res.nacional = {};
             for(let ibge in res.municipios) {
-                const ufId = ibge.substring(0,2); if(!res.estados[ufId]) res.estados[ufId] = {};
-                [id1, id2].forEach(id => { let v = Math.round(res.municipios[ibge][id] * corrections[id]); res.municipios[ibge][id] = v; res.estados[ufId][id] = (res.estados[ufId][id]||0) + v; res.nacional[id] = (res.nacional[id]||0) + v; });
+                const ufId = ibge.substring(0,2); if(!res.estados[ufId]) res.estados[ufId] = {};[id1, id2].forEach(id => { let v = Math.round(res.municipios[ibge][id] * corrections[id]); res.municipios[ibge][id] = v; res.estados[ufId][id] = (res.estados[ufId][id]||0) + v; res.nacional[id] = (res.nacional[id]||0) + v; });
             }
         } else {
             res.nacional = tempNacional;
@@ -685,46 +832,36 @@ const app = {
             app.checkT2Total();
         }
         app.data.round2 = res;
+        if (presentation.isActive) presentation.renderSlide();
     },
     getVotes22: (obj, key) => { let sum = 0; for(let k in obj) { if(k.toUpperCase().includes(key)) sum += obj[k]; } return sum; }
 };
 
 document.addEventListener('DOMContentLoaded', app.init);
 
-    // CORREÇÃO DOS BOTÕES - Garantir que todos os botões sejam clicáveis
 document.addEventListener('DOMContentLoaded', function() {
-    // Forçar z-index alto em todos os elementos interativos
     setTimeout(function() {
-        const interactiveElements = [
+        const interactiveElements =[
             '.mode-tab', '.btn-io', '.btn-primary', '.btn-secondary',
             '.btn-back', '.map-btn', '.nav-item', 'select',
-            'input[type="checkbox"]', 'input[type="range"]', '.switch input'
+            'input[type="checkbox"]', 'input[type="range"]', '.switch input',
+            '.pres-btn', '.pres-nav-area'
         ];
         
         interactiveElements.forEach(selector => {
             document.querySelectorAll(selector).forEach(el => {
                 el.style.zIndex = '10000';
-                el.style.position = 'relative';
+                if(selector !== '.pres-nav-area') el.style.position = 'relative';
             });
         });
         
-        // Garantir que os botões de turno funcionem
-        document.querySelectorAll('.mode-tab').forEach(tab => {
+        document.querySelectorAll('.mode-tab, .btn-io').forEach(tab => {
             tab.style.cursor = 'pointer';
             tab.style.pointerEvents = 'auto';
         });
-        
-        // Garantir que os botões de IO funcionem
-        document.querySelectorAll('.btn-io').forEach(btn => {
-            btn.style.cursor = 'pointer';
-            btn.style.pointerEvents = 'auto';
-        });
-        
-        console.log('Botões corrigidos e prontos para uso');
     }, 500);
 });
 
-// Função auxiliar para garantir que eventos não sejam bloqueados
 function ensureClickable(element) {
     if (element) {
         element.style.pointerEvents = 'auto';
@@ -734,21 +871,12 @@ function ensureClickable(element) {
     }
 }
 
-// Aplicar correções para elementos específicos após carregamento
 window.addEventListener('load', function() {
-    // Botões de turno
     ensureClickable(document.getElementById('tab1'));
     ensureClickable(document.getElementById('tab2'));
-    
-    // Botões de IO
-    document.querySelectorAll('.btn-io').forEach(ensureClickable);
-    
-    // Botões de mapa
-    document.querySelectorAll('.map-btn').forEach(ensureClickable);
-    
-    // Botões de navegação mobile
-    document.querySelectorAll('.nav-item').forEach(ensureClickable);
+    document.querySelectorAll('.btn-io, .map-btn, .nav-item').forEach(ensureClickable);
 });
 </script>
 </body>
 </html>
+--- END OF FILE index (24).html ---
