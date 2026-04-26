@@ -1,3 +1,4 @@
+--- START OF FILE style.css ---
 :root {
   /* Cores modernas e vibrantes */
   --bg-primary: #0a0c10;
@@ -241,24 +242,26 @@ body {
 /* --- BOTÕES --- */
 .io-buttons {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-top: 15px;
 }
 
 .btn-io {
   flex: 1;
-  padding: 12px;
+  min-width: 80px;
+  padding: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(15, 23, 42, 0.8);
   color: var(--text-secondary);
   border-radius: var(--border-radius-md);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   transition: all var(--transition-fast);
   letter-spacing: 0.3px;
 }
@@ -1050,7 +1053,7 @@ input:checked + .slider:before {
   text-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
 }
 
-/* --- ESTILOS ESPECIAIS PARA TOTAL DE VOTOS --- */
+/* Estilos Especiais para Total de Votos */
 .total-votes-display {
   font-size: 2.2rem;
   font-weight: 900;
@@ -1063,38 +1066,400 @@ input:checked + .slider:before {
   background-clip: text;
 }
 
-/* CORREÇÃO DOS BOTÕES DE TURNO - ESTILO ESPECÍFICO */
-.mode-tabs {
+
+/* =========================================================
+   --- PRESENTATION MODE (BROADCAST VIEW) ---
+========================================================= */
+
+#presentationOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    /* Fundo imersivo escuro voltado a telejornalismo */
+    background: radial-gradient(circle at 50% 40%, #1e293b 0%, #020617 100%);
+    z-index: 999999;
+    display: none;
+    flex-direction: column;
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+    animation: fadeIn var(--transition-normal);
+}
+
+/* Efeito de Scanlines/Grid Tvs no background */
+#presentationOverlay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.015) 2px, rgba(255,255,255,0.015) 4px);
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+#presentationOverlay.active {
     display: flex;
-    gap: 10px;
-    margin-top: 20px;
-    background: rgba(15, 23, 42, 0.5);
-    padding: 6px;
-    border-radius: var(--border-radius-md);
 }
 
-.mode-tab {
-    flex: 1;
-    padding: 12px;
+/* Top Header de Apresentação */
+.pres-header {
     text-align: center;
-    border-radius: var(--border-radius-sm);
-    background: transparent;
-    border: 1px solid transparent;
+    padding: 30px 50px;
+    position: relative;
+    z-index: 10;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    animation: slideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pres-header-center {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+}
+
+.pres-region {
+    font-size: 2.2rem;
+    font-weight: 300;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #f1f5f9;
+    text-shadow: 0 4px 15px rgba(0,0,0,0.6);
+}
+
+.pres-year {
+    font-size: 4.5rem;
+    font-weight: 900;
+    line-height: 0.9;
+    letter-spacing: -2px;
+    text-shadow: 0 8px 25px rgba(0,0,0,0.6);
+    background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.pres-turn {
+    font-size: 1.3rem;
+    font-weight: 400;
+    font-style: italic;
+    color: #94a3b8;
+    margin-top: 5px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+}
+
+/* Layout Central: Candidato 1 | Mapa | Candidato 2 */
+.pres-content {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    z-index: 10;
+    padding: 0 5vw;
+}
+
+.pres-map-container {
+    flex: 0 0 40%;
+    height: 80%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    animation: zoomIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pres-map-container svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0px 20px 35px rgba(0,0,0,0.8));
+    transition: all 0.5s ease-in-out;
+}
+
+/* Colunas dos Candidatos Principais */
+.pres-candidate-main {
+    flex: 0 0 30%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    animation: fadeIn 1s ease;
+}
+
+/* Fotos estilo telejornal */
+.pres-photo-wrapper {
+    position: relative;
+    width: 300px;
+    height: 400px;
+    margin-bottom: 30px;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8);
+    background: #111;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.pres-photo-wrapper::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 0 6px rgba(255,255,255,0.9);
+    pointer-events: none;
+    border-radius: 4px;
+}
+
+.pres-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+    filter: grayscale(10%) contrast(1.1);
+    transition: filter 0.4s;
+}
+
+/* Badge do Partido */
+.pres-party-badge {
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-weight: 900;
+    font-size: 1.4rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+    border: 3px solid #ffffff;
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    z-index: 2;
+}
+
+.pres-cand-name {
+    font-size: 2.2rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    line-height: 1.1;
+    margin-bottom: 5px;
+    text-shadow: 0 4px 15px rgba(0,0,0,0.9);
+    letter-spacing: -0.5px;
+}
+
+.pres-cand-vice {
+    font-size: 1rem;
+    color: #94a3b8;
+    margin-bottom: 20px;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+.pres-cand-pct {
+    font-size: 5rem;
+    font-weight: 900;
+    line-height: 1;
+    text-shadow: 0 6px 20px rgba(0,0,0,0.8);
+    margin-bottom: 5px;
+    letter-spacing: -2px;
+}
+
+.pres-cand-votes {
+    font-size: 1.2rem;
+    color: #cbd5e1;
+    font-weight: 500;
+    background: rgba(0,0,0,0.4);
+    padding: 6px 16px;
+    border-radius: var(--border-radius-full);
+}
+
+/* Barra inferior (Outros Candidatos) */
+.pres-bottom {
+    position: absolute;
+    bottom: 40px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 70px;
+    z-index: 10;
+    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+}
+
+.pres-bottom-cand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.pres-bottom-photo-wrapper {
+    position: relative;
+    margin-bottom: 12px;
+}
+
+.pres-bottom-photo {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    border: 4px solid #ffffff;
+    object-fit: cover;
+    object-position: top center;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+    filter: grayscale(10%);
+}
+
+.pres-bottom-party {
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ffffff;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    color: #000;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+}
+
+.pres-bottom-name {
+    font-size: 1.2rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    text-shadow: 0 3px 8px rgba(0,0,0,0.9);
+    margin-bottom: 2px;
+}
+
+.pres-bottom-pct {
+    font-size: 2rem;
+    font-weight: 900;
+    text-shadow: 0 3px 8px rgba(0,0,0,0.9);
+}
+
+/* Controles de Navegação da Apresentação */
+.pres-controls {
+    position: absolute;
+    top: 40px;
+    right: 50px;
+    display: flex;
+    gap: 15px;
+    z-index: 50;
+}
+
+.pres-btn {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #ffffff;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: var(--text-muted);
-    transition: all var(--transition-fast);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 1.3rem;
+    backdrop-filter: blur(8px);
 }
 
-.mode-tab:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text-secondary);
+.pres-btn:hover {
+    background: rgba(255,255,255,0.3);
+    transform: scale(1.15);
+    border-color: #ffffff;
+    box-shadow: 0 0 15px rgba(255,255,255,0.3);
 }
 
-.mode-tab.active {
-    background: var(--gradient-primary);
-    color: white;
-    border-color: transparent;
-    box-shadow: var(--shadow-glow);
+/* Áreas de Clique Laterais Invisíveis para Navegação (Passar Slide) */
+.pres-nav-area {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 12vw;
+    z-index: 20;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s;
+    background: linear-gradient(90deg, rgba(0,0,0,0.4) 0%, transparent 100%);
 }
+
+.pres-nav-area.pres-nav-right {
+    background: linear-gradient(-90deg, rgba(0,0,0,0.4) 0%, transparent 100%);
+}
+
+.pres-nav-area:hover {
+    opacity: 1;
+}
+
+.pres-nav-area i {
+    font-size: 3.5rem;
+    text-shadow: 0 0 25px rgba(0,0,0,0.8);
+    color: rgba(255,255,255,0.7);
+    transition: transform 0.2s, color 0.2s;
+}
+
+.pres-nav-area:hover i {
+    transform: scale(1.2);
+    color: #ffffff;
+}
+
+.pres-nav-left { left: 0; }
+.pres-nav-right { right: 0; }
+
+/* Loader Tela Inteira de Processamento de Mapa na Apresentação */
+.pres-loading {
+    position: absolute;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.95);
+    backdrop-filter: blur(15px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    font-size: 2rem;
+    flex-direction: column;
+    gap: 25px;
+}
+
+/* Keyframes Específicos para a Apresentação */
+@keyframes slideDown {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes zoomIn {
+    from { transform: scale(0.9); opacity: 0; filter: blur(10px); }
+    to { transform: scale(1); opacity: 1; filter: blur(0); }
+}
+
+/* Ajustes Responsive da Apresentação (Caso Aberto em Telas Menores) */
+@media (max-width: 1200px) {
+    .pres-photo-wrapper { width: 240px; height: 320px; }
+    .pres-cand-name { font-size: 1.8rem; }
+    .pres-cand-pct { font-size: 4rem; }
+    .pres-region { font-size: 1.8rem; }
+    .pres-year { font-size: 3.5rem; }
+    .pres-bottom { gap: 40px; }
+    .pres-map-container { flex: 0 0 45%; }
+}
+
+@media (max-width: 768px) {
+    .pres-content { flex-direction: column; padding: 0 20px; margin-top: 100px; }
+    .pres-map-container { display: none; /* Esconde o mapa em telas muito pequenas na visão TV */ }
+    .pres-candidate-main { flex: none; flex-direction: row; gap: 20px; width: 100%; text-align: left; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin-bottom: 15px; }
+    .pres-photo-wrapper { width: 100px; height: 100px; margin-bottom: 0; border-radius: 50%; box-shadow: none; }
+    .pres-photo-wrapper::after { display: none; }
+    .pres-party-badge { display: none; }
+    .pres-cand-pct { font-size: 2.5rem; }
+    .pres-cand-name { font-size: 1.4rem; }
+    .pres-bottom { display: none; }
+}
+--- END OF FILE style.css ---
