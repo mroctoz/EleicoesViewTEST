@@ -407,68 +407,93 @@ handleKeydown: (e) => {
     },
 
 downloadSlide: async () => {
+        // Altera o mouse para indicar carregamento
         document.body.style.cursor = 'wait';
         
-        const overlay = document.getElementById('presentationOverlay');
-        const controls = document.querySelector('.pres-controls');
-        const navAreas = document.querySelectorAll('.pres-nav-area');
-        
-        // 1. Ocultar botões que não devem sair na foto
-        controls.style.display = 'none';
-        navAreas.forEach(n => n.style.display = 'none');
-        
-        // 2. Salvar posição atual da página e jogar para o topo 
-        // (Resolve o bug do "position: fixed" sair do enquadramento e ficar transparente)
-        const currentScrollX = window.scrollX;
-        const currentScrollY = window.scrollY;
-        window.scrollTo(0, 0);
-        
-        // 3. Injetar um bloco CSS temporário 
-        // (Desliga gradientes e as linhas da tela que bugam o html2canvas e o deixam invisível)
-        const tempStyle = document.createElement('style');
-        tempStyle.innerHTML = `
-            #presentationOverlay.export-mode {
-                background: #0f172a !important; /* Força cor sólida idêntica ao design */
-                background-image: none !important; /* Desliga o radial-gradient principal */
-                position: absolute !important; /* Trava no fluxo da tela */
-            }
-            #presentationOverlay.export-mode::before {
-                display: none !important; /* Oculta as scanlines/grade da TV no momento da foto */
-            }
-        `;
-        document.head.appendChild(tempStyle);
-        overlay.classList.add('export-mode');
-        
         try {
-            // Tira a foto
-            const canvas = await html2canvas(overlay, {
+            const originalOverlay = document.getElementById('presentationOverlay');
+            
+            // 1. Cria um container "clone" ancorado de forma absoluta no topo (ignora o bug do scroll e fixed)
+            const exportContainer = document.createElement('div');
+            exportContainer.style.position = 'absolute';
+            exportContainer.style.top = '0';
+            exportContainer.style.left = '0';
+            exportContainer.style.width = originalOverlay.offsetWidth + 'px';
+            exportContainer.style.height = originalOverlay.offsetHeight + 'px';
+            exportContainer.style.background = '#0b1120'; // Fundo azul marinho profundo sólido
+            exportContainer.style.zIndex = '-9999'; // Fica escondido atrás do site atual
+            exportContainer.style.overflow = 'hidden';
+            
+            // 2. Clona todo o conteúdo visual do slide original
+            const clone = originalOverlay.cloneNode(true);
+            clone.id = "presentationOverlayClone";
+            clone.style.position = 'relative';
+            clone.style.width = '100%';
+            clone.style.height = '100%';
+            clone.style.background = 'transparent';
+            
+            // 3. Limpa botões e controles para não saírem na foto
+            const controls = clone.querySelector('.pres-controls');
+            if(controls) controls.remove();
+            clone.querySelectorAll('.pres-nav-area').forEach(n => n.remove());
+            
+            // 4. REMOVE OS FILTROS CSS (Vilões da transparência no html2canvas)
+            clone.querySelectorAll('svg').forEach(svg => {
+                svg.style.filter = 'none'; // O drop-shadow do mapa quebra a captura
+            });
+            clone.querySelectorAll('.pres-photo, .pres-bottom-photo').forEach(img => {
+                img.style.filter = 'none'; // O grayscale das fotos quebra a captura
+            });
+
+            // 5. Tática Anti-CORS: Converte as imagens externas para Base64 nativo
+            const images = clone.querySelectorAll('img');
+            for (let img of images) {
+                try {
+                    const tempCanvas = document.createElement('canvas');
+                    const ctx = tempCanvas.getContext('2d');
+                    const tempImg = new Image();
+                    tempImg.crossOrigin = "anonymous"; // Tenta liberação CORS
+                    
+                    await new Promise((resolve) => {
+                        tempImg.onload = () => {
+                            tempCanvas.width = tempImg.width;
+                            tempCanvas.height = tempImg.height;
+                            ctx.drawImage(tempImg, 0, 0);
+                            img.src = tempCanvas.toDataURL('image/png'); // Substitui o link da Wikipedia por imagem crua
+                            resolve();
+                        };
+                        tempImg.onerror = resolve; // Se falhar, segue em frente para não travar
+                        tempImg.src = img.src;
+                    });
+                } catch(e) { console.error("Ignorando erro de imagem", e); }
+            }
+
+            // Anexa o clone ao HTML real (sem ele estar na página, o canvas não renderiza)
+            exportContainer.appendChild(clone);
+            document.body.appendChild(exportContainer);
+            
+            // 6. Tira o print do Clone Limpo (não da tela original)
+            const finalCanvas = await html2canvas(exportContainer, {
                 useCORS: true,
-                scale: 2, // Qualidade Alta (dobro da resolução)
-                backgroundColor: '#0f172a', // Dupla garantia do fundo para evitar transparência
-                width: window.innerWidth,
-                height: window.innerHeight,
-                x: 0,
-                y: 0,
-                scrollX: 0,
-                scrollY: 0
+                scale: 2, // Resolução 2x para textos nítidos
+                backgroundColor: '#0b1120',
+                logging: false
             });
             
-            canvas.toBlob((blob) => {
+            // 7. Salva a imagem final usando o FileSaver
+            finalCanvas.toBlob((blob) => {
                 const regionName = document.getElementById('presRegion').innerText;
-                saveAs(blob, `Slide_Eleicoes_2026_${regionName}.png`);
+                saveAs(blob, `Slide_${regionName}_2026.png`);
             }, 'image/png', 1.0);
+            
+            // 8. Destrói o clone limpando o HTML
+            document.body.removeChild(exportContainer);
             
         } catch (error) {
             console.error("Erro ao gerar a imagem:", error);
-            alert("Houve um erro ao exportar o slide.");
+            alert("Houve um erro técnico ao exportar o slide. Verifique o console.");
         } finally {
-            // 4. Limpeza: Restaura tudo de volta em fração de segundo
-            overlay.classList.remove('export-mode');
-            if (tempStyle.parentNode) tempStyle.parentNode.removeChild(tempStyle);
-            window.scrollTo(currentScrollX, currentScrollY);
-            
-            controls.style.display = 'flex';
-            navAreas.forEach(n => n.style.display = 'flex');
+            // Retorna o mouse ao normal
             document.body.style.cursor = 'default';
         }
     },
