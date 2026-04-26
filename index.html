@@ -15,6 +15,7 @@
 
 <!-- Export Libraries -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <link rel="stylesheet" href="style.css">
 
@@ -91,6 +92,7 @@
 <!-- VIEW DE APRESENTAÇÃO (NOVO) -->
 <div id="presentationOverlay">
     <div class="pres-controls">
+        <button class="pres-btn" onclick="presentation.downloadSlide()" title="Baixar Imagem do Slide"><i class="fas fa-camera"></i></button>
         <button class="pres-btn" onclick="presentation.close()" title="Sair da Apresentação"><i class="fas fa-times"></i></button>
     </div>
     <div class="pres-nav-area pres-nav-left" onclick="presentation.prev()"><i class="fas fa-chevron-left"></i></div>
@@ -398,10 +400,45 @@ const presentation = {
         }
     },
 
-    handleKeydown: (e) => {
+handleKeydown: (e) => {
         if(e.key === 'ArrowRight') presentation.next();
         if(e.key === 'ArrowLeft') presentation.prev();
         if(e.key === 'Escape') presentation.close();
+    },
+
+    downloadSlide: async () => {
+        // Mostra o cursor de carregamento
+        document.body.style.cursor = 'wait';
+        
+        const overlay = document.getElementById('presentationOverlay');
+        const controls = document.querySelector('.pres-controls');
+        const navAreas = document.querySelectorAll('.pres-nav-area');
+        
+        // Oculta os botões de navegação e fechar para que não apareçam na foto
+        controls.style.display = 'none';
+        navAreas.forEach(n => n.style.display = 'none');
+        
+        try {
+            // Tira print da tela em Alta Resolução e permitindo imagens externas (CORS)
+            const canvas = await html2canvas(overlay, {
+                useCORS: true, 
+                scale: 2, 
+                backgroundColor: '#111827' // Fundo escuro fallback
+            });
+            
+            canvas.toBlob((blob) => {
+                const regionName = document.getElementById('presRegion').innerText;
+                saveAs(blob, `Slide_Eleicoes_2026_${regionName}.png`);
+            });
+        } catch (error) {
+            console.error("Erro ao gerar a imagem:", error);
+            alert("Houve um erro ao exportar o slide.");
+        } finally {
+            // Restaura os botões de volta para a tela e volta o cursor normal
+            controls.style.display = 'flex';
+            navAreas.forEach(n => n.style.display = 'flex');
+            document.body.style.cursor = 'default';
+        }
     },
 
     renderSlide: () => {
