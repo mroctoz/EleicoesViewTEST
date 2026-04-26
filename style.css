@@ -1202,7 +1202,7 @@ input:checked + .slider:before {
     box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8);
     background: #111;
     border-radius: 4px;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .pres-photo-wrapper::after {
@@ -1352,13 +1352,14 @@ input:checked + .slider:before {
 }
 
 /* Controles de Navegação da Apresentação */
+/* Controles de Navegação da Apresentação */
 .pres-controls {
     position: absolute;
     top: 40px;
     right: 50px;
     display: flex;
     gap: 15px;
-    z-index: 50;
+    z-index: 99999 !important; /* Força a caixa de controles a ficar acima de absolutamente tudo */
 }
 
 .pres-btn {
@@ -1375,6 +1376,8 @@ input:checked + .slider:before {
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     font-size: 1.3rem;
     backdrop-filter: blur(8px);
+    position: relative;
+    z-index: 99999 !important; /* Impede que o script de sobreposição bloqueie o clique */
 }
 
 .pres-btn:hover {
