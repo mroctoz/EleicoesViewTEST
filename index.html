@@ -413,27 +413,44 @@ downloadSlide: async () => {
         const controls = document.querySelector('.pres-controls');
         const navAreas = document.querySelectorAll('.pres-nav-area');
         
-        // Salva o estilo original do fundo para restaurar depois
-        const originalBackground = overlay.style.background;
-        
-        // Oculta as setas e o botão de fechar para não saírem na foto
+        // 1. Ocultar botões que não devem sair na foto
         controls.style.display = 'none';
         navAreas.forEach(n => n.style.display = 'none');
         
-        // Força fundo sólido temporário e evita o bug de transparência do radial-gradient
-        overlay.style.background = '#0d131f';
+        // 2. Salvar posição atual da página e jogar para o topo 
+        // (Resolve o bug do "position: fixed" sair do enquadramento e ficar transparente)
+        const currentScrollX = window.scrollX;
+        const currentScrollY = window.scrollY;
+        window.scrollTo(0, 0);
+        
+        // 3. Injetar um bloco CSS temporário 
+        // (Desliga gradientes e as linhas da tela que bugam o html2canvas e o deixam invisível)
+        const tempStyle = document.createElement('style');
+        tempStyle.innerHTML = `
+            #presentationOverlay.export-mode {
+                background: #0f172a !important; /* Força cor sólida idêntica ao design */
+                background-image: none !important; /* Desliga o radial-gradient principal */
+                position: absolute !important; /* Trava no fluxo da tela */
+            }
+            #presentationOverlay.export-mode::before {
+                display: none !important; /* Oculta as scanlines/grade da TV no momento da foto */
+            }
+        `;
+        document.head.appendChild(tempStyle);
+        overlay.classList.add('export-mode');
         
         try {
+            // Tira a foto
             const canvas = await html2canvas(overlay, {
-                useCORS: true, 
-                scale: 2, 
-                backgroundColor: '#0d131f', // Garante que a imagem não tenha transparência
-                logging: false,
-                scrollY: 0, // Resolve o bug caso a tela de trás esteja rolada
+                useCORS: true,
+                scale: 2, // Qualidade Alta (dobro da resolução)
+                backgroundColor: '#0f172a', // Dupla garantia do fundo para evitar transparência
+                width: window.innerWidth,
+                height: window.innerHeight,
                 x: 0,
                 y: 0,
-                width: overlay.offsetWidth,
-                height: overlay.offsetHeight
+                scrollX: 0,
+                scrollY: 0
             });
             
             canvas.toBlob((blob) => {
@@ -445,8 +462,11 @@ downloadSlide: async () => {
             console.error("Erro ao gerar a imagem:", error);
             alert("Houve um erro ao exportar o slide.");
         } finally {
-            // Devolve o fundo gradiente e restaura os botões da interface
-            overlay.style.background = originalBackground;
+            // 4. Limpeza: Restaura tudo de volta em fração de segundo
+            overlay.classList.remove('export-mode');
+            if (tempStyle.parentNode) tempStyle.parentNode.removeChild(tempStyle);
+            window.scrollTo(currentScrollX, currentScrollY);
+            
             controls.style.display = 'flex';
             navAreas.forEach(n => n.style.display = 'flex');
             document.body.style.cursor = 'default';
