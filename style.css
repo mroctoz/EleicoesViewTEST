@@ -1,4 +1,3 @@
---- START OF FILE style.css ---
 :root {
   /* Cores modernas e vibrantes */
   --bg-primary: #0a0c10;
@@ -1462,4 +1461,3 @@ input:checked + .slider:before {
     .pres-cand-name { font-size: 1.4rem; }
     .pres-bottom { display: none; }
 }
---- END OF FILE style.css ---
