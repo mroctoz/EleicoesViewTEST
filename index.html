@@ -305,19 +305,183 @@ const CONFIG = {
 
 const DEFAULT_SCENARIO = {
   "t1_polls": {
-    "LULA": 47, "FLAVIO": 40, "TARCISIO": 0, "RENAN": 6, "CAIADO": 4, "ZEMA": 3, "RATINHO": 0, "CIRO": 0, "ALDO": 1
+    "LULA": 44,
+    "FLAVIO": 43,
+    "TARCISIO": 10,
+    "RENAN": 2,
+    "CAIADO": 2,
+    "ZEMA": 2,
+    "RATINHO": 5,
+    "CIRO": 4,
+    "ALDO": 1,
+    "CURY": 2
   },
   "t1_matrix": {
-    "LULA": { "LULA": 1, "FLAVIO": 0.01, "TARCISIO": 0.03, "RENAN": 0.01, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0.01 },
-    "JAIR": { "LULA": 0.01, "FLAVIO": 1, "TARCISIO": 1, "RENAN": 0.03, "CAIADO": 0.2, "ZEMA": 0.1, "RATINHO": 0.05, "CIRO": 0, "ALDO": 0 },
-    "CIRO": { "LULA": 0, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 1, "ALDO": 0 },
-    "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "TARCISIO": 0.9, "RENAN": 0.2, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0.02, "CURY": 0.1 }
+    "LULA": {
+      "LULA": 1,
+      "FLAVIO": 0,
+      "TARCISIO": 0,
+      "RENAN": 0,
+      "CAIADO": 0,
+      "ZEMA": 0,
+      "RATINHO": 0,
+      "CIRO": 0,
+      "ALDO": 0
+    },
+    "JAIR": {
+      "LULA": 0,
+      "FLAVIO": 1,
+      "TARCISIO": 1,
+      "RENAN": 0,
+      "CAIADO": 0,
+      "ZEMA": 0,
+      "RATINHO": 0,
+      "CIRO": 0,
+      "ALDO": 0
+    },
+    "CIRO": {
+      "LULA": 0.1,
+      "FLAVIO": 0,
+      "TARCISIO": 0,
+      "RENAN": 0,
+      "CAIADO": 0,
+      "ZEMA": 0,
+      "RATINHO": 0,
+      "CIRO": 1,
+      "ALDO": 0,
+      "CURY": 0.01
+    },
+    "SIMONE": {
+      "LULA": 0.5,
+      "FLAVIO": 0.5,
+      "TARCISIO": 0,
+      "RENAN": 0.06,
+      "CAIADO": 0.06,
+      "ZEMA": 0.06,
+      "RATINHO": 0.06,
+      "CIRO": 0,
+      "ALDO": 0.25,
+      "CURY": 0.5
+    }
   },
-  "t1_matrix_state": {},
-  "t1_mults": {},
-  "t2_migr": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 1, "RENAN": 0.83, "CAIADO": 0.78, "ZEMA": 0.84, "RATINHO": 1, "CIRO": 0.5, "ALDO": 0.5 },
-  "t2_mults": {},
-  "active_candidates": { "LULA": true, "FLAVIO": true, "TARCISIO": false, "RENAN": true, "CAIADO": true, "ZEMA": true, "RATINHO": false, "CIRO": false, "ALDO": true },
+  "t1_matrix_state": {
+    "31": {
+      "JAIR": {
+        "LULA": 0,
+        "FLAVIO": 1,
+        "TARCISIO": 1,
+        "RENAN": 0,
+        "CAIADO": 0,
+        "ZEMA": 0,
+        "RATINHO": 0,
+        "CIRO": 0,
+        "ALDO": 0
+      },
+      "SIMONE": {
+        "LULA": 0.5,
+        "FLAVIO": 0.5,
+        "TARCISIO": 0,
+        "RENAN": 0.06,
+        "CAIADO": 0.06,
+        "ZEMA": 0.35,
+        "RATINHO": 0.06,
+        "CIRO": 0,
+        "ALDO": 0.25,
+        "CURY": 0.5
+      }
+    },
+    "35": {
+      "JAIR": {
+        "LULA": 0,
+        "FLAVIO": 1,
+        "TARCISIO": 1,
+        "RENAN": 0.01,
+        "CAIADO": 0,
+        "ZEMA": 0,
+        "RATINHO": 0,
+        "CIRO": 0,
+        "ALDO": 0
+      }
+    },
+    "41": {
+      "JAIR": {
+        "LULA": 0,
+        "FLAVIO": 1,
+        "TARCISIO": 1,
+        "RENAN": 0,
+        "CAIADO": 0,
+        "ZEMA": 0,
+        "RATINHO": 0.01,
+        "CIRO": 0,
+        "ALDO": 0
+      }
+    },
+    "52": {
+      "JAIR": {
+        "LULA": 0,
+        "FLAVIO": 1,
+        "TARCISIO": 1,
+        "RENAN": 0,
+        "CAIADO": 0,
+        "ZEMA": 0,
+        "RATINHO": 0,
+        "CIRO": 0,
+        "ALDO": 0
+      },
+      "SIMONE": {
+        "LULA": 0.5,
+        "FLAVIO": 0.5,
+        "TARCISIO": 0,
+        "RENAN": 0.06,
+        "CAIADO": 0.35,
+        "ZEMA": 0.06,
+        "RATINHO": 0.06,
+        "CIRO": 0,
+        "ALDO": 0.25,
+        "CURY": 0.5
+      }
+    }
+  },
+  "t1_mults": {
+    "33": {
+      "FLAVIO": 1.1
+    }
+  },
+  "t2_migr": {
+    "LULA": 0,
+    "FLAVIO": 1,
+    "TARCISIO": 1,
+    "RENAN": 0.63,
+    "CAIADO": 0.94,
+    "ZEMA": 0.91,
+    "RATINHO": 1,
+    "CIRO": 0.37,
+    "ALDO": 0.48,
+    "CURY": 0.56
+  },
+  "t2_mults": {
+    "21": {},
+    "31": {
+      "FLAVIO": 1,
+      "LULA": 1.1
+    },
+    "42": {},
+    "52": {
+      "FLAVIO": 1,
+      "LULA": 1.11
+    }
+  },
+  "active_candidates": {
+    "LULA": true,
+    "FLAVIO": true,
+    "TARCISIO": false,
+    "RENAN": true,
+    "CAIADO": true,
+    "ZEMA": true,
+    "RATINHO": false,
+    "CIRO": true,
+    "ALDO": true
+  },
   "t2_mode": "organic"
 };
 
