@@ -406,35 +406,47 @@ handleKeydown: (e) => {
         if(e.key === 'Escape') presentation.close();
     },
 
-    downloadSlide: async () => {
-        // Mostra o cursor de carregamento
+downloadSlide: async () => {
         document.body.style.cursor = 'wait';
         
         const overlay = document.getElementById('presentationOverlay');
         const controls = document.querySelector('.pres-controls');
         const navAreas = document.querySelectorAll('.pres-nav-area');
         
-        // Oculta os botões de navegação e fechar para que não apareçam na foto
+        // Salva o estilo original do fundo para restaurar depois
+        const originalBackground = overlay.style.background;
+        
+        // Oculta as setas e o botão de fechar para não saírem na foto
         controls.style.display = 'none';
         navAreas.forEach(n => n.style.display = 'none');
         
+        // Força fundo sólido temporário e evita o bug de transparência do radial-gradient
+        overlay.style.background = '#0d131f';
+        
         try {
-            // Tira print da tela em Alta Resolução e permitindo imagens externas (CORS)
             const canvas = await html2canvas(overlay, {
                 useCORS: true, 
                 scale: 2, 
-                backgroundColor: '#111827' // Fundo escuro fallback
+                backgroundColor: '#0d131f', // Garante que a imagem não tenha transparência
+                logging: false,
+                scrollY: 0, // Resolve o bug caso a tela de trás esteja rolada
+                x: 0,
+                y: 0,
+                width: overlay.offsetWidth,
+                height: overlay.offsetHeight
             });
             
             canvas.toBlob((blob) => {
                 const regionName = document.getElementById('presRegion').innerText;
                 saveAs(blob, `Slide_Eleicoes_2026_${regionName}.png`);
-            });
+            }, 'image/png', 1.0);
+            
         } catch (error) {
             console.error("Erro ao gerar a imagem:", error);
             alert("Houve um erro ao exportar o slide.");
         } finally {
-            // Restaura os botões de volta para a tela e volta o cursor normal
+            // Devolve o fundo gradiente e restaura os botões da interface
+            overlay.style.background = originalBackground;
             controls.style.display = 'flex';
             navAreas.forEach(n => n.style.display = 'flex');
             document.body.style.cursor = 'default';
