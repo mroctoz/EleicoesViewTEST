@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Eleições View - 2026 + LV 2022</title>
+<title>Eleições View - 2026 + Zonas 2022</title>
 
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -159,7 +159,6 @@
                 <select id="viewModeSelect" onchange="app.handleViewChange()">
                     <option value="states">Por Estados (Brasil)</option>
                     <option value="all_cities">Brasil Municipal</option>
-                    <option value="lv">Locais de Votação (2022)</option>
                 </select>
             </div>
         </div>
@@ -302,6 +301,14 @@ const CONFIG = {
         { min: 90, mix: '#000000', ratio: 0.60, ref: '#343434' },
         { min: 100,mix: '#000000', ratio: 0.75, ref: '#202020' }
     ]
+};
+
+// +++ ZONAS: Mapeamento número de urna (2 dígitos) para candidato do CONFIG (2022) +++
+const NUM_TO_CANDIDATE = {
+    '13': 'LULA',
+    '22': 'FLAVIO',
+    '12': 'CIRO',
+    '15': 'SIMONE'   // não existe no CONFIG, será ignorado
 };
 
 const DEFAULT_SCENARIO = {
@@ -799,8 +806,8 @@ downloadSlide: async () => {
 
 const app = {
     map: null,
-    layers: { brazil: null, cities: null, lv: null },
-    data: { base22: null, round1: null, round2: null, geoJson: null, names: {}, brazilGeoJson: null, lvData: null },
+    layers: { brazil: null, cities: null, zonas: null },  // +++ ZONAS: adicionado zonas +++
+    data: { base22: null, round1: null, round2: null, geoJson: null, names: {}, brazilGeoJson: null, zonasGeo: null, zonasData: null },  // +++ ZONAS: adicionados zonasGeo e zonasData +++
     state: { turn: 1, view: 'states', selectedId: null, selectedName: "Brasil", t1_polls: {}, t1_matrix: {}, t1_matrix_state: {}, t1_mults: {}, t2_finalists:[], t2_polls: {}, t2_migr: {}, t2_mults: {}, active_candidates: {}, t2_mode: 'manual' },
 
     init: async () => {
@@ -840,7 +847,31 @@ const app = {
 
     loadData: async () => {
         const loader = document.getElementById('loader');
-        try { const res = await fetch('data/2022_president.json'); const json = await res.json(); app.data.base22 = json['1']; app.data.names = json['1'].meta_nomes || {}; await app.loadBrazilLayer(); app.runSimulation(); } catch(e) { console.error(e); alert("Erro dados. Verifique data/2022_president.json"); } finally { loader.classList.add('hidden'); }
+        try {
+            const res = await fetch('data/2022_president.json');
+            const json = await res.json();
+            app.data.base22 = json['1'];
+            app.data.names = json['1'].meta_nomes || {};
+            await app.loadBrazilLayer();
+            app.runSimulation();
+
+            // +++ ZONAS: Carrega geometria e dados das zonas +++
+            try {
+                const respGeo = await fetch('data/mapazn.geojson');
+                app.data.zonasGeo = await respGeo.json();
+                const respData = await fetch('data/dadoszn.json');
+                const arr = await respData.json();
+                const obj = {};
+                arr.forEach(row => { obj[row.ZE_COD] = row; });
+                app.data.zonasData = obj;
+                console.log(`Zonas carregadas: ${Object.keys(obj).length} zonas, ${app.data.zonasGeo.features.length} geometrias.`);
+            } catch (e) {
+                console.warn("Zonas eleitorais não disponíveis (mapazn.geojson ou dadoszn.json ausentes).");
+                app.data.zonasGeo = { type: "FeatureCollection", features: [] };
+                app.data.zonasData = {};
+            }
+        } catch(e) { console.error(e); alert("Erro dados. Verifique data/2022_president.json"); }
+        finally { loader.classList.add('hidden'); }
     },
 
     exportConfig: () => { const config = { t1_polls: app.state.t1_polls, t1_matrix: app.state.t1_matrix, t1_matrix_state: app.state.t1_matrix_state, t1_mults: app.state.t1_mults, t2_migr: app.state.t2_migr, t2_mults: app.state.t2_mults, active_candidates: app.state.active_candidates, t2_mode: app.state.t2_mode }; saveAs(new Blob([JSON.stringify(config, null, 2)], {type: "application/json;charset=utf-8"}), "eleicoes_config.json"); },
@@ -864,26 +895,25 @@ const app = {
         app.updateT2UI(); app.runSimulation();
     },
 
-    handleViewChange: async () => { 
-        app.state.view = document.getElementById('viewModeSelect').value; 
-        if (app.state.view === 'all_cities') {
-            app.hideLVLayer();
+    handleViewChange: async () => {
+        app.state.view = document.getElementById('viewModeSelect').value;
+        if(app.state.view === 'all_cities') {
+            app.removeZonasLayer(); // +++ ZONAS +++
             await app.loadAllMunicipalities();
-        } else if (app.state.view === 'lv') {
-            app.hideLVLayer(); // remove qualquer camada anterior de LV
-            app.resetMapToStates(); // tira municípios/estados se estiverem visíveis
-            await app.showLVLayer();
         } else {
-            app.hideLVLayer();
+            app.removeZonasLayer(); // +++ ZONAS +++
             app.resetMapToStates();
         }
     },
     getFeatureId: (feature, scope) => { const p = feature.properties; if (scope === 'municipios') return String(p.CD_MUN || p.id || p.geocodigo || ''); return String(p.CD_UF || (STATES.find(x => x.sigla === p.sigla)||{}).id || p.id || ''); },
 
     loadBrazilLayer: async () => { if(app.layers.brazil) { if(!app.map.hasLayer(app.layers.brazil)) app.layers.brazil.addTo(app.map); app.layers.brazil.setStyle((f) => app.getStyle(f, 'estados')); return; } const res = await fetch('https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson'); app.data.brazilGeoJson = await res.json(); app.layers.brazil = L.geoJSON(app.data.brazilGeoJson, { style: (f) => app.getStyle(f, 'estados'), onEachFeature: (f, l) => { l.on('click', () => { if(app.state.view === 'states') app.loadStateCities(app.getFeatureId(f,'estados'), f.properties.NM_UF || f.properties.name); }); app.bindTooltip(l, 'estados'); } }).addTo(app.map); },
-    loadAllMunicipalities: async () => { const loader = document.getElementById('loader'); loader.classList.remove('hidden'); if(app.layers.brazil && app.map.hasLayer(app.layers.brazil)) app.map.removeLayer(app.layers.brazil); if(app.layers.cities) app.map.removeLayer(app.layers.cities); app.layers.cities = null; if(!app.data.geoJson) { const r = await fetch("https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json"); app.data.geoJson = await r.json(); } app.layers.cities = L.geoJSON(app.data.geoJson, { style: (f) => app.getStyle(f, 'municipios'), onEachFeature: (f, l) => { l.on('click', (e) => { L.DomEvent.stopPropagation(e); app.selectRegion(app.getFeatureId(f,'municipios'), f.properties.NM_MUN||f.properties.name); }); app.bindTooltip(l, 'municipios'); } }).addTo(app.map); if (app.layers.cities.getBounds().isValid()) app.map.fitBounds(app.layers.cities.getBounds()); loader.classList.add('hidden'); },
-    loadStateCities: async (ufId, ufName) => { if(app.state.view === 'all_cities') return; const loader = document.getElementById('loader'); loader.classList.remove('hidden'); document.getElementById('loaderMsg').innerText = `Carregando ${ufName}...`; if(app.layers.cities) { app.map.removeLayer(app.layers.cities); app.layers.cities = null; } if(app.layers.brazil) app.map.removeLayer(app.layers.brazil); if(!app.data.geoJson) { const r = await fetch("https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json"); app.data.geoJson = await r.json(); } const feats = app.data.geoJson.features.filter(f => app.getFeatureId(f, 'municipios').startsWith(ufId)); app.layers.cities = L.geoJSON({ type:"FeatureCollection", features:feats }, { style: (f) => app.getStyle(f, 'municipios'), onEachFeature: (f, l) => { l.on('click', (e) => { L.DomEvent.stopPropagation(e); app.selectRegion(app.getFeatureId(f,'municipios'), f.properties.NM_MUN||f.properties.name); }); app.bindTooltip(l, 'municipios'); } }).addTo(app.map); if (app.layers.cities.getBounds().isValid()) app.map.fitBounds(app.layers.cities.getBounds()); app.selectRegion(ufId, ufName); loader.classList.add('hidden'); },
-    resetMapToStates: () => { if(app.layers.cities) { app.map.removeLayer(app.layers.cities); app.layers.cities = null; } if(app.layers.brazil) { if(!app.map.hasLayer(app.layers.brazil)) app.layers.brazil.addTo(app.map); app.layers.brazil.setStyle((f) => app.getStyle(f, 'estados')); } else app.loadBrazilLayer(); app.map.setView([-15, -50], 4); app.resetSelection(); },
+    loadAllMunicipalities: async () => { const loader = document.getElementById('loader'); loader.classList.remove('hidden'); if(app.layers.brazil && app.map.hasLayer(app.layers.brazil)) app.map.removeLayer(app.layers.brazil); if(app.layers.cities) app.map.removeLayer(app.layers.cities); app.layers.cities = null; app.removeZonasLayer(); // +++ ZONAS +++
+        if(!app.data.geoJson) { const r = await fetch("https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json"); app.data.geoJson = await r.json(); } app.layers.cities = L.geoJSON(app.data.geoJson, { style: (f) => app.getStyle(f, 'municipios'), onEachFeature: (f, l) => { l.on('click', (e) => { L.DomEvent.stopPropagation(e); app.selectRegion(app.getFeatureId(f,'municipios'), f.properties.NM_MUN||f.properties.name); }); app.bindTooltip(l, 'municipios'); } }).addTo(app.map); if (app.layers.cities.getBounds().isValid()) app.map.fitBounds(app.layers.cities.getBounds()); loader.classList.add('hidden'); },
+    loadStateCities: async (ufId, ufName) => { if(app.state.view === 'all_cities') return; const loader = document.getElementById('loader'); loader.classList.remove('hidden'); document.getElementById('loaderMsg').innerText = `Carregando ${ufName}...`; if(app.layers.cities) { app.map.removeLayer(app.layers.cities); app.layers.cities = null; } if(app.layers.brazil) app.map.removeLayer(app.layers.brazil); app.removeZonasLayer(); // +++ ZONAS +++
+        if(!app.data.geoJson) { const r = await fetch("https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json"); app.data.geoJson = await r.json(); } const feats = app.data.geoJson.features.filter(f => app.getFeatureId(f, 'municipios').startsWith(ufId)); app.layers.cities = L.geoJSON({ type:"FeatureCollection", features:feats }, { style: (f) => app.getStyle(f, 'municipios'), onEachFeature: (f, l) => { l.on('click', (e) => { L.DomEvent.stopPropagation(e); app.selectRegion(app.getFeatureId(f,'municipios'), f.properties.NM_MUN||f.properties.name); }); app.bindTooltip(l, 'municipios'); } }).addTo(app.map); if (app.layers.cities.getBounds().isValid()) app.map.fitBounds(app.layers.cities.getBounds()); app.selectRegion(ufId, ufName); loader.classList.add('hidden'); },
+    resetMapToStates: () => { if(app.layers.cities) { app.map.removeLayer(app.layers.cities); app.layers.cities = null; } app.removeZonasLayer(); // +++ ZONAS +++
+        if(app.layers.brazil) { if(!app.map.hasLayer(app.layers.brazil)) app.layers.brazil.addTo(app.map); app.layers.brazil.setStyle((f) => app.getStyle(f, 'estados')); } else app.loadBrazilLayer(); app.map.setView([-15, -50], 4); app.resetSelection(); },
     
     getStyle: (feature, scope) => { const id = app.getFeatureId(feature, scope); return { fillColor: app.getColorForId(id, scope).fill, weight: scope === 'estados' ? 0.8 : 0.5, color: '#ffffff', opacity: 1, fillOpacity: 1 }; },
     getColorForId: (id, scope) => { if (!id) return { fill: '#333' }; const dataset = app.state.turn === 1 ? app.data.round1 : app.data.round2; if(!dataset) return { fill: '#333' }; const votes = (id.length === 2 && scope === 'estados') ? dataset.estados[id] : dataset.municipios[id]; if(!votes) return { fill: '#333' }; let max = -1, winner = null, total = 0; for(let c in votes) { total += votes[c]; if(votes[c] > max) { max = votes[c]; winner = c; } } const cand = CONFIG.candidates.find(c => c.id === winner); return { fill: app.getDiscreteColor(cand ? cand.color : '#555', total > 0 ? (max/total)*100 : 0) }; },
@@ -934,6 +964,20 @@ const app = {
     selectRegion: (id, name) => {
         app.state.selectedId = id; app.state.selectedName = name;
         document.getElementById('btnBack').style.display = 'flex';
+
+        // +++ ZONAS: Se for município (7 dígitos) e existirem zonas, exibe camada de zonas +++
+        if (id.length === 7 && app.data.zonasGeo && app.data.zonasGeo.features.length > 0) {
+            const zonasNoMunicipio = app.data.zonasGeo.features.filter(f => {
+                const mun = f.properties.CD_MUN_I || f.properties.CD_MUN_T;
+                return mun == id;
+            });
+            if (zonasNoMunicipio.length > 0) {
+                app.showZonasForMunicipio(zonasNoMunicipio, id, name);
+                if (window.innerWidth <= 768) app.mobileNav('results');
+                return;
+            }
+        }
+
         if(window.innerWidth <= 768) app.mobileNav('results'); // Mobile: Abre resultados
         app.updateSidebarRight();
     },
@@ -941,7 +985,7 @@ const app = {
         app.state.selectedId = null; app.state.selectedName = "Brasil";
         document.getElementById('btnBack').style.display = 'none';
         if (app.layers.cities) { app.map.removeLayer(app.layers.cities); app.layers.cities = null; }
-        app.hideLVLayer(); // Remove pontos LV se estiverem visíveis
+        app.removeZonasLayer(); // +++ ZONAS +++
         if (app.layers.brazil) { if (!app.map.hasLayer(app.layers.brazil)) app.layers.brazil.addTo(app.map); app.layers.brazil.setStyle((f) => app.getStyle(f, 'estados')); } else app.loadBrazilLayer();
         app.map.setView([-15, -50], 4);
         document.getElementById('viewModeSelect').value = 'states'; app.state.view = 'states';
@@ -1107,112 +1151,109 @@ const app = {
     },
     getVotes22: (obj, key) => { let sum = 0; for(let k in obj) { if(k.toUpperCase().includes(key)) sum += obj[k]; } return sum; },
 
-    // +++ NOVOS MÉTODOS PARA LOCAIS DE VOTAÇÃO +++
-    loadLVData: async function() {
-        if (app.data.lvData) return app.data.lvData; // já carregado
-        try {
-            const res = await fetch('data/locais_votacao_2022.geojson');
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const geojson = await res.json();
-            app.data.lvData = geojson;
-            console.log(`LV carregado: ${geojson.features.length} locais.`);
-            return geojson;
-        } catch (e) {
-            console.error("Erro ao carregar locais de votação:", e);
-            alert("Não foi possível carregar o arquivo data/locais_votacao_2022.geojson. Verifique se o arquivo existe.");
-            throw e;
-        }
-    },
+    // +++ ZONAS: Novas funções +++
+    showZonasForMunicipio: function(features, munId, munName) {
+        if(app.layers.cities) app.map.removeLayer(app.layers.cities);
+        app.removeZonasLayer();
+        if(!app.data.zonasData || Object.keys(app.data.zonasData).length === 0) return;
 
-    showLVLayer: async function() {
-        try {
-            const geojson = await app.loadLVData();
-            // remove outras camadas
-            if (app.layers.brazil && app.map.hasLayer(app.layers.brazil)) app.map.removeLayer(app.layers.brazil);
-            if (app.layers.cities) app.map.removeLayer(app.layers.cities);
-            if (app.layers.lv) app.map.removeLayer(app.layers.lv);
-
-            const points = [];
-            geojson.features.forEach(f => {
-                const props = f.properties;
-                // Encontra o vencedor para presidente
-                let maxVotes = -1, winner = null, totalPresidenteVotes = 0;
-                for (let key in props) {
-                    if (key.startsWith('Presidente_')) {
-                        const votos = parseInt(props[key]) || 0;
-                        totalPresidenteVotes += votos;
-                        if (votos > maxVotes) { maxVotes = votos; winner = key.replace('Presidente_', ''); }
+        const dados = app.data.zonasData;
+        const geojson = { type: 'FeatureCollection', features: features };
+        app.layers.zonas = L.geoJSON(geojson, {
+            style: (f) => {
+                const zeCod = f.properties.ZE_COD;
+                const zData = dados[zeCod];
+                if (!zData) return { fillColor: '#333', weight: 0.5, color: '#aaa', fillOpacity: 1 };
+                // Calcula vencedor para presidente (colunas PS22_)
+                let max = -1, winnerCand = null, total = 0;
+                for (let col in zData) {
+                    if (col.startsWith('PS22_')) {
+                        const sufixo = col.substring(5); // ex: "122"
+                        const num = sufixo.substring(1); // remove o primeiro dígito -> "22"
+                        const candId = NUM_TO_CANDIDATE[num];
+                        if (!candId) continue;
+                        const votos = parseInt(zData[col]) || 0;
+                        total += votos;
+                        if (votos > max) { max = votos; winnerCand = candId; }
                     }
                 }
-                if (!winner) return;
-                const cand = CONFIG.candidates.find(c => c.name.toUpperCase() === winner.toUpperCase()) ||
-                             CONFIG.candidates.find(c => winner.toUpperCase().includes(c.name.toUpperCase()));
-                const color = cand ? cand.color : '#888';
-                const pct = totalPresidenteVotes > 0 ? (maxVotes / totalPresidenteVotes) * 100 : 0;
-                const fillColor = app.getDiscreteColor(color, pct);
-
-                let popupHtml = `<div style="font-family:Inter,sans-serif; font-size:0.85rem;">
-                    <b>${props.nm_locvot || props.NM_LOCVOT || 'Local ' + props.NR_LOCAL_V}</b><br>`;
-                if(props.nm_localidade || props.NM_MUNICIPIO) popupHtml += `<span style="color:#aaa;">${props.nm_localidade || props.NM_MUNICIPIO}</span><br>`;
-                popupHtml += `<hr style="margin:5px 0; border-color:#444;"><b>Presidente:</b><br>`;
-                for (let key in props) {
-                    if (key.startsWith('Presidente_')) {
-                        let name = key.replace('Presidente_', '');
-                        let votos = parseInt(props[key]) || 0;
-                        popupHtml += `${name}: ${votos.toLocaleString()}<br>`;
-                    }
-                }
-                ['Governador', 'Senador'].forEach(cargo => {
-                    let hasCargo = false;
-                    for (let key in props) {
-                        if (key.startsWith(cargo + '_')) {
-                            if (!hasCargo) { popupHtml += `<hr style="margin:5px 0; border-color:#444;"><b>${cargo}:</b><br>`; hasCargo = true; }
-                            let name = key.replace(cargo + '_', '');
-                            let votos = parseInt(props[key]) || 0;
-                            popupHtml += `${name}: ${votos.toLocaleString()}<br>`;
+                const pct = total > 0 ? (max / total) * 100 : 0;
+                const cand = CONFIG.candidates.find(c => c.id === winnerCand);
+                const fill = app.getDiscreteColor(cand ? cand.color : '#555', pct);
+                return { fillColor: fill, weight: 0.5, color: '#fff', fillOpacity: 1 };
+            },
+            onEachFeature: (f, l) => {
+                const zeCod = f.properties.ZE_COD;
+                const zData = dados[zeCod];
+                let popup = `<b>Zona ${f.properties.ZE_NOME || zeCod}</b><br>`;
+                if (zData) {
+                    popup += '<hr><b>Presidente 2022:</b><br>';
+                    for (let col in zData) {
+                        if (col.startsWith('PS22_')) {
+                            const sufixo = col.substring(5);
+                            const num = sufixo.substring(1);
+                            const candId = NUM_TO_CANDIDATE[num];
+                            const nome = candId ? (CONFIG.candidates.find(c=>c.id===candId)?.name || num) : num;
+                            const votos = parseInt(zData[col]) || 0;
+                            popup += `${nome}: ${votos.toLocaleString()}<br>`;
                         }
                     }
-                });
-                popupHtml += '</div>';
-
-                const lat = parseFloat(props.lat || props.latitude || props.Y || 0);
-                const lon = parseFloat(props.long || props.longitude || props.X || 0);
-                if (isNaN(lat) || isNaN(lon)) return;
-                points.push(L.circleMarker([lat, lon], {
-                    radius: 6,
-                    fillColor: fillColor,
-                    color: '#888',
-                    weight: 0.8,
-                    fillOpacity: 0.9
-                }).bindPopup(popupHtml, { maxWidth: 250 }));
-            });
-
-            if (points.length > 0) {
-                app.layers.lv = L.layerGroup(points).addTo(app.map);
-                const group = L.featureGroup(points);
-                if (group.getBounds().isValid()) app.map.fitBounds(group.getBounds().pad(0.2));
-                app.state.view = 'lv';
-                app.resetSelection();
-                document.getElementById('regionName').innerText = "Locais de Votação";
-                document.getElementById('regionType').innerText = "2022";
-                document.getElementById('resultsContainer').innerHTML = '';
-            } else {
-                alert("Nenhum ponto com coordenadas válidas encontrado no arquivo.");
+                }
+                l.bindPopup(popup, { maxWidth: 200 });
             }
-        } catch(e) {
-            // Erro já tratado no loadLVData, mas garante que o seletor volte
-            document.getElementById('viewModeSelect').value = 'states';
-            app.handleViewChange();
+        }).addTo(app.map);
+        if (app.layers.zonas.getBounds().isValid()) app.map.fitBounds(app.layers.zonas.getBounds());
+
+        // Atualiza sidebar com agregação das zonas
+        document.getElementById('regionName').innerText = munName;
+        document.getElementById('regionType').innerText = 'Zonas Eleitorais (2022)';
+        app.updateSidebarForZonas(features, munName);
+    },
+
+    removeZonasLayer: function() {
+        if (app.layers.zonas && app.map.hasLayer(app.layers.zonas)) {
+            app.map.removeLayer(app.layers.zonas);
+            app.layers.zonas = null;
         }
     },
 
-    hideLVLayer: function() {
-        if (app.layers.lv && app.map.hasLayer(app.layers.lv)) {
-            app.map.removeLayer(app.layers.lv);
-            app.layers.lv = null;
-        }
+    updateSidebarForZonas: function(features, munName) {
+        const list = document.getElementById('resultsContainer');
+        list.innerHTML = '';
+        const dados = app.data.zonasData;
+        let totalMunicipio = {};
+        features.forEach(f => {
+            const zData = dados[f.properties.ZE_COD];
+            if (!zData) return;
+            for (let col in zData) {
+                if (col.startsWith('PS22_') && zData[col] !== null) {
+                    const sufixo = col.substring(5);
+                    const num = sufixo.substring(1);
+                    const candId = NUM_TO_CANDIDATE[num];
+                    if (!candId) continue;
+                    const votos = parseInt(zData[col]) || 0;
+                    totalMunicipio[candId] = (totalMunicipio[candId] || 0) + votos;
+                }
+            }
+        });
+        const sorted = Object.entries(totalMunicipio).sort((a,b) => b[1]-a[1]);
+        const total = sorted.reduce((a,b) => a+b[1], 0);
+        document.getElementById('totalVotesVal').innerText = total.toLocaleString();
+        sorted.forEach(([cid, votos]) => {
+            const cand = CONFIG.candidates.find(c => c.id === cid);
+            if (!cand) return;
+            const pct = total > 0 ? (votos/total)*100 : 0;
+            const row = document.createElement('div'); row.className = 'cand-row';
+            row.innerHTML = `<div class="cand-color" style="background:${cand.color}"></div>
+                <div class="cand-info">
+                    <div class="cand-head"><span><i class="fas ${cand.icon}"></i> ${cand.name}</span><span style="color:${cand.color}">${pct.toFixed(2)}%</span></div>
+                    <div class="progress-bar"><div class="progress-fill" style="width:${pct}%; background:${cand.color}"></div></div>
+                    <div style="text-align:right; font-size:0.7rem; color:#666;">${votos.toLocaleString()} votos</div>
+                </div>`;
+            list.appendChild(row);
+        });
     }
-    // FIM NOVOS MÉTODOS
+    // +++ FIM ZONAS +++
 };
 
 document.addEventListener('DOMContentLoaded', app.init);
