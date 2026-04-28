@@ -144,9 +144,7 @@
                 <button class="btn-io" onclick="app.exportConfig()"><i class="fas fa-download"></i> Salvar</button>
                 <button class="btn-io" onclick="document.getElementById('fileInput').click()"><i class="fas fa-upload"></i> Abrir</button>
                 <button class="btn-io" style="background: var(--accent-blue);" onclick="presentation.open()"><i class="fas fa-tv"></i> Apresentar</button>
-                <button class="btn-io" style="background: #8b5cf6;" onclick="document.getElementById('fileZonas').click()"><i class="fas fa-layer-group"></i> Add Zonas</button>
                 <input type="file" id="fileInput" style="display:none" onchange="app.importConfig(this)" accept=".json">
-                <input type="file" id="fileZonas" style="display:none" onchange="app.importZonas(this)" accept=".geojson,.json">
             </div>
             <div class="mode-tabs">
                 <div class="mode-tab active" id="tab1" onclick="app.setTurn(1)">1º TURNO</div>
@@ -437,7 +435,7 @@ const app = {
         app.map = L.map('map', { center: [-15, -50], zoom: 4, zoomControl: false, preferCanvas: true, background: '#1a1a1a', renderer: L.canvas({ tolerance: 0, padding: 0.5 }) });
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { opacity: 0.4 }).addTo(app.map);
         if(typeof DEFAULT_SCENARIO !== 'undefined') app.loadScenario(DEFAULT_SCENARIO);
-        else { CONFIG.candidates.forEach(c => { app.state.t1_polls[c.id] = c.val; app.state.active_candidates[c.id] = c.active; }); ['LULA','JAIR','CIRO','SIMONE'].forEach(src => { app.state.t1_matrix[src] = {}; CONFIG.candidates.forEach(dest => app.state.t1_matrix[src][dest.id] = 0); }); }
+        else { CONFIG.candidates.forEach(c => { app.state.t1_polls[c.id] = c.val; app.state.active_candidates[c.id] = c.active; });['LULA','JAIR','CIRO','SIMONE'].forEach(src => { app.state.t1_matrix[src] = {}; CONFIG.candidates.forEach(dest => app.state.t1_matrix[src][dest.id] = 0); }); }
         app.renderLegend(); app.renderUI(); await app.loadData();
     },
 
@@ -457,8 +455,16 @@ const app = {
         try { 
             const res = await fetch('data/2022_president.json'); const json = await res.json(); 
             app.data.base22 = json['1']; app.data.names = json['1'].meta_nomes || {}; 
-            // Tenta carregar zonas localmente se existirem
-            try { const zRes = await fetch('data/zonas.geojson'); if (zRes.ok) { app.data.zonasGeoJson = await zRes.json(); app.processZonasGeoJson(); } } catch(ez) {}
+            // Tenta carregar zonas locais automaticamente do repositório
+            try { 
+                const zRes = await fetch('data/mapazn.geojson'); 
+                if (zRes.ok) { 
+                    app.data.zonasGeoJson = await zRes.json(); 
+                    app.processZonasGeoJson(); 
+                } 
+            } catch(ez) {
+                console.warn("Zonas eleitorais (data/mapazn.geojson) não encontradas ou erro ao carregar.");
+            }
             await app.loadBrazilLayer(); app.runSimulation(); 
         } catch(e) { console.error(e); alert("Erro dados. Verifique data/2022_president.json"); } finally { loader.classList.add('hidden'); }
     },
@@ -466,18 +472,6 @@ const app = {
     exportConfig: () => { const config = { t1_polls: app.state.t1_polls, t1_matrix: app.state.t1_matrix, t1_matrix_state: app.state.t1_matrix_state, t1_mults: app.state.t1_mults, t2_migr: app.state.t2_migr, t2_mults: app.state.t2_mults, active_candidates: app.state.active_candidates, t2_mode: app.state.t2_mode }; saveAs(new Blob([JSON.stringify(config, null, 2)], {type: "application/json;charset=utf-8"}), "eleicoes_config.json"); },
     importConfig: (input) => { const file = input.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = (e) => { try { app.loadScenario(JSON.parse(e.target.result)); app.renderUI(); app.runSimulation(); alert("Configuração carregada com sucesso!"); } catch(err) { alert("Erro JSON: " + err.message); } }; reader.readAsText(file); input.value = ''; },
     
-    // Função para importar arquivo de zonas eleitorais
-    importZonas: (input) => {
-        const file = input.files[0]; if(!file) return;
-        const loader = document.getElementById('loader'); loader.classList.remove('hidden'); document.getElementById('loaderMsg').innerText = "Processando Zonas...";
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try { app.data.zonasGeoJson = JSON.parse(e.target.result); app.processZonasGeoJson(); app.runSimulation(); alert("Zonas eleitorais carregadas com sucesso! Explore os municípios para visualizar."); } 
-            catch(err) { alert("Erro ao ler Zonas: " + err.message); }
-            loader.classList.add('hidden');
-        };
-        reader.readAsText(file); input.value = '';
-    },
     // Transforma os dados do GeoJSON de zonas em formato de matriz pra simulação
     processZonasGeoJson: () => {
         app.data.base22.zonas = {};
@@ -543,7 +537,7 @@ const app = {
     updateT1Poll: (id, val) => { app.state.t1_polls[id] = parseInt(val); document.getElementById(`val_t1_${id}`).innerText = val + "%"; app.updateTotalT1Label(); },
     updateTotalT1Label: () => { const tot = CONFIG.candidates.filter(c => app.state.active_candidates[c.id]!==false).reduce((a,c) => a + (app.state.t1_polls[c.id]||0), 0); const el = document.getElementById('totalSimVal'); el.innerText = tot + "%"; el.style.color = tot===100?'#4ade80':'#facc15'; },
 
-    updateT2UI: () => { const c1 = document.getElementById('candFinal1'), c2 = document.getElementById('candFinal2'); if(!c1.value || !c2.value) return; if (c1.value === c2.value) { const active = CONFIG.candidates.filter(c => app.state.active_candidates[c.id]!==false); if(active.length > 1) c2.value = active.find(c => c.id !== c1.value).id; } app.state.t2_finalists = [c1.value, c2.value]; const slidersDiv = document.getElementById('slidersT2'); slidersDiv.innerHTML = '';[CONFIG.candidates.find(c=>c.id===c1.value), CONFIG.candidates.find(c=>c.id===c2.value)].forEach(cand => { if(!cand) return; const current = app.state.t2_polls[cand.id] !== undefined ? app.state.t2_polls[cand.id] : 50; const div = document.createElement('div'); div.className = `slider-box ${app.state.t2_mode === 'organic' ? 'inactive' : ''}`; div.innerHTML = `<div class="slider-header"><span style="color:${cand.color}; font-weight:700"><i class="fas ${cand.icon}"></i> ${cand.name}</span><span id="val_t2_${cand.id}">${current}%</span></div><input type="range" min="0" max="100" value="${current}" ${app.state.t2_mode === 'organic' ? 'disabled' : ''} oninput="app.state.t2_polls['${cand.id}'] = parseInt(this.value); document.getElementById('val_t2_${cand.id}').innerText=this.value+'%'; app.checkT2Total();">`; slidersDiv.appendChild(div); }); app.checkT2Total(); },
+    updateT2UI: () => { const c1 = document.getElementById('candFinal1'), c2 = document.getElementById('candFinal2'); if(!c1.value || !c2.value) return; if (c1.value === c2.value) { const active = CONFIG.candidates.filter(c => app.state.active_candidates[c.id]!==false); if(active.length > 1) c2.value = active.find(c => c.id !== c1.value).id; } app.state.t2_finalists =[c1.value, c2.value]; const slidersDiv = document.getElementById('slidersT2'); slidersDiv.innerHTML = '';[CONFIG.candidates.find(c=>c.id===c1.value), CONFIG.candidates.find(c=>c.id===c2.value)].forEach(cand => { if(!cand) return; const current = app.state.t2_polls[cand.id] !== undefined ? app.state.t2_polls[cand.id] : 50; const div = document.createElement('div'); div.className = `slider-box ${app.state.t2_mode === 'organic' ? 'inactive' : ''}`; div.innerHTML = `<div class="slider-header"><span style="color:${cand.color}; font-weight:700"><i class="fas ${cand.icon}"></i> ${cand.name}</span><span id="val_t2_${cand.id}">${current}%</span></div><input type="range" min="0" max="100" value="${current}" ${app.state.t2_mode === 'organic' ? 'disabled' : ''} oninput="app.state.t2_polls['${cand.id}'] = parseInt(this.value); document.getElementById('val_t2_${cand.id}').innerText=this.value+'%'; app.checkT2Total();">`; slidersDiv.appendChild(div); }); app.checkT2Total(); },
     checkT2Total: () => { const[id1, id2] = app.state.t2_finalists; const tot = (app.state.t2_polls[id1]||0) + (app.state.t2_polls[id2]||0); const el = document.getElementById('totalSimValT2'); el.innerText = tot + "%"; el.style.color = tot===100?'#4ade80':'#facc15'; },
     
     selectRegion: (id, name, scope) => { app.state.selectedId = id; app.state.selectedName = name; app.state.selectedScope = scope; document.getElementById('btnBack').style.display = 'flex'; if(window.innerWidth <= 768) app.mobileNav('results'); app.updateSidebarRight(); },
@@ -618,8 +612,7 @@ const app = {
             for(let zId in app.data.base22.zonas) {
                 const votes22 = app.data.base22.zonas[zId], ufId = String(zId).substring(0,2), zVotes = {};
                 activeIds.forEach(candId => {
-                    let sum = 0;
-                    ['LULA','JAIR','CIRO','SIMONE'].forEach(srcKey => {
+                    let sum = 0;['LULA','JAIR','CIRO','SIMONE'].forEach(srcKey => {
                         const rawVal = app.getMatrixValue(ufId, srcKey, candId);
                         let totalActiveWeight = 0; activeIds.forEach(cid => { totalActiveWeight += app.getMatrixValue(ufId, srcKey, cid); });
                         let finalFactor = 0; if(totalActiveWeight > 0) finalFactor = rawVal / totalActiveWeight;
@@ -648,7 +641,7 @@ const app = {
         }
         if(!isOrganic) {
             const totalSlider = (app.state.t2_polls[id1]||0) + (app.state.t2_polls[id2]||0); const targetPcts = { [id1]: (app.state.t2_polls[id1]||0)/(totalSlider||1),[id2]: (app.state.t2_polls[id2]||0)/(totalSlider||1) };
-            const corrections = {}; [id1, id2].forEach(id => { const currPct = tempNacional[id] / (grandTotal||1); corrections[id] = (app.state.t2_polls[id]<=0) ? 0 : (currPct>0 ? targetPcts[id]/currPct : 1); });
+            const corrections = {};[id1, id2].forEach(id => { const currPct = tempNacional[id] / (grandTotal||1); corrections[id] = (app.state.t2_polls[id]<=0) ? 0 : (currPct>0 ? targetPcts[id]/currPct : 1); });
             res.nacional = {};
             for(let ibge in res.municipios) { const ufId = ibge.substring(0,2); if(!res.estados[ufId]) res.estados[ufId] = {};[id1, id2].forEach(id => { let v = Math.round(res.municipios[ibge][id] * corrections[id]); res.municipios[ibge][id] = v; res.estados[ufId][id] = (res.estados[ufId][id]||0) + v; res.nacional[id] = (res.nacional[id]||0) + v; }); }
         } else {
@@ -664,11 +657,11 @@ const app = {
                 const v1 = r1.zonas[zId], ufId = String(zId).substring(0,2); let vA = 0, vB = 0;
                 for(let cid in v1) { const votos = v1[cid]; if(cid === id1) vA += votos; else if(cid === id2) vB += votos; else { let ratio = app.state.t2_migr[cid] !== undefined ? app.state.t2_migr[cid] : 0.5; vA += votos * (1 - ratio); vB += votos * ratio; } }
                 if(app.state.t2_mults[ufId]) { if(app.state.t2_mults[ufId][id1]) vA *= app.state.t2_mults[ufId][id1]; if(app.state.t2_mults[ufId][id2]) vB *= app.state.t2_mults[ufId][id2]; }
-                vA = Math.round(vA); vB = Math.round(vB); res.zonas[zId] = { [id1]: vA, [id2]: vB };
+                vA = Math.round(vA); vB = Math.round(vB); res.zonas[zId] = { [id1]: vA,[id2]: vB };
             }
             if(!isOrganic) {
                 const totalSlider = (app.state.t2_polls[id1]||0) + (app.state.t2_polls[id2]||0); const targetPcts = { [id1]: (app.state.t2_polls[id1]||0)/(totalSlider||1), [id2]: (app.state.t2_polls[id2]||0)/(totalSlider||1) };
-                const corrections = {}; [id1, id2].forEach(id => { const currPct = tempNacional[id] / (grandTotal||1); corrections[id] = (app.state.t2_polls[id]<=0) ? 0 : (currPct>0 ? targetPcts[id]/currPct : 1); });
+                const corrections = {};[id1, id2].forEach(id => { const currPct = tempNacional[id] / (grandTotal||1); corrections[id] = (app.state.t2_polls[id]<=0) ? 0 : (currPct>0 ? targetPcts[id]/currPct : 1); });
                 for(let zId in res.zonas) { [id1, id2].forEach(id => { res.zonas[zId][id] = Math.round(res.zonas[zId][id] * corrections[id]); }); }
             }
         }
