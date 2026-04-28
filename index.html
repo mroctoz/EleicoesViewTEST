@@ -159,9 +159,18 @@
                 <select id="viewModeSelect" onchange="app.handleViewChange()">
                     <option value="states">Por Estados (Brasil)</option>
                     <option value="all_cities">Brasil Municipal</option>
+		    <option value="lv">Locais de Votação (2022)</option>
                 </select>
             </div>
         </div>
+
+	<div style="padding: 5px 15px;">
+    <button class="btn-io" onclick="document.getElementById('fileInputLV').click()">
+        <i class="fas fa-map-pin"></i> Carregar LV (.geojson)
+    </button>
+    <input type="file" id="fileInputLV" style="display:none" accept=".geojson,.json" onchange="app.loadLVFile(this)">
+    <div id="lvStatus" style="font-size:0.65rem; color:#888; margin-top:3px;">Nenhum arquivo carregado</div>
+</div>
         
         <div class="controls" id="controlsT1">
             <div style="text-align:center;">
@@ -798,8 +807,8 @@ downloadSlide: async () => {
 
 const app = {
     map: null,
-    layers: { brazil: null, cities: null },
-    data: { base22: null, round1: null, round2: null, geoJson: null, names: {}, brazilGeoJson: null },
+    layers: { brazil: null, cities: null, lv: null },
+    data: { base22: null, round1: null, round2: null, geoJson: null, names: {}, brazilGeoJson: null, lvData: null },
     state: { turn: 1, view: 'states', selectedId: null, selectedName: "Brasil", t1_polls: {}, t1_matrix: {}, t1_matrix_state: {}, t1_mults: {}, t2_finalists:[], t2_polls: {}, t2_migr: {}, t2_mults: {}, active_candidates: {}, t2_mode: 'manual' },
 
     init: async () => {
@@ -863,7 +872,20 @@ const app = {
         app.updateT2UI(); app.runSimulation();
     },
 
-    handleViewChange: async () => { app.state.view = document.getElementById('viewModeSelect').value; if(app.state.view === 'all_cities') await app.loadAllMunicipalities(); else app.resetMapToStates(); },
+    handleViewChange: async () => { 
+    app.state.view = document.getElementById('viewModeSelect').value; 
+    if (app.state.view === 'all_cities') {
+        app.hideLVLayer();
+        await app.loadAllMunicipalities();
+    } else if (app.state.view === 'lv') {
+        app.hideLVLayer(); // remove qualquer camada anterior de LV
+        app.resetMapToStates(); // tira municípios/estados se estiverem visíveis
+        app.showLVLayer();
+    } else {
+        app.hideLVLayer();
+        app.resetMapToStates();
+    }
+},
     getFeatureId: (feature, scope) => { const p = feature.properties; if (scope === 'municipios') return String(p.CD_MUN || p.id || p.geocodigo || ''); return String(p.CD_UF || (STATES.find(x => x.sigla === p.sigla)||{}).id || p.id || ''); },
 
     loadBrazilLayer: async () => { if(app.layers.brazil) { if(!app.map.hasLayer(app.layers.brazil)) app.layers.brazil.addTo(app.map); app.layers.brazil.setStyle((f) => app.getStyle(f, 'estados')); return; } const res = await fetch('https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson'); app.data.brazilGeoJson = await res.json(); app.layers.brazil = L.geoJSON(app.data.brazilGeoJson, { style: (f) => app.getStyle(f, 'estados'), onEachFeature: (f, l) => { l.on('click', () => { if(app.state.view === 'states') app.loadStateCities(app.getFeatureId(f,'estados'), f.properties.NM_UF || f.properties.name); }); app.bindTooltip(l, 'estados'); } }).addTo(app.map); },
@@ -927,6 +949,7 @@ const app = {
         app.state.selectedId = null; app.state.selectedName = "Brasil";
         document.getElementById('btnBack').style.display = 'none';
         if (app.layers.cities) { app.map.removeLayer(app.layers.cities); app.layers.cities = null; }
+	app.hideLVLayer();
         if (app.layers.brazil) { if (!app.map.hasLayer(app.layers.brazil)) app.layers.brazil.addTo(app.map); app.layers.brazil.setStyle((f) => app.getStyle(f, 'estados')); } else app.loadBrazilLayer();
         app.map.setView([-15, -50], 4);
         document.getElementById('viewModeSelect').value = 'states'; app.state.view = 'states';
@@ -1092,6 +1115,127 @@ const app = {
     },
     getVotes22: (obj, key) => { let sum = 0; for(let k in obj) { if(k.toUpperCase().includes(key)) sum += obj[k]; } return sum; }
 };
+
+loadLVFile: function(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const geojson = JSON.parse(e.target.result);
+            app.data.lvData = geojson;
+            document.getElementById('lvStatus').innerText = `Carregado: ${file.name} (${geojson.features.length} pontos)`;
+            if (app.state.view === 'lv') {
+                app.showLVLayer();
+            }
+            alert(`LV carregado com sucesso! ${geojson.features.length} pontos.`);
+        } catch (err) {
+            alert("Erro ao ler o arquivo GeoJSON: " + err.message);
+        }
+    };
+    reader.readAsText(file);
+    input.value = '';
+},
+
+showLVLayer: function() {
+    if (!app.data.lvData) {
+        alert("Nenhum arquivo de locais de votação carregado.");
+        document.getElementById('viewModeSelect').value = 'states';
+        app.handleViewChange();
+        return;
+    }
+    // Remove outras camadas
+    if (app.layers.brazil && app.map.hasLayer(app.layers.brazil)) app.map.removeLayer(app.layers.brazil);
+    if (app.layers.cities) app.map.removeLayer(app.layers.cities);
+    if (app.layers.lv) app.map.removeLayer(app.layers.lv);
+    
+    // Cria camada de pontos
+    const points = [];
+    app.data.lvData.features.forEach(f => {
+        const props = f.properties;
+        // Encontra o vencedor local (Presidente, pois é a única comum a todos)
+        let maxVotes = -1;
+        let winner = null;
+        let totalPresidenteVotes = 0;
+        for (let key in props) {
+            if (key.startsWith('Presidente_')) {
+                const votos = parseInt(props[key]) || 0;
+                totalPresidenteVotes += votos;
+                if (votos > maxVotes) {
+                    maxVotes = votos;
+                    winner = key.replace('Presidente_', '');
+                }
+            }
+        }
+        if (!winner) return; // sem dados de presidente
+        const cand = CONFIG.candidates.find(c => c.name.toUpperCase() === winner.toUpperCase()) ||
+                     CONFIG.candidates.find(c => winner.includes(c.name.toUpperCase()));
+        const color = cand ? cand.color : '#888';
+        const pct = totalPresidenteVotes > 0 ? (maxVotes / totalPresidenteVotes) * 100 : 0;
+        const fillColor = app.getDiscreteColor(color, pct);
+        
+        // Cria conteúdo do popup
+        let popupHtml = `<div style="font-family:Inter,sans-serif; font-size:0.85rem;">
+            <b>${props.nm_locvot || props.NM_LOCVOT || 'Local ' + props.NR_LOCAL_V}</b><br>
+            <span style="color:#aaa;">${props.nm_localidade || props.NM_MUNICIPIO || ''}</span><br>
+            <hr style="margin:5px 0; border-color:#444;">`;
+        // Resultados de Presidente
+        popupHtml += '<b>Presidente:</b><br>';
+        for (let key in props) {
+            if (key.startsWith('Presidente_')) {
+                let name = key.replace('Presidente_', '');
+                let votos = parseInt(props[key]) || 0;
+                popupHtml += `${name}: ${votos.toLocaleString()}<br>`;
+            }
+        }
+        popupHtml += '<hr style="margin:5px 0; border-color:#444;">';
+        // Governador e Senador (se existirem)
+        ['Governador', 'Senador'].forEach(cargo => {
+            let hasCargo = false;
+            for (let key in props) {
+                if (key.startsWith(cargo + '_')) {
+                    if (!hasCargo) { popupHtml += `<b>${cargo}:</b><br>`; hasCargo = true; }
+                    let name = key.replace(cargo + '_', '');
+                    let votos = parseInt(props[key]) || 0;
+                    popupHtml += `${name}: ${votos.toLocaleString()}<br>`;
+                }
+            }
+        });
+        popupHtml += '</div>';
+        
+        const lat = parseFloat(props.lat || props.latitude || props.Y || 0);
+        const lon = parseFloat(props.long || props.longitude || props.X || 0);
+        if (isNaN(lat) || isNaN(lon)) return;
+        
+        points.push(L.circleMarker([lat, lon], {
+            radius: 6,
+            fillColor: fillColor,
+            color: '#888',
+            weight: 0.8,
+            fillOpacity: 0.9
+        }).bindPopup(popupHtml, { maxWidth: 250 }));
+    });
+    
+    if (points.length > 0) {
+        app.layers.lv = L.layerGroup(points).addTo(app.map);
+        const group = L.featureGroup(points);
+        if (group.getBounds().isValid()) app.map.fitBounds(group.getBounds().pad(0.2));
+        app.state.view = 'lv';
+        app.resetSelection(); // limpa seleção atual
+        document.getElementById('regionName').innerText = "Locais de Votação";
+        document.getElementById('regionType').innerText = "2022";
+        document.getElementById('resultsContainer').innerHTML = '';
+    } else {
+        alert("Nenhum ponto com coordenadas válidas encontrado.");
+    }
+},
+
+hideLVLayer: function() {
+    if (app.layers.lv && app.map.hasLayer(app.layers.lv)) {
+        app.map.removeLayer(app.layers.lv);
+        app.layers.lv = null;
+    }
+},
 
 document.addEventListener('DOMContentLoaded', app.init);
 
