@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Eleições View - 2026 Final c/ Zonas Eleitorais</title>
+<title>Eleições View - 2026 Final (Estilo Apuração TV)</title>
 
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -18,100 +18,45 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <link rel="stylesheet" href="style.css">
-
-<style id="presentation-styles">
-    /* ESTILOS DA APRESENTAÇÃO (BROADCAST VIEW) */
-    #presentationOverlay {
-        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-        background: radial-gradient(circle at 50% 40%, #2c3e50 0%, #0a0e14 100%);
-        z-index: 999999; display: none; flex-direction: column; color: #fff;
-        font-family: 'Inter', sans-serif; overflow: hidden;
-    }
-    #presentationOverlay::before {
-        content: ''; position: absolute; top:0; left:0; right:0; bottom:0;
-        background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.02) 2px, rgba(255,255,255,0.02) 4px);
-        pointer-events: none; opacity: 0.5;
-    }
-    #presentationOverlay.active { display: flex; }
-    
-    .pres-header { text-align: center; padding: 30px 40px; position: relative; z-index: 10; display: flex; justify-content: space-between; align-items: flex-start;}
-    .pres-header-center { position: absolute; left: 50%; transform: translateX(-50%); text-align: center; }
-    .pres-region { font-size: 1.8rem; font-weight: 300; letter-spacing: 2px; text-transform: uppercase; color: #e2e8f0; }
-    .pres-year { font-size: 4rem; font-weight: 900; line-height: 1; text-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-    .pres-turn { font-size: 1.2rem; font-weight: 400; font-style: italic; color: #a0aec0; margin-top: -5px; }
-
-    .pres-content { flex: 1; display: flex; justify-content: center; align-items: center; position: relative; z-index: 10; padding: 0 50px; }
-    
-    .pres-map-container { flex: 0 0 45%; height: 75%; display: flex; justify-content: center; align-items: center; }
-    .pres-map-container svg { width: 100%; height: 100%; filter: drop-shadow(0px 15px 25px rgba(0,0,0,0.6)); }
-
-    .pres-candidate-main { flex: 0 0 25%; display: flex; flex-direction: column; align-items: center; text-align: center; }
-    .pres-photo-wrapper { position: relative; width: 280px; height: 380px; margin-bottom: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
-    .pres-photo-wrapper::after {
-        content: ''; position: absolute; inset: 0;
-        box-shadow: inset 0 0 0 4px rgba(255,255,255,0.8); pointer-events: none;
-    }
-    .pres-photo { width: 100%; height: 100%; object-fit: cover; background: #333; filter: grayscale(15%); transition: filter 0.3s; }
-    .pres-party-badge {
-        position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%);
-        padding: 8px 16px; border-radius: 4px; font-weight: 900; font-size: 1.2rem; display: flex; align-items: center; gap: 6px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.5); border: 2px solid #fff;
-    }
-    .pres-cand-name { font-size: 2rem; font-weight: 800; text-transform: uppercase; line-height: 1.1; margin-bottom: 5px; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
-    .pres-cand-vice { font-size: 0.9rem; color: #cbd5e1; margin-bottom: 15px; font-weight: 600; }
-    .pres-cand-pct { font-size: 4.5rem; font-weight: 900; line-height: 1; text-shadow: 0 4px 15px rgba(0,0,0,0.6); margin-bottom: 5px; }
-    .pres-cand-votes { font-size: 1.1rem; color: #94a3b8; font-weight: 500; }
-
-    .pres-bottom { position: absolute; bottom: 30px; left: 0; width: 100%; display: flex; justify-content: center; gap: 60px; z-index: 10; }
-    .pres-bottom-cand { display: flex; flex-direction: column; align-items: center; text-align: center; }
-    .pres-bottom-photo { width: 80px; height: 80px; border-radius: 50%; border: 3px solid #fff; object-fit: cover; margin-bottom: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); position: relative;}
-    .pres-bottom-party { position: absolute; bottom: -5px; background: #fff; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #000; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
-    .pres-bottom-name { font-size: 1.1rem; font-weight: 800; text-transform: uppercase; text-shadow: 0 2px 5px rgba(0,0,0,0.8); margin-bottom: 2px; }
-    .pres-bottom-pct { font-size: 1.8rem; font-weight: 900; text-shadow: 0 2px 5px rgba(0,0,0,0.8); }
-
-    .pres-controls { position: absolute; top: 30px; right: 40px; display: flex; gap: 15px; z-index: 50;}
-    .pres-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; font-size: 1.2rem; backdrop-filter: blur(5px); }
-    .pres-btn:hover { background: rgba(255,255,255,0.3); transform: scale(1.1); }
-    .pres-nav-area { position: absolute; top: 0; height: 100%; width: 10vw; z-index: 20; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
-    .pres-nav-area:hover { opacity: 1; background: rgba(0,0,0,0.1); }
-    .pres-nav-area i { font-size: 3rem; text-shadow: 0 0 20px rgba(0,0,0,0.8); }
-    .pres-nav-left { left: 0; }
-    .pres-nav-right { right: 0; }
-    
-    .pres-loading { position: absolute; inset: 0; background: #000; display: flex; align-items: center; justify-content: center; z-index: 100; font-size: 2rem; flex-direction: column; gap: 20px;}
-</style>
-    
 </head>
 <body>
 <div id="loader">
-<div class="spinner"></div>
-<h3 id="loaderMsg">Carregando Dados...</h3>
+    <div class="spinner"></div>
+    <h3 id="loaderMsg">Carregando Dados...</h3>
 </div>
 
-<!-- VIEW DE APRESENTAÇÃO (NOVO) -->
+<!-- VIEW DE APRESENTAÇÃO (ESTILO TELEJORNAL) -->
 <div id="presentationOverlay">
     <div class="pres-controls">
         <button class="pres-btn" onclick="presentation.close()" title="Sair da Apresentação"><i class="fas fa-times"></i></button>
+        <button class="pres-btn" onclick="presentation.downloadSlide()" title="Baixar Slide"><i class="fas fa-download"></i></button>
     </div>
+    
     <div class="pres-nav-area pres-nav-left" onclick="presentation.prev()"><i class="fas fa-chevron-left"></i></div>
     <div class="pres-nav-area pres-nav-right" onclick="presentation.next()"><i class="fas fa-chevron-right"></i></div>
     
     <div class="pres-header">
-        <div class="pres-region" id="presRegion">BRASIL</div>
+        <div class="pres-region" id="presRegion">SÃO CAETANO DO SUL</div>
         <div class="pres-header-center">
-            <div class="pres-year">2026</div>
-            <div class="pres-turn" id="presTurn">no 1º turno</div>
+            <div class="pres-year-badge"><span id="presYear">2026</span></div>
         </div>
-        <div style="width: 200px"></div>
+        <div class="pres-turn" id="presTurn">PRIMEIRO TURNO</div>
     </div>
     
     <div class="pres-content">
+        <!-- Candidato Esquerda -->
         <div class="pres-candidate-main" id="presCand1"></div>
-        <div class="pres-map-container" id="presMap"></div>
+        
+        <!-- Mapa Centro -->
+        <div class="pres-map-col">
+            <div class="pres-map-container" id="presMap"></div>
+            <!-- Candidatos da Parte Inferior (3º em diante) -->
+            <div class="pres-bottom" id="presBottom"></div>
+        </div>
+        
+        <!-- Candidato Direita -->
         <div class="pres-candidate-main" id="presCand2"></div>
     </div>
-    
-    <div class="pres-bottom" id="presBottom"></div>
     
     <div id="presLoader" class="pres-loading hidden">
         <div class="spinner"></div>
@@ -229,8 +174,8 @@
         <div class="map-btn map-btn-dl" title="Baixar PNG" onclick="app.generateStaticMap('png')"><i class="fas fa-image"></i></div>
         <div class="map-btn map-btn-dl" title="Baixar Vetor SVG" onclick="app.generateStaticMap('svg')"><i class="fas fa-bezier-curve"></i></div>
         <div style="height:5px;"></div>
-        <div class="map-btn" onclick="app.map.zoomIn()">+</div>
-        <div class="map-btn" onclick="app.map.zoomOut()">-</div>
+        <div class="map-btn" onclick="app.map.zoomIn()"><i class="fas fa-plus"></i></div>
+        <div class="map-btn" onclick="app.map.zoomOut()"><i class="fas fa-minus"></i></div>
     </div>
 
     <div class="legend">
@@ -261,6 +206,19 @@
 <script>
 const STATES =[{sigla:'AC', nome:'Acre', id:'12'}, {sigla:'AL', nome:'Alagoas', id:'27'}, {sigla:'AP', nome:'Amapá', id:'16'}, {sigla:'AM', nome:'Amazonas', id:'13'}, {sigla:'BA', nome:'Bahia', id:'29'}, {sigla:'CE', nome:'Ceará', id:'23'}, {sigla:'DF', nome:'Distrito Federal', id:'53'}, {sigla:'ES', nome:'Espírito Santo', id:'32'}, {sigla:'GO', nome:'Goiás', id:'52'}, {sigla:'MA', nome:'Maranhão', id:'21'}, {sigla:'MT', nome:'Mato Grosso', id:'51'}, {sigla:'MS', nome:'Mato Grosso do Sul', id:'50'}, {sigla:'MG', nome:'Minas Gerais', id:'31'}, {sigla:'PA', nome:'Pará', id:'15'}, {sigla:'PB', nome:'Paraíba', id:'25'}, {sigla:'PR', nome:'Paraná', id:'41'}, {sigla:'PE', nome:'Pernambuco', id:'26'}, {sigla:'PI', nome:'Piauí', id:'22'}, {sigla:'RJ', nome:'Rio de Janeiro', id:'33'}, {sigla:'RN', nome:'Rio Grande do Norte', id:'24'}, {sigla:'RS', nome:'Rio Grande do Sul', id:'43'}, {sigla:'RO', nome:'Rondônia', id:'11'}, {sigla:'RR', nome:'Roraima', id:'14'}, {sigla:'SC', nome:'Santa Catarina', id:'42'}, {sigla:'SP', nome:'São Paulo', id:'35'}, {sigla:'SE', nome:'Sergipe', id:'28'}, {sigla:'TO', nome:'Tocantins', id:'17'}];
 
+/* Definição das Regiões Metropolitanas e Códigos IBGE dos Municípios */
+const METRO_REGIONS =[
+    { id: 'RMSP', name: 'GRANDE SÃO PAULO', cities:['3550308','3518800','3548708','3547809','3548807','3534401','3529401','3513801','3522208','3510609','3522505','3552809','3513009','3515004'] },
+    { id: 'RMRJ', name: 'GRANDE RIO', cities:['3304557','3304904','3301702','3303500','3303302','3300456','3302502','3305109','3303203'] },
+    { id: 'RMBH', name: 'GRANDE BELO HORIZONTE', cities:['3106200','3118601','3106705','3154606','3161106','3157807','3127701','3129806','3124104'] },
+    { id: 'RIDE', name: 'ENTORNO DF', cities:['5300108','5200258','5201108','5201405','5205497','5208707','5212501','5216205','5217609','5221403'] },
+    { id: 'RMPA', name: 'GRANDE PORTO ALEGRE', cities:['4314902','4303103','4304606','4309209','4313409','4318705','4323002'] },
+    { id: 'RMRE', name: 'GRANDE RECIFE', cities:['2611606','2607901','2609600','2610707','2603454','2601904','2606804','2600054'] },
+    { id: 'RMFO', name: 'GRANDE FORTALEZA', cities:['2304400','2303709','2307651','2309707','2301000','2306257','2305234','2304285'] },
+    { id: 'RMSA', name: 'GRANDE SALVADOR', cities:['2927408','2905701','2918100','2919207','2929503','2930709'] },
+    { id: 'RMC', name: 'GRANDE CAMPINAS', cities:['3509502','3552403','3519071','3501608','3556206','3523404'] }
+];
+
 const CANDIDATE_PHOTOS = {
     'LULA': 'data/lula.jpg', 'FLAVIO': 'data/flavio.jpg', 'TARCISIO': 'data/tarcisio.jpg',
     'RENAN': 'data/renan.jpg', 'CAIADO': 'data/caiado.jpg', 'ZEMA': 'data/zema.jpg',
@@ -269,16 +227,16 @@ const CANDIDATE_PHOTOS = {
 
 const CONFIG = {
     candidates:[
-        { id: 'LULA', name: 'Lula', party: 'PT', val: 40, color: '#E12525', active: true, icon: 'fa-star' },
-        { id: 'FLAVIO', name: 'Flávio Bolsonaro', party: 'PL', val: 25, color: '#5756d6', active: true, icon: 'fa-flag' },
-        { id: 'TARCISIO', name: 'Tarcísio', party: 'REP', val: 15, color: '#28a745', active: false, icon: 'fa-shield-alt' }, 
-        { id: 'RENAN', name: 'Renan Santos', party: 'MISSÃO', val: 3, color: '#D4AF37', active: true, icon: 'fa-bolt' },
-        { id: 'CAIADO', name: 'Ronaldo Caiado', party: 'UNIÃO', val: 8, color: '#009EE3', active: true, icon: 'fa-link' },
-        { id: 'ZEMA', name: 'Romeu Zema', party: 'NOVO', val: 6, color: '#F58220', active: true, icon: 'fa-certificate' },
-        { id: 'RATINHO', name: 'Ratinho Jr', party: 'PSD', val: 4, color: '#FAA21B', active: false, icon: 'fa-building' },
-        { id: 'CIRO', name: 'Ciro Gomes', party: 'PSDB', val: 2, color: '#2591cc', active: false, icon: 'fa-crow' },
-        { id: 'ALDO', name: 'Aldo Rebelo', party: 'DC', val: 1, color: '#006400', active: true, icon: 'fa-church' },
-        { id: 'CURY', name: 'Augusto Cury', party: 'AVANTE', val: 1, color: '#2ebf98', active: true, icon: 'fa-book' }
+        { id: 'LULA', name: 'Lula da Silva', vice: 'Geraldo Alckmin (PSB)', party: 'PT', val: 40, color: '#E12525', active: true, icon: 'fa-star', logo: 'data/logos/pt.png' },
+        { id: 'FLAVIO', name: 'Flávio Bolsonaro', vice: 'Indefinido (PL)', party: 'PL', val: 25, color: '#224292', active: true, icon: 'fa-flag', logo: 'data/logos/pl.png' },
+        { id: 'TARCISIO', name: 'Tarcísio', vice: 'Kassab (PSD)', party: 'REP', val: 15, color: '#28a745', active: false, icon: 'fa-shield-alt', logo: 'data/logos/rep.png' }, 
+        { id: 'RENAN', name: 'Renan Santos', vice: 'Indefinido (MISSÃO)', party: 'MISSÃO', val: 3, color: '#D4AF37', active: true, icon: 'fa-bolt', logo: 'data/logos/missao.png' },
+        { id: 'CAIADO', name: 'Ronaldo Caiado', vice: 'ACM Neto (UNIÃO)', party: 'UNIÃO', val: 8, color: '#009EE3', active: true, icon: 'fa-link', logo: 'data/logos/uniao.png' },
+        { id: 'ZEMA', name: 'Romeu Zema', vice: 'M. Van Hattem (NOVO)', party: 'NOVO', val: 6, color: '#F58220', active: true, icon: 'fa-certificate', logo: 'data/logos/novo.png' },
+        { id: 'RATINHO', name: 'Ratinho Jr', vice: 'Indefinido (PSD)', party: 'PSD', val: 4, color: '#FAA21B', active: false, icon: 'fa-building', logo: 'data/logos/psd.png' },
+        { id: 'CIRO', name: 'Ciro Gomes', vice: 'Indefinido (PSDB)', party: 'PSDB', val: 2, color: '#2591cc', active: false, icon: 'fa-crow', logo: 'data/logos/psdb.png' },
+        { id: 'ALDO', name: 'Aldo Rebelo', vice: 'Indefinido (DC)', party: 'DC', val: 1, color: '#006400', active: true, icon: 'fa-church', logo: 'data/logos/dc.png' },
+        { id: 'CURY', name: 'Augusto Cury', vice: 'Indefinido (AVANTE)', party: 'AVANTE', val: 1, color: '#2ebf98', active: true, icon: 'fa-book', logo: 'data/logos/avante.png' }
     ],
     scheme:[
         { min: 0, mix: '#ffffff', ratio: 0.85, ref: '#E6E6E6' }, { min: 20, mix: '#ffffff', ratio: 0.85, ref: '#E6E6E6' },
@@ -289,20 +247,11 @@ const CONFIG = {
     ]
 };
 
+// ... Mantenho toda a carga JSON normal e defaults ...
 const DEFAULT_SCENARIO = {
   "t1_polls": { "LULA": 47, "FLAVIO": 45, "TARCISIO": 10, "RENAN": 2, "CAIADO": 3, "ZEMA": 2, "RATINHO": 5, "CIRO": 4, "ALDO": 1, "CURY": 2 },
-  "t1_matrix": {
-    "LULA": { "LULA": 1, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 },
-    "JAIR": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 1, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 },
-    "CIRO": { "LULA": 0.1, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 1, "ALDO": 0, "CURY": 0.01 },
-    "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "TARCISIO": 0, "RENAN": 0.06, "CAIADO": 0.06, "ZEMA": 0.06, "RATINHO": 0.06, "CIRO": 0, "ALDO": 0.25, "CURY": 0.5 }
-  },
-  "t1_matrix_state": {
-    "31": { "JAIR": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 1, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 }, "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "TARCISIO": 0, "RENAN": 0.06, "CAIADO": 0.06, "ZEMA": 0.35, "RATINHO": 0.06, "CIRO": 0, "ALDO": 0.25, "CURY": 0.5 } },
-    "35": { "JAIR": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 1, "RENAN": 0.01, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 } },
-    "41": { "JAIR": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 1, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0.01, "CIRO": 0, "ALDO": 0 } },
-    "52": { "JAIR": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 1, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 }, "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "TARCISIO": 0, "RENAN": 0.06, "CAIADO": 0.35, "ZEMA": 0.06, "RATINHO": 0.06, "CIRO": 0, "ALDO": 0.25, "CURY": 0.5 } }
-  },
+  "t1_matrix": { "LULA": { "LULA": 1, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 }, "JAIR": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 1, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 }, "CIRO": { "LULA": 0.1, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 1, "ALDO": 0, "CURY": 0.01 }, "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "TARCISIO": 0, "RENAN": 0.06, "CAIADO": 0.06, "ZEMA": 0.06, "RATINHO": 0.06, "CIRO": 0, "ALDO": 0.25, "CURY": 0.5 } },
+  "t1_matrix_state": {},
   "t1_mults": { "33": { "FLAVIO": 1.1 } },
   "t2_migr": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 1, "RENAN": 0.63, "CAIADO": 0.94, "ZEMA": 0.91, "RATINHO": 1, "CIRO": 0.37, "ALDO": 0.48, "CURY": 0.56 },
   "t2_mults": { "21": {}, "31": { "FLAVIO": 1, "LULA": 1 }, "42": {}, "52": { "FLAVIO": 1, "LULA": 1.1 } },
@@ -312,14 +261,8 @@ const DEFAULT_SCENARIO = {
 
 const CLEAN_SCENARIO = {
     t1_polls: { "LULA": 30, "FLAVIO": 30, "TARCISIO": 10, "RENAN": 5, "CAIADO": 5, "ZEMA": 5, "RATINHO": 5, "CIRO": 5, "ALDO": 5 },
-    t1_matrix: {
-        "LULA": { "LULA": 1, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 },
-        "JAIR": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 },
-        "CIRO": { "LULA": 0, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 1, "ALDO": 0 },
-        "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 }
-    },
-    t1_matrix_state: {}, t1_mults: {},
-    t2_migr: { "LULA":0, "FLAVIO":1, "TARCISIO":1, "RENAN":0.5, "CAIADO":1, "ZEMA":1, "RATINHO":1, "CIRO":0.5, "ALDO":0.5 },
+    t1_matrix: { "LULA": { "LULA": 1, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 }, "JAIR": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 }, "CIRO": { "LULA": 0, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 1, "ALDO": 0 }, "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 } },
+    t1_matrix_state: {}, t1_mults: {}, t2_migr: { "LULA":0, "FLAVIO":1, "TARCISIO":1, "RENAN":0.5, "CAIADO":1, "ZEMA":1, "RATINHO":1, "CIRO":0.5, "ALDO":0.5 },
     t2_mults: {}, active_candidates: { "LULA": true, "FLAVIO": true, "TARCISIO": true, "RENAN": true, "CAIADO": true, "ZEMA": true, "RATINHO": true, "CIRO": true, "ALDO": true }, t2_mode: "manual"
 };
 
@@ -335,8 +278,11 @@ const presentation = {
         if(!app.data.geoJson) {
             try { const r = await fetch("https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json"); app.data.geoJson = await r.json(); } catch(e) {}
         }
+        
+        // Povoa slides (Brasil -> Estados -> Regiões Metropolitanas)
         presentation.slides =[{ id: 'BR', name: 'BRASIL', type: 'nacional' }];
-        STATES.forEach(s => presentation.slides.push({ id: s.id, name: s.nome, type: 'estado' }));
+        STATES.forEach(s => presentation.slides.push({ id: s.id, name: s.nome.toUpperCase(), type: 'estado' }));
+        METRO_REGIONS.forEach(mr => presentation.slides.push({ id: mr.id, name: mr.name, type: 'metropolitana', cities: mr.cities }));
         
         presentation.currentIndex = 0; presentation.isActive = true;
         document.getElementById('presentationOverlay').classList.add('active');
@@ -355,79 +301,123 @@ const presentation = {
             const exportContainer = document.createElement('div');
             exportContainer.style.position = 'absolute'; exportContainer.style.top = '0'; exportContainer.style.left = '0';
             exportContainer.style.width = originalOverlay.offsetWidth + 'px'; exportContainer.style.height = originalOverlay.offsetHeight + 'px';
-            exportContainer.style.background = '#0b1120'; exportContainer.style.zIndex = '-9999'; exportContainer.style.overflow = 'hidden';
+            exportContainer.style.background = getComputedStyle(document.getElementById('presentationOverlay')).background;
+            exportContainer.style.zIndex = '-9999'; exportContainer.style.overflow = 'hidden';
             
             const clone = originalOverlay.cloneNode(true);
             clone.id = "presentationOverlayClone"; clone.style.position = 'relative'; clone.style.width = '100%'; clone.style.height = '100%'; clone.style.background = 'transparent';
             
             const controls = clone.querySelector('.pres-controls'); if(controls) controls.remove();
             clone.querySelectorAll('.pres-nav-area').forEach(n => n.remove());
-            clone.querySelectorAll('svg').forEach(svg => { svg.style.filter = 'none'; });
-            clone.querySelectorAll('.pres-photo, .pres-bottom-photo').forEach(img => { img.style.filter = 'none'; });
-
-            const images = clone.querySelectorAll('img');
-            for (let img of images) {
-                try {
-                    const tempCanvas = document.createElement('canvas'); const ctx = tempCanvas.getContext('2d'); const tempImg = new Image(); tempImg.crossOrigin = "anonymous"; 
-                    await new Promise((resolve) => { tempImg.onload = () => { tempCanvas.width = tempImg.width; tempCanvas.height = tempImg.height; ctx.drawImage(tempImg, 0, 0); img.src = tempCanvas.toDataURL('image/png'); resolve(); }; tempImg.onerror = resolve; tempImg.src = img.src; });
-                } catch(e) {}
-            }
-
-            exportContainer.appendChild(clone); document.body.appendChild(exportContainer);
-            const finalCanvas = await html2canvas(exportContainer, { useCORS: true, scale: 2, backgroundColor: '#0b1120', logging: false });
             
-            finalCanvas.toBlob((blob) => { const regionName = document.getElementById('presRegion').innerText; saveAs(blob, `Slide_${regionName}_2026.png`); }, 'image/png', 1.0);
+            exportContainer.appendChild(clone); document.body.appendChild(exportContainer);
+            const finalCanvas = await html2canvas(exportContainer, { useCORS: true, scale: 2, backgroundColor: '#130541', logging: false });
+            
+            finalCanvas.toBlob((blob) => { const regionName = document.getElementById('presRegion').innerText; saveAs(blob, `Apuracao_${regionName}_2026.png`); }, 'image/png', 1.0);
             document.body.removeChild(exportContainer);
         } catch (error) { alert("Erro ao exportar slide."); } finally { document.body.style.cursor = 'default'; }
     },
+    
     renderSlide: () => {
         const slide = presentation.slides[presentation.currentIndex];
         document.getElementById('presRegion').innerText = slide.name;
-        document.getElementById('presTurn').innerText = `no ${app.state.turn}º turno`;
+        document.getElementById('presTurn').innerText = app.state.turn === 1 ? "PRIMEIRO TURNO" : "SEGUNDO TURNO";
+        document.getElementById('presYear').innerText = "2026";
+        
         const dataset = app.state.turn === 1 ? app.data.round1 : app.data.round2; if(!dataset) return;
 
-        let votes = slide.type === 'nacional' ? dataset.nacional : (dataset.estados[slide.id] || {});
+        let votes = {};
+        if (slide.type === 'nacional') { votes = dataset.nacional; } 
+        else if (slide.type === 'estado') { votes = dataset.estados[slide.id] || {}; }
+        else if (slide.type === 'metropolitana') {
+            slide.cities.forEach(ibge => {
+                const cityVotes = dataset.municipios[ibge];
+                if (cityVotes) { for(let c in cityVotes) { votes[c] = (votes[c] || 0) + cityVotes[c]; } }
+            });
+        }
+
         const sorted = Object.entries(votes).sort((a,b) => b[1] - a[1]);
         const total = sorted.reduce((a,b) => a+b[1], 0);
-
         const validSorted = sorted.filter(([cid, v]) => { const cand = CONFIG.candidates.find(c=>c.id===cid); return cand && !(app.state.turn===1 && app.state.active_candidates[cid] === false && v === 0); });
 
         presentation.renderMainCand('presCand1', validSorted[0], total);
         presentation.renderMainCand('presCand2', validSorted[1], total);
+        
         const bottomContainer = document.getElementById('presBottom'); bottomContainer.innerHTML = '';
-        for(let i=2; i < Math.min(validSorted.length, 6); i++) presentation.renderBottomCand(bottomContainer, validSorted[i], total);
+        // No estilo retro, mostramos apenas alguns candidatos na base
+        for(let i=2; i < Math.min(validSorted.length, 5); i++) presentation.renderBottomCand(bottomContainer, validSorted[i], total);
+        
         presentation.drawMap(slide);
     },
+    
     renderMainCand: (elementId, data, total) => {
         const el = document.getElementById(elementId); if(!data) { el.innerHTML = ''; return; }
         const cand = CONFIG.candidates.find(c=>c.id===data[0]); const pct = total > 0 ? (data[1]/total)*100 : 0;
-        const photoUrl = CANDIDATE_PHOTOS[cand.id] || `https://via.placeholder.com/300x400/${cand.color.substring(1)}/ffffff.png?text=${cand.name}`;
-        el.innerHTML = `<div class="pres-photo-wrapper"><img src="${photoUrl}" class="pres-photo" onerror="this.src='https://via.placeholder.com/300x400/333/fff?text=${cand.name}'"><div class="pres-party-badge" style="background: ${cand.color};"><i class="fas ${cand.icon}"></i> ${cand.party}</div></div><div class="pres-cand-name">${cand.name}</div><div class="pres-cand-vice">VICE NÃO DEFINIDO</div><div class="pres-cand-pct" style="color: ${cand.color}">${pct.toFixed(2)}%</div><div class="pres-cand-votes">Votos: ${data[1].toLocaleString('pt-BR')}</div>`;
+        const photoUrl = CANDIDATE_PHOTOS[cand.id] || `https://via.placeholder.com/400x500/${cand.color.substring(1)}/ffffff.png?text=${cand.name}`;
+        
+        el.innerHTML = `
+            <div class="pres-photo-wrapper" style="border-color: ${cand.color};">
+                <img src="${photoUrl}" class="pres-photo" onerror="this.src='https://via.placeholder.com/400x500/333/fff?text=${cand.name}'">
+                <img src="${cand.logo}" class="pres-party-logo" alt="${cand.party}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="pres-party-logo-fallback" style="display:none; background:${cand.color}"><i class="fas ${cand.icon}"></i> ${cand.party}</div>
+            </div>
+            <div class="pres-cand-name"><span style="color: ${cand.color}">•</span> ${cand.name}</div>
+            <div class="pres-cand-vice">Vice: ${cand.vice || 'Indefinido'}</div>
+            <div class="pres-cand-pct">${pct.toFixed(2).replace('.', ',')}%</div>
+            <div class="pres-cand-votes">Votos: ${data[1].toLocaleString('pt-BR')}</div>
+        `;
     },
+    
     renderBottomCand: (container, data, total) => {
         if(!data) return; const cand = CONFIG.candidates.find(c=>c.id===data[0]); const pct = total > 0 ? (data[1]/total)*100 : 0;
-        const photoUrl = CANDIDATE_PHOTOS[cand.id] || `https://via.placeholder.com/100x100/${cand.color.substring(1)}/ffffff.png?text=${cand.id.substring(0,3)}`;
         const div = document.createElement('div'); div.className = 'pres-bottom-cand';
-        div.innerHTML = `<div class="pres-bottom-photo-wrapper" style="position:relative;"><img src="${photoUrl}" class="pres-bottom-photo" onerror="this.src='https://via.placeholder.com/100/333/fff'"><div class="pres-bottom-party" style="border: 2px solid ${cand.color}"><i class="fas ${cand.icon}" style="color: ${cand.color}"></i></div></div><div class="pres-bottom-name">${cand.name.split(' ')[0]}</div><div class="pres-bottom-pct" style="color: ${cand.color}">${pct.toFixed(2)}%</div>`;
+        div.innerHTML = `
+            <div class="pres-bottom-logo-wrapper">
+                <img src="${cand.logo}" class="pres-bottom-logo" alt="${cand.party}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="pres-bottom-logo-fallback" style="display:none; color:${cand.color}; border-color:${cand.color}">
+                    <i class="fas ${cand.icon}"></i> <span style="font-size:0.6rem; display:block">${cand.party}</span>
+                </div>
+            </div>
+            <div class="pres-bottom-name">${cand.name.split(' ')[0]}</div>
+            <div class="pres-bottom-pct">${pct.toFixed(2).replace('.', ',')}%</div>
+        `;
         container.appendChild(div);
     },
+    
     drawMap: (slide) => {
         const container = document.getElementById('presMap'); let features =[]; let scope = '';
-        if(slide.type === 'nacional') { if(!app.data.brazilGeoJson) return; features = app.data.brazilGeoJson.features; scope = 'estados'; } 
-        else { if(!app.data.geoJson) return; features = app.data.geoJson.features.filter(f => app.getFeatureId(f, 'municipios').startsWith(slide.id)); scope = 'municipios'; }
-        if(features.length === 0) { container.innerHTML = ''; return; }
+        if(slide.type === 'nacional') { 
+            if(!app.data.brazilGeoJson) return; features = app.data.brazilGeoJson.features; scope = 'estados'; 
+        } else if (slide.type === 'estado') { 
+            if(!app.data.geoJson) return; features = app.data.geoJson.features.filter(f => app.getFeatureId(f, 'municipios').startsWith(slide.id)); scope = 'municipios'; 
+        } else if (slide.type === 'metropolitana') {
+            if(!app.data.geoJson) return; features = app.data.geoJson.features.filter(f => slide.cities.includes(app.getFeatureId(f, 'municipios'))); scope = 'municipios';
+        }
+        
+        if(features.length === 0) { container.innerHTML = '<div style="font-size:4rem; color:rgba(255,255,255,0.4)">?</div>'; return; }
+        
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         features.forEach(f => { const scan = (coords) => { coords.forEach(pt => { if(typeof pt[0]==='number') { if(pt[0]<minX) minX=pt[0]; if(pt[0]>maxX) maxX=pt[0]; if(pt[1]<minY) minY=pt[1]; if(pt[1]>maxY) maxY=pt[1]; } else scan(pt); }); }; if(f.geometry && f.geometry.coordinates) scan(f.geometry.coordinates); });
+        
         const w = 800; const latD = maxY - minY; const lonD = maxX - minX; const h = w / (lonD/latD); const proj = (x,y) =>[(x-minX)*(w/lonD), (maxY-y)*(h/latD)];
         let svg = '';
-        features.forEach(f => { const id = app.getFeatureId(f, scope); const col = app.getColorForId(id, scope).fill; let d = ''; const draw = (r) => { let p=''; r.forEach((pt,i)=>{ const[px,py]=proj(pt[0],pt[1]); p+=(i===0?'M':'L')+px.toFixed(1)+','+py.toFixed(1); }); return p+'Z '; }; if(f.geometry.type==='Polygon') f.geometry.coordinates.forEach(r=>d+=draw(r)); else if(f.geometry.type==='MultiPolygon') f.geometry.coordinates.forEach(p=>p.forEach(r=>d+=draw(r))); svg += `<path d="${d}" fill="${col}" stroke="rgba(255,255,255,0.4)" stroke-width="${scope==='estados'? 1 : 0.2}"/>`; });
-        container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">${svg}</svg>`;
+        
+        // Estética do mapa retro/broadcast: Preenchimento muito escuro quase invisível, bordas brancas definidas
+        const fillCol = 'rgba(20, 20, 50, 0.4)';
+        const strokeColor = 'rgba(255, 255, 255, 0.9)';
+        const strokeWidth = scope === 'estados' ? 1.5 : 0.6;
+        
+        features.forEach(f => { 
+            let d = ''; const draw = (r) => { let p=''; r.forEach((pt,i)=>{ const[px,py]=proj(pt[0],pt[1]); p+=(i===0?'M':'L')+px.toFixed(1)+','+py.toFixed(1); }); return p+'Z '; }; 
+            if(f.geometry.type==='Polygon') f.geometry.coordinates.forEach(r=>d+=draw(r)); else if(f.geometry.type==='MultiPolygon') f.geometry.coordinates.forEach(p=>p.forEach(r=>d+=draw(r))); 
+            svg += `<path d="${d}" fill="${fillCol}" stroke="${strokeColor}" stroke-width="${strokeWidth}" vector-effect="non-scaling-stroke"/>`; 
+        });
+        container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">${svg}</svg>`;
     }
 };
 
 const app = {
-    map: null,
-    layers: { brazil: null, cities: null, zones: null },
+    map: null, layers: { brazil: null, cities: null, zones: null },
     data: { base22: null, round1: null, round2: null, geoJson: null, names: {}, brazilGeoJson: null, zonasGeoJson: null },
     state: { turn: 1, view: 'states', selectedId: null, selectedName: "Brasil", selectedScope: null, activeCityId: null, t1_polls: {}, t1_matrix: {}, t1_matrix_state: {}, t1_mults: {}, t2_finalists:[], t2_polls: {}, t2_migr: {}, t2_mults: {}, active_candidates: {}, t2_mode: 'manual' },
 
@@ -455,24 +445,17 @@ const app = {
         try { 
             const res = await fetch('data/2022_president.json'); const json = await res.json(); 
             app.data.base22 = json['1']; app.data.names = json['1'].meta_nomes || {}; 
-            // Tenta carregar zonas locais automaticamente do repositório
             try { 
                 const zRes = await fetch('data/mapazn.geojson'); 
-                if (zRes.ok) { 
-                    app.data.zonasGeoJson = await zRes.json(); 
-                    app.processZonasGeoJson(); 
-                } 
-            } catch(ez) {
-                console.warn("Zonas eleitorais (data/mapazn.geojson) não encontradas ou erro ao carregar.");
-            }
+                if (zRes.ok) { app.data.zonasGeoJson = await zRes.json(); app.processZonasGeoJson(); } 
+            } catch(ez) { console.warn("Zonas eleitorais não encontradas."); }
             await app.loadBrazilLayer(); app.runSimulation(); 
         } catch(e) { console.error(e); alert("Erro dados. Verifique data/2022_president.json"); } finally { loader.classList.add('hidden'); }
     },
 
     exportConfig: () => { const config = { t1_polls: app.state.t1_polls, t1_matrix: app.state.t1_matrix, t1_matrix_state: app.state.t1_matrix_state, t1_mults: app.state.t1_mults, t2_migr: app.state.t2_migr, t2_mults: app.state.t2_mults, active_candidates: app.state.active_candidates, t2_mode: app.state.t2_mode }; saveAs(new Blob([JSON.stringify(config, null, 2)], {type: "application/json;charset=utf-8"}), "eleicoes_config.json"); },
-    importConfig: (input) => { const file = input.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = (e) => { try { app.loadScenario(JSON.parse(e.target.result)); app.renderUI(); app.runSimulation(); alert("Configuração carregada com sucesso!"); } catch(err) { alert("Erro JSON: " + err.message); } }; reader.readAsText(file); input.value = ''; },
+    importConfig: (input) => { const file = input.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = (e) => { try { app.loadScenario(JSON.parse(e.target.result)); app.renderUI(); app.runSimulation(); alert("Configuração carregada!"); } catch(err) { alert("Erro JSON: " + err.message); } }; reader.readAsText(file); input.value = ''; },
     
-    // Transforma os dados do GeoJSON de zonas em formato de matriz pra simulação
     processZonasGeoJson: () => {
         app.data.base22.zonas = {};
         app.data.zonasGeoJson.features.forEach(f => {
@@ -586,7 +569,6 @@ const app = {
         const targetPcts = {}; activeIds.forEach(id => { targetPcts[id] = (app.state.t1_polls[id]||0) / (rawSliderTotal || 1); });
         const res = { municipios: {}, estados: {}, nacional: {}, zonas: {} }; let tempNacional = {}, grandTotal = 0;
         
-        // Simulação baseada nos municípios
         for(let ibge in base) {
             const votes22 = base[ibge], ufId = ibge.substring(0,2), mVotes = {};
             activeIds.forEach(candId => {
@@ -607,7 +589,6 @@ const app = {
             for(let cid in res.municipios[ibge]) { let v = Math.round(res.municipios[ibge][cid] * corrections[cid]); res.municipios[ibge][cid] = v; res.estados[ufId][cid] = (res.estados[ufId][cid]||0) + v; res.nacional[cid] = (res.nacional[cid]||0) + v; }
         }
         
-        // Simulação extra para as zonas eleitorais (se existirem na memória)
         if (app.data.base22.zonas) {
             for(let zId in app.data.base22.zonas) {
                 const votes22 = app.data.base22.zonas[zId], ufId = String(zId).substring(0,2), zVotes = {};
@@ -625,7 +606,6 @@ const app = {
             }
             for(let zId in res.zonas) { for(let cid in res.zonas[zId]) { res.zonas[zId][cid] = Math.round(res.zonas[zId][cid] * corrections[cid]); } }
         }
-        
         app.data.round1 = res; if (presentation.isActive) presentation.renderSlide();
     },
     calculateTurn2: () => {
@@ -651,7 +631,6 @@ const app = {
             if(document.getElementById(`val_t2_${id1}`)) document.getElementById(`val_t2_${id1}`).innerText = app.state.t2_polls[id1] + '%'; if(document.getElementById(`val_t2_${id2}`)) document.getElementById(`val_t2_${id2}`).innerText = app.state.t2_polls[id2] + '%'; app.checkT2Total();
         }
 
-        // T2 para Zonas
         if (r1.zonas) {
             for(let zId in r1.zonas) {
                 const v1 = r1.zonas[zId], ufId = String(zId).substring(0,2); let vA = 0, vB = 0;
@@ -672,16 +651,13 @@ const app = {
 
 document.addEventListener('DOMContentLoaded', app.init);
 
-document.addEventListener('DOMContentLoaded', function() {
+window.addEventListener('load', function() {
     setTimeout(function() {
         const interactiveElements =['.mode-tab', '.btn-io', '.btn-primary', '.btn-secondary', '.btn-back', '.map-btn', '.nav-item', 'select', 'input[type="checkbox"]', 'input[type="range"]', '.switch input', '.pres-btn', '.pres-nav-area'];
         interactiveElements.forEach(selector => { document.querySelectorAll(selector).forEach(el => { el.style.zIndex = '10000'; if(selector !== '.pres-nav-area') el.style.position = 'relative'; }); });
         document.querySelectorAll('.mode-tab, .btn-io').forEach(tab => { tab.style.cursor = 'pointer'; tab.style.pointerEvents = 'auto'; });
     }, 500);
 });
-
-function ensureClickable(element) { if (element) { element.style.pointerEvents = 'auto'; element.style.cursor = 'pointer'; element.style.zIndex = '10000'; element.style.position = 'relative'; } }
-window.addEventListener('load', function() { ensureClickable(document.getElementById('tab1')); ensureClickable(document.getElementById('tab2')); document.querySelectorAll('.btn-io, .map-btn, .nav-item').forEach(ensureClickable); });
 </script>
 </body>
 </html>
