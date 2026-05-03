@@ -3,388 +3,107 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Eleições View - 2026 Final c/ Zonas Eleitorais</title>
+<title>Eleições View - 2026 Final c/ Zonas Eleitorais e RMEs</title>
 
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <!-- Fonts & Icons -->
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,600;0,800;0,900;1,400&family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
 <!-- Export Libraries -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<style>
-/* ============================================================
-   style.css COMPLETO (baseado no modelo fornecido)
-   ============================================================ */
-:root {
-  /* Cores modernas e vibrantes */
-  --bg-primary: #0a0c10;
-  --bg-secondary: #111827;
-  --bg-card: rgba(17, 24, 39, 0.95);
-  --bg-card-glass: rgba(30, 41, 59, 0.85);
-  --accent-blue: #3b82f6;
-  --accent-blue-light: #60a5fa;
-  --accent-purple: #8b5cf6;
-  --accent-green: #10b981;
-  --accent-amber: #f59e0b;
-  --accent-red: #ef4444;
-  
-  --gradient-primary: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-  --gradient-dark: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-  --gradient-card: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
-  
-  --text-primary: #ffffff;
-  --text-secondary: #e2e8f0;
-  --text-muted: #94a3b8;
-  --text-accent: #60a5fa;
-  
-  --border-color: rgba(255, 255, 255, 0.1);
-  --border-light: rgba(255, 255, 255, 0.05);
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
-  --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.3);
-  --shadow-glow-purple: 0 0 20px rgba(139, 92, 246, 0.3);
-  
-  --sidebar-width: 380px;
-  --bottom-nav-height: 70px;
-  --border-radius-sm: 8px;
-  --border-radius-md: 12px;
-  --border-radius-lg: 16px;
-  --border-radius-xl: 20px;
-  --border-radius-full: 9999px;
-  
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
-}
+<link rel="stylesheet" href="style.css">
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  outline: none;
-  -webkit-tap-highlight-color: transparent;
-}
+<style id="presentation-styles">
+    /* ESTILOS DA APRESENTAÇÃO (BROADCAST VIEW) */
+    #presentationOverlay {
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: radial-gradient(circle at 50% 40%, #2c3e50 0%, #0a0e14 100%);
+        z-index: 999999; display: none; flex-direction: column; color: #fff;
+        font-family: 'Inter', sans-serif; overflow: hidden;
+    }
+    #presentationOverlay::before {
+        content: ''; position: absolute; top:0; left:0; right:0; bottom:0;
+        background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.02) 2px, rgba(255,255,255,0.02) 4px);
+        pointer-events: none; opacity: 0.5;
+    }
+    #presentationOverlay.active { display: flex; }
+    
+    .pres-header { text-align: center; padding: 30px 40px; position: relative; z-index: 10; display: flex; justify-content: space-between; align-items: flex-start;}
+    .pres-header-center { position: absolute; left: 50%; transform: translateX(-50%); text-align: center; }
+    .pres-region { font-size: 1.8rem; font-weight: 300; letter-spacing: 2px; text-transform: uppercase; color: #e2e8f0; }
+    .pres-year { font-size: 4rem; font-weight: 900; line-height: 1; text-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+    .pres-turn { font-size: 1.2rem; font-weight: 400; font-style: italic; color: #a0aec0; margin-top: -5px; }
 
-html { scroll-behavior: smooth; }
+    .pres-content { flex: 1; display: flex; justify-content: center; align-items: center; position: relative; z-index: 10; padding: 0 50px; }
+    
+    .pres-map-container { flex: 0 0 45%; height: 75%; display: flex; justify-content: center; align-items: center; }
+    .pres-map-container svg { width: 100%; height: 100%; filter: drop-shadow(0px 15px 25px rgba(0,0,0,0.6)); }
 
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  overflow: hidden;
-  height: 100vh;
-  width: 100vw;
-  font-weight: 400;
-  line-height: 1.5;
-}
+    .pres-candidate-main { flex: 0 0 25%; display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .pres-photo-wrapper { position: relative; width: 280px; height: 380px; margin-bottom: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
+    .pres-photo-wrapper::after {
+        content: ''; position: absolute; inset: 0;
+        box-shadow: inset 0 0 0 4px rgba(255,255,255,0.8); pointer-events: none;
+    }
+    .pres-photo { width: 100%; height: 100%; object-fit: cover; background: #333; filter: grayscale(15%); transition: filter 0.3s; }
+    .pres-party-badge {
+        position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%);
+        padding: 8px 16px; border-radius: 4px; font-weight: 900; font-size: 1.2rem; display: flex; align-items: center; gap: 6px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5); border: 2px solid #fff;
+    }
+    .pres-cand-name { font-size: 2rem; font-weight: 800; text-transform: uppercase; line-height: 1.1; margin-bottom: 5px; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
+    .pres-cand-vice { font-size: 0.9rem; color: #cbd5e1; margin-bottom: 15px; font-weight: 600; }
+    .pres-cand-pct { font-size: 4.5rem; font-weight: 900; line-height: 1; text-shadow: 0 4px 15px rgba(0,0,0,0.6); margin-bottom: 5px; }
+    .pres-cand-votes { font-size: 1.1rem; color: #94a3b8; font-weight: 500; }
 
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); border-radius: var(--border-radius-full); }
-::-webkit-scrollbar-thumb { background: linear-gradient(to bottom, var(--accent-blue), var(--accent-purple)); border-radius: var(--border-radius-full); }
+    .pres-bottom { position: absolute; bottom: 30px; left: 0; width: 100%; display: flex; justify-content: center; gap: 60px; z-index: 10; }
+    .pres-bottom-cand { display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .pres-bottom-photo { width: 80px; height: 80px; border-radius: 50%; border: 3px solid #fff; object-fit: cover; margin-bottom: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); position: relative;}
+    .pres-bottom-party { position: absolute; bottom: -5px; background: #fff; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #000; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+    .pres-bottom-name { font-size: 1.1rem; font-weight: 800; text-transform: uppercase; text-shadow: 0 2px 5px rgba(0,0,0,0.8); margin-bottom: 2px; }
+    .pres-bottom-pct { font-size: 1.8rem; font-weight: 900; text-shadow: 0 2px 5px rgba(0,0,0,0.8); }
 
-#app { width: 100%; height: 100%; display: flex; position: relative; background: var(--bg-secondary); overflow: hidden; }
-#app::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--accent-blue), transparent); z-index: 100; }
-
-#map { flex: 1; height: 100%; background: var(--bg-secondary); z-index: 1; position: relative; }
-
-.sidebar, .sidebar-right {
-  width: var(--sidebar-width); min-width: var(--sidebar-width);
-  background: var(--bg-card); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-  display: flex; flex-direction: column; z-index: 100;
-  border-right: 1px solid var(--border-color); height: 100%;
-  box-shadow: var(--shadow-xl); transition: all var(--transition-normal);
-}
-.sidebar-right { border-left: 1px solid var(--border-color); border-right: none; }
-
-.mobile-nav { display: none; }
-
-.header {
-  padding: 20px; background: var(--gradient-dark); border-bottom: 1px solid var(--border-color);
-  flex-shrink: 0; position: relative; overflow: hidden;
-}
-.header::before { content: ""; position: absolute; inset: 0; background: linear-gradient(45deg, transparent 30%, rgba(59, 130, 246, 0.05) 100%); z-index: 0; }
-.header-top { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 1; }
-.header h1, .header h2 { font-size: 1.4rem; font-weight: 800; margin: 0; background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.5px; position: relative; padding-bottom: 8px; }
-.header h1::after, .header h2::after { content: ""; position: absolute; bottom: 0; left: 0; width: 40px; height: 3px; background: var(--gradient-primary); border-radius: var(--border-radius-full); }
-
-.controls { padding: 20px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
-.control-group { margin-bottom: 5px; }
-.control-group label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-
-.io-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
-.btn-io {
-  flex: 1; min-width: 80px; padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(15, 23, 42, 0.8); color: var(--text-secondary); border-radius: var(--border-radius-md);
-  font-size: 0.75rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center;
-  gap: 6px; transition: all var(--transition-fast); letter-spacing: 0.3px;
-}
-.btn-io:hover { background: rgba(30, 41, 59, 0.9); color: var(--text-primary); border-color: var(--accent-blue); transform: translateY(-2px); box-shadow: var(--shadow-glow); }
-.btn-io:active { transform: translateY(0); }
-
-.btn-primary {
-  width: 100%; padding: 16px; border-radius: var(--border-radius-md); background: var(--gradient-primary);
-  border: none; font-weight: 700; color: white; cursor: pointer; text-transform: uppercase;
-  letter-spacing: 1px; margin-bottom: 15px; font-size: 0.9rem; transition: all var(--transition-normal);
-  position: relative; overflow: hidden; z-index: 1;
-}
-.btn-primary::before { content: ""; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); transition: left 0.7s ease; z-index: -1; }
-.btn-primary:hover::before { left: 100%; }
-.btn-primary:hover { transform: translateY(-3px); box-shadow: var(--shadow-glow); }
-.btn-primary:active { transform: translateY(0); }
-
-.btn-secondary {
-  width: 100%; padding: 14px; border-radius: var(--border-radius-md);
-  background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-light);
-  color: var(--text-secondary); cursor: pointer; font-weight: 600; font-size: 0.85rem;
-  display: flex; justify-content: space-between; align-items: center; transition: all var(--transition-fast);
-}
-.btn-secondary:hover { background: rgba(255,255,255,0.1); border-color: var(--accent-blue); color: var(--text-primary); transform: translateX(5px); }
-
-.btn-back {
-  width: 100%; padding: 14px; border-radius: var(--border-radius-md);
-  background: rgba(30, 41, 59, 0.8); border: 1px solid var(--border-light);
-  color: var(--text-secondary); cursor: pointer; margin-bottom: 20px;
-  display: flex; align-items: center; justify-content: center; gap: 10px;
-  font-size: 0.9rem; font-weight: 600; transition: all var(--transition-fast);
-}
-.btn-back:hover { background: rgba(30, 41, 59, 1); border-color: var(--accent-blue); color: var(--text-primary); }
-
-.mode-tabs { display: flex; gap: 10px; margin-top: 20px; background: rgba(15, 23, 42, 0.5); padding: 6px; border-radius: var(--border-radius-md); }
-.mode-tab { flex: 1; padding: 12px; text-align: center; border-radius: var(--border-radius-sm); background: transparent; border: 1px solid transparent; cursor: pointer; font-size: 0.85rem; font-weight: 700; color: var(--text-muted); transition: all var(--transition-fast); }
-.mode-tab:hover { background: rgba(255,255,255,0.05); color: var(--text-secondary); }
-.mode-tab.active { background: var(--gradient-primary); color: white; border-color: transparent; box-shadow: var(--shadow-glow); }
-
-select {
-  width: 100%; padding: 14px; border-radius: var(--border-radius-md);
-  border: 1px solid var(--border-light); background-color: rgba(15, 23, 42, 0.8);
-  color: var(--text-primary); font-family: inherit; font-size: 0.95rem;
-  transition: all var(--transition-fast); appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 15px center; background-size: 12px;
-}
-select:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); outline: none; }
-select:hover { border-color: rgba(255,255,255,0.2); }
-
-.slider-box { margin-bottom: 16px; transition: opacity var(--transition-normal); padding: 10px 0; border-radius: var(--border-radius-md); background: rgba(15, 23, 42, 0.3); padding: 15px; }
-.slider-box.inactive { opacity: 0.5; filter: grayscale(0.8); }
-.slider-header { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 12px; align-items: center; }
-.slider-check-group { display: flex; align-items: center; gap: 10px; }
-
-input[type="checkbox"] { cursor: pointer; accent-color: var(--accent-blue); width: 18px; height: 18px; border-radius: 4px; }
-input[type="range"] { width: 100%; -webkit-appearance: none; background: transparent; padding: 10px 0; }
-input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: var(--border-radius-full); }
-input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; margin-top: -8px; height: 22px; width: 22px; background: var(--gradient-primary); border-radius: 50%; cursor: pointer; box-shadow: var(--shadow-lg); border: 2px solid rgba(255,255,255,0.8); transition: all var(--transition-fast); }
-input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); box-shadow: var(--shadow-glow); }
-input[type="range"]:disabled { cursor: not-allowed; opacity: 0.5; }
-
-.switch-container { display: flex; align-items: center; justify-content: space-between; background: rgba(15, 23, 42, 0.8); padding: 16px; border-radius: var(--border-radius-md); margin-bottom: 15px; border: 1px solid var(--border-light); }
-.switch-container:hover { border-color: var(--accent-blue); }
-.switch-label { font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); }
-.switch { position: relative; display: inline-block; width: 52px; height: 26px; }
-.switch input { opacity: 0; width: 0; height: 0; }
-.slider { position: absolute; cursor: pointer; inset: 0; background-color: rgba(255,255,255,0.1); transition: var(--transition-normal); border-radius: var(--border-radius-full); }
-.slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: var(--transition-normal); border-radius: 50%; box-shadow: var(--shadow-md); }
-input:checked + .slider { background: var(--gradient-primary); }
-input:checked + .slider:before { transform: translateX(26px); }
-
-.cand-row { display: flex; align-items: center; gap: 12px; padding: 16px; margin-bottom: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--border-radius-md); transition: all var(--transition-fast); }
-.cand-row:hover { background: rgba(255,255,255,0.06); transform: translateX(5px); border-color: rgba(255,255,255,0.1); }
-.cand-color { width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
-.cand-info { flex: 1; min-width: 0; }
-.cand-head { display: flex; justify-content: space-between; font-size: 0.95rem; font-weight: 600; margin-bottom: 8px; }
-.progress-bar { height: 8px; background: rgba(255,255,255,0.1); border-radius: var(--border-radius-full); margin-top: 8px; overflow: hidden; }
-.progress-fill { height: 100%; transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); border-radius: var(--border-radius-full); }
-
-.map-controls { position: absolute; top: 25px; right: 410px; display: flex; flex-direction: column; gap: 10px; z-index: 900; }
-.map-btn { width: 48px; height: 48px; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px); border: 1px solid var(--border-light); color: var(--text-secondary); display: flex; align-items: center; justify-content: center; border-radius: var(--border-radius-md); cursor: pointer; font-size: 1.3rem; transition: all var(--transition-fast); box-shadow: var(--shadow-lg); }
-.map-btn:hover { background: rgba(30, 41, 59, 0.95); color: var(--text-primary); border-color: var(--accent-blue); transform: translateY(-3px); box-shadow: var(--shadow-glow); }
-.map-btn-dl { color: var(--accent-blue); border-color: rgba(59, 130, 246, 0.4); }
-.map-btn-dl:hover { color: var(--accent-blue-light); }
-
-.legend { position: absolute; bottom: 30px; right: 410px; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px); padding: 20px; border: 1px solid var(--border-light); border-radius: var(--border-radius-lg); z-index: 900; box-shadow: var(--shadow-xl); }
-.legend:hover { background: rgba(15, 23, 42, 0.95); border-color: var(--accent-blue); }
-.legend-grid { display: flex; height: 24px; width: 250px; border-radius: var(--border-radius-md); overflow: hidden; border: 1px solid var(--border-light); box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
-.legend-item { flex: 1; border-right: 1px solid rgba(0,0,0,0.3); }
-
-.custom-tooltip { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); border: 1px solid var(--border-light); color: white; border-radius: var(--border-radius-md); font-family: 'Inter', sans-serif; padding: 0; box-shadow: var(--shadow-xl); max-width: 250px; }
-.tt-head { background: rgba(30, 41, 59, 0.9); padding: 12px 16px; font-weight: 700; border-bottom: 1px solid var(--border-light); border-radius: var(--border-radius-md) var(--border-radius-md) 0 0; }
-.tt-body { padding: 12px 16px; }
-
-.modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 6000; display: none; align-items: center; justify-content: center; animation: fadeIn var(--transition-normal); }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-.modal-overlay.active { display: flex; }
-.modal-content { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--border-light); width: 520px; max-height: 85vh; border-radius: var(--border-radius-lg); display: flex; flex-direction: column; box-shadow: var(--shadow-xl); animation: slideUp var(--transition-normal) ease-out; }
-@keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-.modal-header { padding: 20px; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 1.1rem; background: rgba(30, 41, 59, 0.8); border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0; }
-.modal-body { padding: 24px; overflow-y: auto; flex: 1; }
-.modal-footer { padding: 20px; border-top: 1px solid var(--border-light); text-align: right; background: rgba(30, 41, 59, 0.8); border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg); }
-.close-btn { cursor: pointer; padding: 8px; color: var(--text-muted); font-size: 1.2rem; transition: all var(--transition-fast); border-radius: var(--border-radius-sm); width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
-.close-btn:hover { color: var(--text-primary); background: rgba(255,255,255,0.1); }
-
-#loader { position: absolute; inset: 0; background: rgba(5,5,5,0.95); backdrop-filter: blur(10px); z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; transition: opacity var(--transition-normal); }
-.hidden { opacity: 0; pointer-events: none; display: none !important; }
-.spinner { width: 60px; height: 60px; border: 4px solid rgba(255,255,255,0.1); border-top-color: var(--accent-blue); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* --- MOBILE RESPONSIVE --- */
-@media (max-width: 1024px) {
-  :root { --sidebar-width: 340px; }
-  .map-controls { right: 360px; }
-  .legend { right: 360px; }
-}
-
-@media (max-width: 768px) {
-  #app { display: block; position: relative; }
-  #map { width: 100%; height: 100%; padding-bottom: var(--bottom-nav-height); }
-  .mobile-nav {
-    display: flex; position: fixed; bottom: 0; left: 0; right: 0;
-    height: var(--bottom-nav-height); background: rgba(15, 23, 42, 0.95);
-    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid var(--border-light); z-index: 5000;
-    justify-content: space-around; align-items: center; box-shadow: 0 -10px 30px rgba(0,0,0,0.7);
-  }
-  .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.75rem; gap: 6px; width: 33%; height: 100%; cursor: pointer; transition: all var(--transition-fast); position: relative; }
-  .nav-item i { font-size: 1.4rem; transition: all var(--transition-fast); }
-  .nav-item.active { color: var(--accent-blue); }
-  .nav-item.active i { transform: translateY(-5px); }
-  .nav-item.active::after { content: ""; position: absolute; bottom: 5px; width: 5px; height: 5px; background: var(--gradient-primary); border-radius: 50%; }
-  .sidebar, .sidebar-right { position: absolute; bottom: var(--bottom-nav-height); left: 0; right: 0; top: auto; width: 100%; height: auto; max-height: 85vh; border: none; border-radius: 24px 24px 0 0; border-top: 1px solid rgba(255,255,255,0.15); background: rgba(15, 23, 42, 0.97); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); box-shadow: 0 -20px 60px rgba(0,0,0,0.9); z-index: 4000; transform: translateY(110%); transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1); }
-  .sidebar.active, .sidebar-right.active { transform: translateY(0); }
-  .legend { display: none !important; }
-  .map-controls { top: 20px; right: 20px; flex-direction: row; gap: 8px; }
-  .map-btn { width: 44px; height: 44px; }
-  .header { padding: 16px; }
-  .header h1, .header h2 { font-size: 1.2rem; }
-  #btnBack { display: none !important; }
-  .controls { padding: 16px; }
-  .modal-content { width: 90%; margin: 10px; }
-}
-
-/* --- PRESENTATION MODE (BROADCAST VIEW) --- */
-#presentationOverlay {
-    position: fixed; inset: 0; width: 100vw; height: 100vh;
-    background: radial-gradient(circle at 50% 40%, #1e293b 0%, #020617 100%);
-    z-index: 999999; display: none; flex-direction: column; color: #ffffff;
-    font-family: 'Inter', sans-serif; overflow: hidden; animation: fadeIn var(--transition-normal);
-}
-#presentationOverlay::before {
-    content: ''; position: absolute; inset: 0;
-    background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.015) 2px, rgba(255,255,255,0.015) 4px);
-    pointer-events: none; opacity: 0.8;
-}
-#presentationOverlay.active { display: flex; }
-
-.pres-header {
-    text-align: center; padding: 30px 50px; position: relative; z-index: 10;
-    display: flex; justify-content: space-between; align-items: flex-start;
-    animation: slideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.pres-header-center { position: absolute; left: 50%; transform: translateX(-50%); text-align: center; }
-.pres-region {
-    font-size: 1.8rem; font-weight: 300; letter-spacing: 3px; text-transform: uppercase;
-    color: #f1f5f9; text-shadow: 0 4px 15px rgba(0,0,0,0.6);
-}
-.pres-year {
-    font-size: 4.5rem; font-weight: 900; line-height: 0.9; letter-spacing: -2px;
-    text-shadow: 0 8px 25px rgba(0,0,0,0.6);
-    background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-}
-.pres-turn { font-size: 1.3rem; font-weight: 400; font-style: italic; color: #94a3b8; margin-top: 5px; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
-
-.pres-content { flex: 1; display: flex; justify-content: center; align-items: center; position: relative; z-index: 10; padding: 0 5vw; max-height: 65vh; }
-.pres-map-container { flex: 0 0 40%; height: 100%; display: flex; justify-content: center; align-items: center; position: relative; animation: zoomIn 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
-.pres-map-container svg { max-width: 100%; max-height: 100%; width: auto; height: auto; filter: drop-shadow(0px 20px 35px rgba(0,0,0,0.8)); transition: all 0.5s ease-in-out; }
-
-.pres-candidate-main { flex: 0 0 30%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; height: 100%; animation: fadeIn 1s ease; }
-.pres-photo-wrapper { position: relative; width: 300px; height: 400px; margin-bottom: 30px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8); background: #111; border-radius: 4px; overflow: visible; }
-.pres-photo-wrapper::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 0 0 6px rgba(255,255,255,0.9); pointer-events: none; border-radius: 4px; }
-.pres-photo { width: 100%; height: 100%; object-fit: cover; object-position: top center; filter: grayscale(10%) contrast(1.1); transition: filter 0.4s; }
-.pres-party-badge { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); padding: 10px 24px; border-radius: 6px; font-weight: 900; font-size: 1.4rem; display: flex; align-items: center; gap: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.7); border: 3px solid #ffffff; color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.4); z-index: 2; }
-.pres-cand-name { font-size: 2.2rem; font-weight: 900; text-transform: uppercase; line-height: 1.1; margin-bottom: 5px; text-shadow: 0 4px 15px rgba(0,0,0,0.9); letter-spacing: -0.5px; min-height: 2.4em; display: flex; align-items: center; justify-content: center; }
-.pres-cand-vice { font-size: 1rem; color: #94a3b8; margin-bottom: 20px; font-weight: 600; letter-spacing: 1px; }
-.pres-cand-pct { font-size: 5rem; font-weight: 900; line-height: 1; text-shadow: 0 6px 20px rgba(0,0,0,0.8); margin-bottom: 5px; letter-spacing: -2px; }
-.pres-cand-votes { font-size: 1.2rem; color: #cbd5e1; font-weight: 500; background: rgba(0,0,0,0.4); padding: 6px 16px; border-radius: var(--border-radius-full); }
-
-.pres-bottom { position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; justify-content: center; gap: 70px; z-index: 10; animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both; }
-.pres-bottom-cand { display: flex; flex-direction: column; align-items: center; text-align: center; }
-.pres-bottom-photo-wrapper { position: relative; margin-bottom: 12px; }
-.pres-bottom-photo { width: 90px; height: 90px; border-radius: 50%; border: 4px solid #ffffff; object-fit: cover; object-position: top center; box-shadow: 0 8px 20px rgba(0,0,0,0.6); filter: grayscale(10%); }
-.pres-bottom-party { position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); background: #ffffff; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; color: #000; box-shadow: 0 4px 10px rgba(0,0,0,0.6); }
-.pres-bottom-name { font-size: 1.2rem; font-weight: 800; text-transform: uppercase; text-shadow: 0 3px 8px rgba(0,0,0,0.9); margin-bottom: 2px; }
-.pres-bottom-pct { font-size: 2rem; font-weight: 900; text-shadow: 0 3px 8px rgba(0,0,0,0.9); }
-
-.pres-controls { position: absolute; top: 40px; right: 50px; display: flex; gap: 15px; z-index: 99999 !important; }
-.pres-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #ffffff; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); font-size: 1.3rem; backdrop-filter: blur(8px); position: relative; z-index: 99999 !important; }
-.pres-btn:hover { background: rgba(255,255,255,0.3); transform: scale(1.15); border-color: #ffffff; box-shadow: 0 0 15px rgba(255,255,255,0.3); }
-
-.pres-nav-area { position: absolute; top: 0; height: 100%; width: 12vw; z-index: 20; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
-.pres-nav-area.pres-nav-left { left: 0; background: linear-gradient(90deg, rgba(0,0,0,0.4) 0%, transparent 100%); }
-.pres-nav-area.pres-nav-right { right: 0; background: linear-gradient(-90deg, rgba(0,0,0,0.4) 0%, transparent 100%); }
-.pres-nav-area:hover { opacity: 1; }
-.pres-nav-area i { font-size: 3.5rem; text-shadow: 0 0 25px rgba(0,0,0,0.8); color: rgba(255,255,255,0.7); transition: transform 0.2s, color 0.2s; }
-.pres-nav-area:hover i { transform: scale(1.2); color: #ffffff; }
-
-.pres-loading { position: absolute; inset: 0; background: rgba(2, 6, 23, 0.95); backdrop-filter: blur(15px); display: flex; align-items: center; justify-content: center; z-index: 100; font-size: 2rem; flex-direction: column; gap: 25px; }
-
-@keyframes slideDown { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-@keyframes zoomIn { from { transform: scale(0.9); opacity: 0; filter: blur(10px); } to { transform: scale(1); opacity: 1; filter: blur(0); } }
-
-@media (max-width: 1200px) {
-  .pres-photo-wrapper { width: 240px; height: 320px; }
-  .pres-cand-name { font-size: 1.8rem; }
-  .pres-cand-pct { font-size: 4rem; }
-  .pres-region { font-size: 1.8rem; }
-  .pres-year { font-size: 3.5rem; }
-  .pres-bottom { gap: 40px; }
-  .pres-map-container { flex: 0 0 45%; }
-}
-@media (max-width: 768px) {
-  .pres-content { flex-direction: column; padding: 0 20px; margin-top: 100px; }
-  .pres-map-container { display: none; }
-  .pres-candidate-main { flex: none; flex-direction: row; gap: 20px; width: 100%; text-align: left; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin-bottom: 15px; }
-  .pres-photo-wrapper { width: 100px; height: 100px; margin-bottom: 0; border-radius: 50%; box-shadow: none; }
-  .pres-photo-wrapper::after { display: none; }
-  .pres-party-badge { display: none; }
-  .pres-cand-pct { font-size: 2.5rem; }
-  .pres-cand-name { font-size: 1.4rem; }
-  .pres-bottom { display: none; }
-}
+    .pres-controls { position: absolute; top: 30px; right: 40px; display: flex; gap: 15px; z-index: 50;}
+    .pres-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; font-size: 1.2rem; backdrop-filter: blur(5px); }
+    .pres-btn:hover { background: rgba(255,255,255,0.3); transform: scale(1.1); }
+    .pres-nav-area { position: absolute; top: 0; height: 100%; width: 10vw; z-index: 20; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
+    .pres-nav-area:hover { opacity: 1; background: rgba(0,0,0,0.1); }
+    .pres-nav-area i { font-size: 3rem; text-shadow: 0 0 20px rgba(0,0,0,0.8); }
+    .pres-nav-left { left: 0; }
+    .pres-nav-right { right: 0; }
+    
+    .pres-loading { position: absolute; inset: 0; background: #000; display: flex; align-items: center; justify-content: center; z-index: 100; font-size: 2rem; flex-direction: column; gap: 20px;}
 </style>
+    
 </head>
 <body>
 <div id="loader">
-  <div class="spinner"></div>
-  <h3 id="loaderMsg">Carregando Dados...</h3>
+<div class="spinner"></div>
+<h3 id="loaderMsg">Carregando Dados...</h3>
 </div>
 
-<!-- VIEW DE APRESENTAÇÃO (TELA CHEIA) -->
+<!-- VIEW DE APRESENTAÇÃO (NOVO) -->
 <div id="presentationOverlay">
     <div class="pres-controls">
-        <button class="pres-btn" onclick="presentation.downloadSlide()" title="Baixar Slide PNG"><i class="fas fa-camera"></i></button>
         <button class="pres-btn" onclick="presentation.close()" title="Sair da Apresentação"><i class="fas fa-times"></i></button>
     </div>
     <div class="pres-nav-area pres-nav-left" onclick="presentation.prev()"><i class="fas fa-chevron-left"></i></div>
     <div class="pres-nav-area pres-nav-right" onclick="presentation.next()"><i class="fas fa-chevron-right"></i></div>
     
     <div class="pres-header">
-        <div></div>
+        <div class="pres-region" id="presRegion">BRASIL</div>
         <div class="pres-header-center">
             <div class="pres-year">2026</div>
-            <div class="pres-turn" id="presTurn">em primeiro turno:</div>
+            <div class="pres-turn" id="presTurn">no 1º turno</div>
         </div>
-        <div></div>
+        <div style="width: 200px"></div>
     </div>
-    
-    <div class="pres-region" id="presRegion" style="position: absolute; top: 40px; left: 50px; z-index: 20; max-width: 350px; font-size: 2rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.85); text-shadow: 0 4px 15px rgba(0,0,0,0.8); line-height: 1.1;">BRASIL</div>
     
     <div class="pres-content">
         <div class="pres-candidate-main" id="presCand1"></div>
@@ -396,7 +115,7 @@ input:checked + .slider:before { transform: translateX(26px); }
     
     <div id="presLoader" class="pres-loading hidden">
         <div class="spinner"></div>
-        <h3>Renderizando Cenário...</h3>
+        <h3>Processando Mapas...</h3>
     </div>
 </div>
 
@@ -487,6 +206,7 @@ input:checked + .slider:before { transform: translateX(26px); }
         </div>
     </aside>
 
+    <!-- CENTRO (MAPA) -->
     <div id="map"></div>
 
     <!-- DIREITA (RESULTADOS) -->
@@ -521,15 +241,19 @@ input:checked + .slider:before { transform: translateX(26px); }
         </div>
     </div>
 
+    <!-- NAV BAR MOBILE -->
     <div class="mobile-nav">
         <div class="nav-item active" id="navMap" onclick="app.mobileNav('map')">
-            <i class="fas fa-map"></i><span>Mapa</span>
+            <i class="fas fa-map"></i>
+            <span>Mapa</span>
         </div>
         <div class="nav-item" id="navConfig" onclick="app.mobileNav('config')">
-            <i class="fas fa-sliders-h"></i><span>Config</span>
+            <i class="fas fa-sliders-h"></i>
+            <span>Config</span>
         </div>
         <div class="nav-item" id="navResults" onclick="app.mobileNav('results')">
-            <i class="fas fa-chart-bar"></i><span>Resultados</span>
+            <i class="fas fa-chart-bar"></i>
+            <span>Resultados</span>
         </div>
     </div>
 </div>
@@ -545,16 +269,16 @@ const CANDIDATE_PHOTOS = {
 
 const CONFIG = {
     candidates:[
-        { id: 'LULA', name: 'Lula', vice: 'Geraldo Alckmin (PSB)', party: 'PT', number: 13, val: 40, color: '#E12525', active: true, icon: 'fa-star' },
-        { id: 'FLAVIO', name: 'Flávio B.', vice: 'Nome do Vice (PL)', party: 'PL', number: 22, val: 25, color: '#5756d6', active: true, icon: 'fa-flag' },
-        { id: 'TARCISIO', name: 'Tarcísio', vice: 'Nome do Vice (REP)', party: 'REP', number: 10, val: 15, color: '#28a745', active: false, icon: 'fa-shield-alt' }, 
-        { id: 'RENAN', name: 'Renan Santos', vice: 'Nome do Vice (MISSÃO)', party: 'MISSÃO', number: 88, val: 3, color: '#D4AF37', active: true, icon: 'fa-bolt' },
-        { id: 'CAIADO', name: 'Ronaldo Caiado', vice: 'Nome do Vice (UNIÃO)', party: 'UNIÃO', number: 44, val: 8, color: '#009EE3', active: true, icon: 'fa-link' },
-        { id: 'ZEMA', name: 'Romeu Zema', vice: 'Nome do Vice (NOVO)', party: 'NOVO', number: 30, val: 6, color: '#F58220', active: true, icon: 'fa-certificate' },
-        { id: 'RATINHO', name: 'Ratinho Jr', vice: 'Nome do Vice (PSD)', party: 'PSD', number: 55, val: 4, color: '#FAA21B', active: false, icon: 'fa-building' },
-        { id: 'CIRO', name: 'Ciro Gomes', vice: 'Nome do Vice (PSDB)', party: 'PSDB', number: 45, val: 2, color: '#2591cc', active: false, icon: 'fa-crow' },
-        { id: 'ALDO', name: 'Aldo Rebelo', vice: 'Nome do Vice (DC)', party: 'DC', number: 27, val: 1, color: '#006400', active: true, icon: 'fa-church' },
-        { id: 'CURY', name: 'Augusto Cury', vice: 'Nome do Vice (AVANTE)', party: 'AVANTE', number: 70, val: 1, color: '#2ebf98', active: true, icon: 'fa-book' }
+        { id: 'LULA', name: 'Lula', party: 'PT', val: 40, color: '#E12525', active: true, icon: 'fa-star' },
+        { id: 'FLAVIO', name: 'Flávio Bolsonaro', party: 'PL', val: 25, color: '#5756d6', active: true, icon: 'fa-flag' },
+        { id: 'TARCISIO', name: 'Tarcísio', party: 'REP', val: 15, color: '#28a745', active: false, icon: 'fa-shield-alt' }, 
+        { id: 'RENAN', name: 'Renan Santos', party: 'MISSÃO', val: 3, color: '#D4AF37', active: true, icon: 'fa-bolt' },
+        { id: 'CAIADO', name: 'Ronaldo Caiado', party: 'UNIÃO', val: 8, color: '#009EE3', active: true, icon: 'fa-link' },
+        { id: 'ZEMA', name: 'Romeu Zema', party: 'NOVO', val: 6, color: '#F58220', active: true, icon: 'fa-certificate' },
+        { id: 'RATINHO', name: 'Ratinho Jr', party: 'PSD', val: 4, color: '#FAA21B', active: false, icon: 'fa-building' },
+        { id: 'CIRO', name: 'Ciro Gomes', party: 'PSDB', val: 2, color: '#2591cc', active: false, icon: 'fa-crow' },
+        { id: 'ALDO', name: 'Aldo Rebelo', party: 'DC', val: 1, color: '#006400', active: true, icon: 'fa-church' },
+        { id: 'CURY', name: 'Augusto Cury', party: 'AVANTE', val: 1, color: '#2ebf98', active: true, icon: 'fa-book' }
     ],
     scheme:[
         { min: 0, mix: '#ffffff', ratio: 0.85, ref: '#E6E6E6' }, { min: 20, mix: '#ffffff', ratio: 0.85, ref: '#E6E6E6' },
@@ -599,26 +323,46 @@ const CLEAN_SCENARIO = {
     t2_mults: {}, active_candidates: { "LULA": true, "FLAVIO": true, "TARCISIO": true, "RENAN": true, "CAIADO": true, "ZEMA": true, "RATINHO": true, "CIRO": true, "ALDO": true }, t2_mode: "manual"
 };
 
-// -- APRESENTAÇÃO (MODELO DO INDEX 29, COM SLIDES E RM) --
+// -- APRESENTAÇÃO LOGIC (agora com RMEs) --
 const presentation = {
     slides:[], currentIndex: 0, isActive: false,
-    
     open: async () => {
         if(!app.data.base22) return;
         const loader = document.getElementById('loader');
         loader.classList.remove('hidden');
         document.getElementById('loaderMsg').innerText = "Carregando Dados Cartográficos...";
 
-        if(!app.data.geoJson) {
-            try { const r = await fetch("https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json"); app.data.geoJson = await r.json(); } catch(e) {}
+        // Garante que o GeoJSON de zonas esteja carregado
+        if(!app.data.zonasGeoJson) {
+            try { 
+                const zRes = await fetch('data/mapazn.geojson'); 
+                if (zRes.ok) { 
+                    app.data.zonasGeoJson = await zRes.json(); 
+                    app.processZonasGeoJson(); 
+                } 
+            } catch(e) {
+                console.warn("Zonas eleitorais não encontradas. RMEs não serão geradas.");
+            }
         }
-        
+        // Monta o array de slides: Brasil, Estados e Regiões Metropolitanas
         presentation.slides =[{ id: 'BR', name: 'BRASIL', type: 'nacional' }];
         STATES.forEach(s => presentation.slides.push({ id: s.id, name: s.nome, type: 'estado' }));
-        if (app.data.zoneToRM) {
-            const rmes =[...new Set(Object.values(app.data.zoneToRM))];
-            rmes.forEach(rmName => {
-                if(rmName) presentation.slides.push({ id: rmName, name: `RM - ${rmName}`, type: 'rm' });
+        
+        // Adiciona slides de RME se os dados de zonas existirem
+        if (app.data.zonasGeoJson && app.data.zonasGeoJson.features) {
+            const rmeNames = new Set();
+            const zoneToRme = {};
+            app.data.zonasGeoJson.features.forEach(f => {
+                const rme = f.properties.RME_NOME;
+                if (rme) {
+                    rmeNames.add(rme);
+                    const zoneId = app.getFeatureId(f, 'zonas');
+                    if (zoneId) zoneToRme[zoneId] = rme;
+                }
+            });
+            app.data.zoneToRme = zoneToRme; // guarda o mapeamento zona -> RME
+            rmeNames.forEach(name => {
+                presentation.slides.push({ id: name, name: name, type: 'rme' });
             });
         }
         
@@ -627,13 +371,7 @@ const presentation = {
         document.addEventListener('keydown', presentation.handleKeydown);
         loader.classList.add('hidden'); presentation.renderSlide();
     },
-    
-    close: () => { 
-        presentation.isActive = false; 
-        document.getElementById('presentationOverlay').classList.remove('active'); 
-        document.removeEventListener('keydown', presentation.handleKeydown); 
-    },
-    
+    close: () => { presentation.isActive = false; document.getElementById('presentationOverlay').classList.remove('active'); document.removeEventListener('keydown', presentation.handleKeydown); },
     prev: () => { presentation.currentIndex = presentation.currentIndex > 0 ? presentation.currentIndex - 1 : presentation.slides.length - 1; presentation.renderSlide(); },
     next: () => { presentation.currentIndex = presentation.currentIndex < presentation.slides.length - 1 ? presentation.currentIndex + 1 : 0; presentation.renderSlide(); },
     handleKeydown: (e) => { if(e.key === 'ArrowRight') presentation.next(); if(e.key === 'ArrowLeft') presentation.prev(); if(e.key === 'Escape') presentation.close(); },
@@ -645,7 +383,7 @@ const presentation = {
             const exportContainer = document.createElement('div');
             exportContainer.style.position = 'absolute'; exportContainer.style.top = '0'; exportContainer.style.left = '0';
             exportContainer.style.width = originalOverlay.offsetWidth + 'px'; exportContainer.style.height = originalOverlay.offsetHeight + 'px';
-            exportContainer.style.background = '#0d102e'; exportContainer.style.zIndex = '-9999'; exportContainer.style.overflow = 'hidden';
+            exportContainer.style.background = '#0b1120'; exportContainer.style.zIndex = '-9999'; exportContainer.style.overflow = 'hidden';
             
             const clone = originalOverlay.cloneNode(true);
             clone.id = "presentationOverlayClone"; clone.style.position = 'relative'; clone.style.width = '100%'; clone.style.height = '100%'; clone.style.background = 'transparent';
@@ -653,31 +391,42 @@ const presentation = {
             const controls = clone.querySelector('.pres-controls'); if(controls) controls.remove();
             clone.querySelectorAll('.pres-nav-area').forEach(n => n.remove());
             clone.querySelectorAll('svg').forEach(svg => { svg.style.filter = 'none'; });
+            clone.querySelectorAll('.pres-photo, .pres-bottom-photo').forEach(img => { img.style.filter = 'none'; });
+
+            const images = clone.querySelectorAll('img');
+            for (let img of images) {
+                try {
+                    const tempCanvas = document.createElement('canvas'); const ctx = tempCanvas.getContext('2d'); const tempImg = new Image(); tempImg.crossOrigin = "anonymous"; 
+                    await new Promise((resolve) => { tempImg.onload = () => { tempCanvas.width = tempImg.width; tempCanvas.height = tempImg.height; ctx.drawImage(tempImg, 0, 0); img.src = tempCanvas.toDataURL('image/png'); resolve(); }; tempImg.onerror = resolve; tempImg.src = img.src; });
+                } catch(e) {}
+            }
 
             exportContainer.appendChild(clone); document.body.appendChild(exportContainer);
-            const finalCanvas = await html2canvas(exportContainer, { useCORS: true, scale: 2, backgroundColor: '#0d102e', logging: false });
+            const finalCanvas = await html2canvas(exportContainer, { useCORS: true, scale: 2, backgroundColor: '#0b1120', logging: false });
             
             finalCanvas.toBlob((blob) => { const regionName = document.getElementById('presRegion').innerText; saveAs(blob, `Slide_${regionName}_2026.png`); }, 'image/png', 1.0);
             document.body.removeChild(exportContainer);
         } catch (error) { alert("Erro ao exportar slide."); } finally { document.body.style.cursor = 'default'; }
     },
-    
     renderSlide: () => {
         const slide = presentation.slides[presentation.currentIndex];
         document.getElementById('presRegion').innerText = slide.name;
-        document.getElementById('presTurn').innerText = app.state.turn === 1 ? "em primeiro turno:" : "em segundo turno:";
-        
+        document.getElementById('presTurn').innerText = `no ${app.state.turn}º turno`;
         const dataset = app.state.turn === 1 ? app.data.round1 : app.data.round2; if(!dataset) return;
 
         let votes = {};
-        if (slide.type === 'nacional') votes = dataset.nacional;
-        else if (slide.type === 'estado') votes = dataset.estados[slide.id] || {};
-        else if (slide.type === 'rm') {
-            if (dataset.zonas && app.data.zoneToRM) {
-                for (let zId in dataset.zonas) {
-                    if (app.data.zoneToRM[zId] === slide.id) {
-                        for (let cid in dataset.zonas[zId]) {
-                            votes[cid] = (votes[cid] || 0) + dataset.zonas[zId][cid];
+        if (slide.type === 'nacional') {
+            votes = dataset.nacional;
+        } else if (slide.type === 'estado') {
+            votes = dataset.estados[slide.id] || {};
+        } else if (slide.type === 'rme') {
+            // Agrega votos das zonas pertencentes a esta RME
+            if (dataset.zonas && app.data.zoneToRme) {
+                for (let zid in dataset.zonas) {
+                    const rme = app.data.zoneToRme[zid];
+                    if (rme === slide.name) {
+                        for (let cid in dataset.zonas[zid]) {
+                            votes[cid] = (votes[cid] || 0) + dataset.zonas[zid][cid];
                         }
                     }
                 }
@@ -687,69 +436,88 @@ const presentation = {
         const sorted = Object.entries(votes).sort((a,b) => b[1] - a[1]);
         const total = sorted.reduce((a,b) => a+b[1], 0);
 
-        const validSorted = sorted.filter(([cid, v]) => { const cand = CONFIG.candidates.find(c=>c.id===cid); return cand && !(app.state.turn===1 && app.state.active_candidates[cid] === false && v === 0); });
+        const validSorted = sorted.filter(([cid, v]) => {
+            const cand = CONFIG.candidates.find(c=>c.id===cid);
+            return cand && !(app.state.turn===1 && app.state.active_candidates[cid] === false && v === 0);
+        });
 
         presentation.renderMainCand('presCand1', validSorted[0], total);
         presentation.renderMainCand('presCand2', validSorted[1], total);
-        
         const bottomContainer = document.getElementById('presBottom'); bottomContainer.innerHTML = '';
         for(let i=2; i < Math.min(validSorted.length, 6); i++) presentation.renderBottomCand(bottomContainer, validSorted[i], total);
-        
         presentation.drawMap(slide);
     },
-    
     renderMainCand: (elementId, data, total) => {
         const el = document.getElementById(elementId); if(!data) { el.innerHTML = ''; return; }
         const cand = CONFIG.candidates.find(c=>c.id===data[0]); const pct = total > 0 ? (data[1]/total)*100 : 0;
         const photoUrl = CANDIDATE_PHOTOS[cand.id] || `https://via.placeholder.com/300x400/${cand.color.substring(1)}/ffffff.png?text=${cand.name}`;
-        
-        el.innerHTML = `
-            <div class="pres-photo-wrapper" style="border-color: ${cand.color}">
-                <img src="${photoUrl}" class="pres-photo" onerror="this.src='https://via.placeholder.com/300x400/333/fff?text=${cand.name}'">
-                <div class="pres-party-badge" style="background: ${cand.color};">
-                    <i class="fas ${cand.icon}"></i> ${cand.party}
-                </div>
-            </div>
-            <div class="pres-cand-name">${cand.name}</div>
-            <div class="pres-cand-vice">Vice: ${cand.vice || 'Não definido'}</div>
-            <div class="pres-cand-pct">${pct.toFixed(2).replace('.', ',')}%</div>
-            <div class="pres-cand-votes">${data[1].toLocaleString('pt-BR')} dos votos</div>
-        `;
+        el.innerHTML = `<div class="pres-photo-wrapper"><img src="${photoUrl}" class="pres-photo" onerror="this.src='https://via.placeholder.com/300x400/333/fff?text=${cand.name}'"><div class="pres-party-badge" style="background: ${cand.color};"><i class="fas ${cand.icon}"></i> ${cand.party}</div></div><div class="pres-cand-name">${cand.name}</div><div class="pres-cand-vice">VICE NÃO DEFINIDO</div><div class="pres-cand-pct" style="color: ${cand.color}">${pct.toFixed(2)}%</div><div class="pres-cand-votes">Votos: ${data[1].toLocaleString('pt-BR')}</div>`;
     },
-    
     renderBottomCand: (container, data, total) => {
         if(!data) return; const cand = CONFIG.candidates.find(c=>c.id===data[0]); const pct = total > 0 ? (data[1]/total)*100 : 0;
         const photoUrl = CANDIDATE_PHOTOS[cand.id] || `https://via.placeholder.com/100x100/${cand.color.substring(1)}/ffffff.png?text=${cand.id.substring(0,3)}`;
-        
         const div = document.createElement('div'); div.className = 'pres-bottom-cand';
-        div.innerHTML = `
-            <div class="pres-bottom-photo-wrapper">
-                <img src="${photoUrl}" class="pres-bottom-photo" style="border-color: ${cand.color}" onerror="this.src='https://via.placeholder.com/100/333/fff'">
-                <div class="pres-bottom-party" style="background-color: ${cand.color}"><i class="fas ${cand.icon}"></i></div>
-            </div>
-            <div class="pres-bottom-name">${cand.name.split(' ')[0]}</div>
-            <div class="pres-bottom-pct">${pct.toFixed(2).replace('.', ',')}%</div>
-        `;
+        div.innerHTML = `<div class="pres-bottom-photo-wrapper" style="position:relative;"><img src="${photoUrl}" class="pres-bottom-photo" onerror="this.src='https://via.placeholder.com/100/333/fff'"><div class="pres-bottom-party" style="border: 2px solid ${cand.color}"><i class="fas ${cand.icon}" style="color: ${cand.color}"></i></div></div><div class="pres-bottom-name">${cand.name.split(' ')[0]}</div><div class="pres-bottom-pct" style="color: ${cand.color}">${pct.toFixed(2)}%</div>`;
         container.appendChild(div);
     },
-    
     drawMap: (slide) => {
-        const container = document.getElementById('presMap'); let features =[]; let scope = '';
-        if(slide.type === 'nacional') { 
-            if(!app.data.brazilGeoJson) return; features = app.data.brazilGeoJson.features; scope = 'estados'; 
-        } else if (slide.type === 'estado') { 
-            if(!app.data.geoJson) return; features = app.data.geoJson.features.filter(f => app.getFeatureId(f, 'municipios').startsWith(slide.id)); scope = 'municipios'; 
-        } else if (slide.type === 'rm') {
-            if(!app.data.zonasGeoJson) return; features = app.data.zonasGeoJson.features.filter(f => f.properties.RME_NOME === slide.id); scope = 'zonas';
+        const container = document.getElementById('presMap');
+        let features = [], scope = '';
+        if (slide.type === 'nacional') {
+            if(!app.data.brazilGeoJson) return;
+            features = app.data.brazilGeoJson.features;
+            scope = 'estados';
+        } else if (slide.type === 'estado') {
+            if(!app.data.geoJson) return;
+            features = app.data.geoJson.features.filter(f => app.getFeatureId(f, 'municipios').startsWith(slide.id));
+            scope = 'municipios';
+        } else if (slide.type === 'rme') {
+            // Filtra zonas pela propriedade RME_NOME
+            if(!app.data.zonasGeoJson) return;
+            features = app.data.zonasGeoJson.features.filter(f => f.properties.RME_NOME === slide.name);
+            scope = 'zonas';
         }
-        
-        if(features.length === 0) { container.innerHTML = ''; return; }
+        if(!features || features.length === 0) { container.innerHTML = ''; return; }
         
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        features.forEach(f => { const scan = (coords) => { coords.forEach(pt => { if(typeof pt[0]==='number') { if(pt[0]<minX) minX=pt[0]; if(pt[0]>maxX) maxX=pt[0]; if(pt[1]<minY) minY=pt[1]; if(pt[1]>maxY) maxY=pt[1]; } else scan(pt); }); }; if(f.geometry && f.geometry.coordinates) scan(f.geometry.coordinates); });
-        const w = 800; const latD = maxY - minY; const lonD = maxX - minX; const h = w / (lonD/latD); const proj = (x,y) =>[(x-minX)*(w/lonD), (maxY-y)*(h/latD)];
+        features.forEach(f => {
+            const scan = (coords) => {
+                coords.forEach(pt => {
+                    if(typeof pt[0]==='number') {
+                        if(pt[0]<minX)minX=pt[0];
+                        if(pt[0]>maxX)maxX=pt[0];
+                        if(pt[1]<minY)minY=pt[1];
+                        if(pt[1]>maxY)maxY=pt[1];
+                    } else scan(pt);
+                });
+            };
+            if(f.geometry && f.geometry.coordinates) scan(f.geometry.coordinates);
+        });
+        
+        const w = 800; const latD = maxY - minY, lonD = maxX - minX;
+        const h = w / (lonD / latD);
+        const proj = (x,y) => [(x-minX)*(w/lonD), (maxY-y)*(h/latD)];
+        
         let svg = '';
-        features.forEach(f => { const id = app.getFeatureId(f, scope); const col = app.getColorForId(id, scope).fill; let d = ''; const draw = (r) => { let p=''; r.forEach((pt,i)=>{ const[px,py]=proj(pt[0],pt[1]); p+=(i===0?'M':'L')+px.toFixed(1)+','+py.toFixed(1); }); return p+'Z '; }; if(f.geometry.type==='Polygon') f.geometry.coordinates.forEach(r=>d+=draw(r)); else if(f.geometry.type==='MultiPolygon') f.geometry.coordinates.forEach(p=>p.forEach(r=>d+=draw(r))); svg += `<path d="${d}" fill="${col}" stroke="#04285e" stroke-width="0.6"/>`; });
+        features.forEach(f => {
+            const id = scope === 'zonas' ? app.getFeatureId(f, 'zonas') : (scope === 'estados' ? app.getFeatureId(f, 'estados') : app.getFeatureId(f, 'municipios'));
+            const col = app.getColorForId(id, scope).fill;
+            let d = '';
+            const draw = (ring) => {
+                let p = '';
+                ring.forEach((pt, i) => {
+                    const [px, py] = proj(pt[0], pt[1]);
+                    p += (i === 0 ? 'M' : 'L') + px.toFixed(1) + ',' + py.toFixed(1);
+                });
+                return p + 'Z ';
+            };
+            if (f.geometry.type === 'Polygon') {
+                f.geometry.coordinates.forEach(r => d += draw(r));
+            } else if (f.geometry.type === 'MultiPolygon') {
+                f.geometry.coordinates.forEach(p => p.forEach(r => d += draw(r)));
+            }
+            svg += `<path d="${d}" fill="${col}" stroke="rgba(255,255,255,0.4)" stroke-width="${scope === 'estados' ? 1 : 0.2}"/>`;
+        });
         container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">${svg}</svg>`;
     }
 };
@@ -757,7 +525,7 @@ const presentation = {
 const app = {
     map: null,
     layers: { brazil: null, cities: null, zones: null },
-    data: { base22: null, round1: null, round2: null, geoJson: null, names: {}, brazilGeoJson: null, zonasGeoJson: null, zoneToRM: {} },
+    data: { base22: null, round1: null, round2: null, geoJson: null, names: {}, brazilGeoJson: null, zonasGeoJson: null, zoneToRme: null },
     state: { turn: 1, view: 'states', selectedId: null, selectedName: "Brasil", selectedScope: null, activeCityId: null, t1_polls: {}, t1_matrix: {}, t1_matrix_state: {}, t1_mults: {}, t2_finalists:[], t2_polls: {}, t2_migr: {}, t2_mults: {}, active_candidates: {}, t2_mode: 'manual' },
 
     init: async () => {
@@ -784,13 +552,16 @@ const app = {
         try { 
             const res = await fetch('data/2022_president.json'); const json = await res.json(); 
             app.data.base22 = json['1']; app.data.names = json['1'].meta_nomes || {}; 
+            // Tenta carregar zonas eleitorais
             try { 
                 const zRes = await fetch('data/mapazn.geojson'); 
                 if (zRes.ok) { 
                     app.data.zonasGeoJson = await zRes.json(); 
                     app.processZonasGeoJson(); 
                 } 
-            } catch(ez) { console.warn("Zonas eleitorais (data/mapazn.geojson) não encontradas."); }
+            } catch(ez) {
+                console.warn("Zonas eleitorais (data/mapazn.geojson) não encontradas ou erro ao carregar.");
+            }
             await app.loadBrazilLayer(); app.runSimulation(); 
         } catch(e) { console.error(e); alert("Erro dados. Verifique data/2022_president.json"); } finally { loader.classList.add('hidden'); }
     },
@@ -798,13 +569,12 @@ const app = {
     exportConfig: () => { const config = { t1_polls: app.state.t1_polls, t1_matrix: app.state.t1_matrix, t1_matrix_state: app.state.t1_matrix_state, t1_mults: app.state.t1_mults, t2_migr: app.state.t2_migr, t2_mults: app.state.t2_mults, active_candidates: app.state.active_candidates, t2_mode: app.state.t2_mode }; saveAs(new Blob([JSON.stringify(config, null, 2)], {type: "application/json;charset=utf-8"}), "eleicoes_config.json"); },
     importConfig: (input) => { const file = input.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = (e) => { try { app.loadScenario(JSON.parse(e.target.result)); app.renderUI(); app.runSimulation(); alert("Configuração carregada com sucesso!"); } catch(err) { alert("Erro JSON: " + err.message); } }; reader.readAsText(file); input.value = ''; },
     
+    // Transforma os dados do GeoJSON de zonas em formato de matriz pra simulação
     processZonasGeoJson: () => {
         app.data.base22.zonas = {};
-        app.data.zoneToRM = {};
         app.data.zonasGeoJson.features.forEach(f => {
             const p = f.properties; const id = String(p.CD_MUN_I) + '_' + String(p.ZE_NUM);
             app.data.base22.zonas[id] = { LULA: p.PS22_113 || 0, JAIR: p.PS22_122 || 0, CIRO: p.PS22_112 || 0, SIMONE: p.PS22_115 || 0 };
-            if(p.RME_NOME) app.data.zoneToRM[id] = p.RME_NOME;
         });
     },
 
@@ -871,14 +641,14 @@ const app = {
     
     updateSidebarRight: () => {
         const title = document.getElementById('regionName'), sub = document.getElementById('regionType'), list = document.getElementById('resultsContainer');
-        title.innerText = app.state.selectedName;
+        title.innerText = app.state.selectedName; 
         let subTxt = "Nacional"; if (app.state.selectedId) { if (app.state.selectedScope === 'zonas') subTxt = "Zona Eleitoral"; else if (app.state.selectedId.length === 2) subTxt = "Estado"; else subTxt = "Município"; }
         sub.innerText = subTxt; list.innerHTML = '';
         const dataset = app.state.turn === 1 ? app.data.round1 : app.data.round2; if(!dataset) return;
         let votes = {};
         if(app.state.selectedId) { if (app.state.selectedScope === 'zonas') votes = dataset.zonas ? dataset.zonas[app.state.selectedId] : {}; else if(app.state.selectedId.length === 2) votes = dataset.estados[app.state.selectedId]; else votes = dataset.municipios[app.state.selectedId]; } else votes = dataset.nacional;
         if(!votes) return;
-        const sorted = Object.entries(votes).sort((a,b)=>b[1]-a[1]); const total = sorted.reduce((a,b)=>a+b[1],0);
+        const sorted = Object.entries(votes).sort((a,b)=>b[1]-a[1]); const total = sorted.reduce((a,b)=>a+b[1],0); 
         if(document.getElementById('totalVotesVal')) document.getElementById('totalVotesVal').innerText = total.toLocaleString();
 
         sorted.forEach(([cid, v]) => {
@@ -913,6 +683,7 @@ const app = {
         const targetPcts = {}; activeIds.forEach(id => { targetPcts[id] = (app.state.t1_polls[id]||0) / (rawSliderTotal || 1); });
         const res = { municipios: {}, estados: {}, nacional: {}, zonas: {} }; let tempNacional = {}, grandTotal = 0;
         
+        // Simulação baseada nos municípios
         for(let ibge in base) {
             const votes22 = base[ibge], ufId = ibge.substring(0,2), mVotes = {};
             activeIds.forEach(candId => {
@@ -933,6 +704,7 @@ const app = {
             for(let cid in res.municipios[ibge]) { let v = Math.round(res.municipios[ibge][cid] * corrections[cid]); res.municipios[ibge][cid] = v; res.estados[ufId][cid] = (res.estados[ufId][cid]||0) + v; res.nacional[cid] = (res.nacional[cid]||0) + v; }
         }
         
+        // Simulação extra para as zonas eleitorais
         if (app.data.base22.zonas) {
             for(let zId in app.data.base22.zonas) {
                 const votes22 = app.data.base22.zonas[zId], ufId = String(zId).substring(0,2), zVotes = {};
@@ -956,6 +728,7 @@ const app = {
     calculateTurn2: () => {
         if(!app.data.round1) app.calculateTurn1(); const r1 = app.data.round1;
         const[id1, id2] = app.state.t2_finalists; if(!id1 || !id2) return;
+        const isOrganic = app.state.t2_mode === 'organic';
         const res = { municipios: {}, estados: {}, nacional: {}, zonas: {} }; let tempNacional = {[id1]:0, [id2]:0}, grandTotal = 0;
         for(let ibge in r1.municipios) {
             const v1 = r1.municipios[ibge], ufId = ibge.substring(0,2); let vA = 0, vB = 0;
@@ -963,18 +736,19 @@ const app = {
             if(app.state.t2_mults[ufId]) { if(app.state.t2_mults[ufId][id1]) vA *= app.state.t2_mults[ufId][id1]; if(app.state.t2_mults[ufId][id2]) vB *= app.state.t2_mults[ufId][id2]; }
             vA = Math.round(vA); vB = Math.round(vB); tempNacional[id1] += vA; tempNacional[id2] += vB; grandTotal += (vA + vB); res.municipios[ibge] = { [id1]: vA, [id2]: vB };
         }
-        if(app.state.t2_mode === 'organic') {
+        if(!isOrganic) {
+            const totalSlider = (app.state.t2_polls[id1]||0) + (app.state.t2_polls[id2]||0); const targetPcts = { [id1]: (app.state.t2_polls[id1]||0)/(totalSlider||1),[id2]: (app.state.t2_polls[id2]||0)/(totalSlider||1) };
+            const corrections = {};[id1, id2].forEach(id => { const currPct = tempNacional[id] / (grandTotal||1); corrections[id] = (app.state.t2_polls[id]<=0) ? 0 : (currPct>0 ? targetPcts[id]/currPct : 1); });
+            res.nacional = {};
+            for(let ibge in res.municipios) { const ufId = ibge.substring(0,2); if(!res.estados[ufId]) res.estados[ufId] = {};[id1, id2].forEach(id => { let v = Math.round(res.municipios[ibge][id] * corrections[id]); res.municipios[ibge][id] = v; res.estados[ufId][id] = (res.estados[ufId][id]||0) + v; res.nacional[id] = (res.nacional[id]||0) + v; }); }
+        } else {
             res.nacional = tempNacional;
             for(let ibge in res.municipios) { const ufId = ibge.substring(0,2); if(!res.estados[ufId]) res.estados[ufId] = {};[id1, id2].forEach(id => { let v = res.municipios[ibge][id]; res.estados[ufId][id] = (res.estados[ufId][id]||0) + v; }); }
             const t = grandTotal || 1; app.state.t2_polls[id1] = Math.round((tempNacional[id1]/t)*100); app.state.t2_polls[id2] = Math.round((tempNacional[id2]/t)*100);
             if(document.getElementById(`val_t2_${id1}`)) document.getElementById(`val_t2_${id1}`).innerText = app.state.t2_polls[id1] + '%'; if(document.getElementById(`val_t2_${id2}`)) document.getElementById(`val_t2_${id2}`).innerText = app.state.t2_polls[id2] + '%'; app.checkT2Total();
-        } else {
-            const totalSlider = (app.state.t2_polls[id1]||0) + (app.state.t2_polls[id2]||0); const targetPcts = {[id1]: (app.state.t2_polls[id1]||0)/(totalSlider||1),[id2]: (app.state.t2_polls[id2]||0)/(totalSlider||1) };
-            const corrections = {};[id1, id2].forEach(id => { const currPct = tempNacional[id] / (grandTotal||1); corrections[id] = (app.state.t2_polls[id]<=0) ? 0 : (currPct>0 ? targetPcts[id]/currPct : 1); });
-            res.nacional = {};
-            for(let ibge in res.municipios) { const ufId = ibge.substring(0,2); if(!res.estados[ufId]) res.estados[ufId] = {};[id1, id2].forEach(id => { let v = Math.round(res.municipios[ibge][id] * corrections[id]); res.municipios[ibge][id] = v; res.estados[ufId][id] = (res.estados[ufId][id]||0) + v; res.nacional[id] = (res.nacional[id]||0) + v; }); }
         }
 
+        // T2 para Zonas
         if (r1.zonas) {
             for(let zId in r1.zonas) {
                 const v1 = r1.zonas[zId], ufId = String(zId).substring(0,2); let vA = 0, vB = 0;
@@ -982,7 +756,7 @@ const app = {
                 if(app.state.t2_mults[ufId]) { if(app.state.t2_mults[ufId][id1]) vA *= app.state.t2_mults[ufId][id1]; if(app.state.t2_mults[ufId][id2]) vB *= app.state.t2_mults[ufId][id2]; }
                 vA = Math.round(vA); vB = Math.round(vB); res.zonas[zId] = { [id1]: vA,[id2]: vB };
             }
-            if(app.state.t2_mode !== 'organic') {
+            if(!isOrganic) {
                 const totalSlider = (app.state.t2_polls[id1]||0) + (app.state.t2_polls[id2]||0); const targetPcts = { [id1]: (app.state.t2_polls[id1]||0)/(totalSlider||1), [id2]: (app.state.t2_polls[id2]||0)/(totalSlider||1) };
                 const corrections = {};[id1, id2].forEach(id => { const currPct = tempNacional[id] / (grandTotal||1); corrections[id] = (app.state.t2_polls[id]<=0) ? 0 : (currPct>0 ? targetPcts[id]/currPct : 1); });
                 for(let zId in res.zonas) { [id1, id2].forEach(id => { res.zonas[zId][id] = Math.round(res.zonas[zId][id] * corrections[id]); }); }
@@ -994,6 +768,17 @@ const app = {
 };
 
 document.addEventListener('DOMContentLoaded', app.init);
+
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+        const interactiveElements =['.mode-tab', '.btn-io', '.btn-primary', '.btn-secondary', '.btn-back', '.map-btn', '.nav-item', 'select', 'input[type="checkbox"]', 'input[type="range"]', '.switch input', '.pres-btn', '.pres-nav-area'];
+        interactiveElements.forEach(selector => { document.querySelectorAll(selector).forEach(el => { el.style.zIndex = '10000'; if(selector !== '.pres-nav-area') el.style.position = 'relative'; }); });
+        document.querySelectorAll('.mode-tab, .btn-io').forEach(tab => { tab.style.cursor = 'pointer'; tab.style.pointerEvents = 'auto'; });
+    }, 500);
+});
+
+function ensureClickable(element) { if (element) { element.style.pointerEvents = 'auto'; element.style.cursor = 'pointer'; element.style.zIndex = '10000'; element.style.position = 'relative'; } }
+window.addEventListener('load', function() { ensureClickable(document.getElementById('tab1')); ensureClickable(document.getElementById('tab2')); document.querySelectorAll('.btn-io, .map-btn, .nav-item').forEach(ensureClickable); });
 </script>
 </body>
 </html>
