@@ -757,7 +757,15 @@ const app = {
     getVotes22: (obj, key) => { let sum = 0; for(let k in obj) { if(k.toUpperCase().includes(key)) sum += obj[k]; } return sum; }
 };
 
-document.addEventListener('DOMContentLoaded', app.init);
+// Garante apenas que o input de arquivo funcione corretamente
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('fileInput');
+    if (fileInput) {
+        fileInput.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
+});
 </script>
 </body>
 </html>
