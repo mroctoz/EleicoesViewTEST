@@ -3,146 +3,295 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Eleições View - 2026 Final c/ Zonas Eleitorais</title>
+<title>Eleições View - 2026 Final c/ Regiões Metropolitanas</title>
 
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <!-- Fonts & Icons -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,600;0,800;0,900;1,400&family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
 <!-- Export Libraries -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<link rel="stylesheet" href="style.css">
+<style id="global-styles">
+/* ESTILOS GERAIS DO APP - MANTIDOS DA VERSÃO ANTERIOR OTIMIZADA */
+:root {
+  --bg-primary: #0a0c10;
+  --bg-secondary: #111827;
+  --bg-card: rgba(17, 24, 39, 0.95);
+  --accent-blue: #3b82f6;
+  --accent-purple: #8b5cf6;
+  --gradient-primary: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  --gradient-dark: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  --text-primary: #ffffff;
+  --text-secondary: #e2e8f0;
+  --text-muted: #94a3b8;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --sidebar-width: 380px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
+body { font-family: 'Inter', sans-serif; background: var(--bg-primary); color: var(--text-primary); overflow: hidden; height: 100vh; width: 100vw; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); border-radius: 9999px; }
+::-webkit-scrollbar-thumb { background: linear-gradient(to bottom, var(--accent-blue), var(--accent-purple)); border-radius: 9999px; }
+#app { width: 100%; height: 100%; display: flex; position: relative; background: var(--bg-secondary); overflow: hidden; }
+#map { flex: 1; height: 100%; z-index: 1; position: relative; }
+.sidebar, .sidebar-right { width: var(--sidebar-width); min-width: var(--sidebar-width); background: var(--bg-card); backdrop-filter: blur(10px); display: flex; flex-direction: column; z-index: 100; border-right: 1px solid var(--border-color); height: 100%; transition: all 0.3s; }
+.sidebar-right { border-left: 1px solid var(--border-color); border-right: none; }
+.header { padding: 20px; background: var(--gradient-dark); border-bottom: 1px solid var(--border-color); flex-shrink: 0; position: relative; }
+.header h1, .header h2 { font-size: 1.4rem; font-weight: 800; background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.controls { padding: 20px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+.btn-io { flex: 1; min-width: 80px; padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(15, 23, 42, 0.8); color: var(--text-secondary); border-radius: 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.btn-io:hover { background: rgba(30, 41, 59, 0.9); border-color: var(--accent-blue); transform: translateY(-2px); }
+.btn-primary, .btn-secondary, .btn-back { width: 100%; padding: 16px; border-radius: 8px; font-weight: 700; color: white; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.btn-primary { background: var(--gradient-primary); border: none; text-transform: uppercase; justify-content: center; }
+.btn-secondary { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); font-size: 0.85rem; }
+.btn-back { background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(255,255,255,0.1); justify-content: center; margin-bottom: 20px;}
+.mode-tabs { display: flex; gap: 10px; margin-top: 20px; background: rgba(15, 23, 42, 0.5); padding: 6px; border-radius: 8px; }
+.mode-tab { flex: 1; padding: 12px; text-align: center; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 700; color: var(--text-muted); }
+.mode-tab.active { background: var(--gradient-primary); color: white; }
+select, input[type="range"] { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: rgba(15, 23, 42, 0.8); color: white; }
+.slider-box { margin-bottom: 16px; background: rgba(15, 23, 42, 0.3); padding: 15px; border-radius: 8px; }
+.slider-header { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 12px; align-items: center; }
+input[type="range"] { padding: 10px 0; -webkit-appearance: none; background: transparent; border: none;}
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 22px; width: 22px; background: var(--gradient-primary); border-radius: 50%; border: 2px solid white; margin-top: -8px;}
+input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 10px;}
+.cand-row { display: flex; align-items: center; gap: 12px; padding: 16px; margin-bottom: 10px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 8px; }
+.cand-color { width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0; }
+.cand-info { flex: 1; }
+.cand-head { display: flex; justify-content: space-between; font-size: 0.95rem; font-weight: 600; margin-bottom: 8px; }
+.progress-bar { height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 10px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 10px; transition: width 0.8s; }
+.map-controls { position: absolute; top: 25px; right: 410px; display: flex; flex-direction: column; gap: 10px; z-index: 900; }
+.map-btn { width: 48px; height: 48px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; font-size: 1.3rem; }
+.legend { position: absolute; bottom: 30px; right: 410px; background: rgba(15, 23, 42, 0.9); padding: 20px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; z-index: 900; }
+.legend-grid { display: flex; height: 24px; width: 250px; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.1); }
+.legend-item { flex: 1; }
+.custom-tooltip { background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); color: white; border-radius: 8px; padding: 0; }
+.tt-head { background: rgba(30, 41, 59, 0.9); padding: 12px 16px; font-weight: 700; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+.tt-body { padding: 12px 16px; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); z-index: 6000; display: none; align-items: center; justify-content: center; }
+.modal-overlay.active { display: flex; }
+.modal-content { background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); width: 520px; max-height: 85vh; border-radius: 16px; display: flex; flex-direction: column; }
+.modal-header, .modal-footer { padding: 20px; background: rgba(30, 41, 59, 0.8); }
+.modal-header { border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-between; font-weight: 700; font-size: 1.1rem; }
+.modal-body { padding: 24px; overflow-y: auto; flex: 1; }
+.modal-footer { border-top: 1px solid rgba(255, 255, 255, 0.1); text-align: right; }
+#loader { position: fixed; inset: 0; background: rgba(5, 5, 5, 0.95); z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+.hidden { opacity: 0; pointer-events: none; display: none !important; }
+.spinner { width: 60px; height: 60px; border: 4px solid rgba(255, 255, 255, 0.1); border-top-color: var(--accent-blue); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.mobile-nav { display: none; }
+@media (max-width: 768px) {
+  #app { display: block; }
+  #map { padding-bottom: 70px; }
+  .mobile-nav { display: flex; position: fixed; bottom: 0; width: 100%; height: 70px; background: rgba(15, 23, 42, 0.95); z-index: 5000; justify-content: space-around; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); }
+  .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 0.75rem; gap: 6px; }
+  .nav-item.active { color: var(--accent-blue); }
+  .sidebar, .sidebar-right { position: absolute; bottom: 70px; width: 100%; height: auto; max-height: 85vh; transform: translateY(110%); z-index: 4000; }
+  .sidebar.active, .sidebar-right.active { transform: translateY(0); }
+  .map-controls { right: 20px; top: 20px; flex-direction: row; }
+  .legend { display: none; }
+}
+</style>
 
 <style id="presentation-styles">
-    /* ESTILOS DA APRESENTAÇÃO (BROADCAST VIEW) - IDÊNTICO À REFERÊNCIA */
+    /* =========================================================
+       ESTILOS EXCLUSIVOS DA APRESENTAÇÃO (MATCH COM A IMAGEM)
+    ========================================================= */
     #presentationOverlay {
-        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-        background: radial-gradient(circle at center, #26164d 0%, #0d081f 100%);
-        z-index: 999999; display: none; flex-direction: column; color: #fff;
-        font-family: 'Inter', sans-serif; overflow: hidden;
+        position: fixed; inset: 0; width: 100vw; height: 100vh;
+        background-color: #0d102e; /* Fundo azul escuro clássico */
+        z-index: 999999; display: none; flex-direction: column; 
+        color: #ffffff; font-family: 'Montserrat', sans-serif; overflow: hidden;
     }
     
-    /* Padrão geométrico de fundo estilo TV */
-    .pres-bg-pattern {
-        position: absolute; inset: 0; opacity: 0.12;
-        background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M60 0L120 30v60L60 120 0 90V30z' fill='none' stroke='%23ffffff' stroke-width='1.5'/%3E%3C/svg%3E");
-        background-size: 100px; z-index: 0; pointer-events: none;
+    /* Marca d'água no fundo simulando identidade visual da eleição */
+    #presentationOverlay::before {
+        content: 'ELEIÇÕES 2026';
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 12vw;
+        font-weight: 900;
+        color: rgba(255,255,255,0.02);
+        white-space: nowrap;
+        pointer-events: none;
+        z-index: 1;
+        letter-spacing: 15px;
     }
     
+    /* Ruído fino simulando painel digital */
+    #presentationOverlay::after {
+        content: ''; position: absolute; inset: 0;
+        background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.015) 2px, rgba(255,255,255,0.015) 4px);
+        pointer-events: none; z-index: 2;
+    }
+
     #presentationOverlay.active { display: flex; }
     
+    /* HEADER (Brasão, 2026, Bandeira) */
     .pres-header { 
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 30px 60px; position: relative; z-index: 10;
+        padding: 30px 60px; position: relative; z-index: 10; 
+        display: flex; justify-content: space-between; align-items: flex-start;
+    }
+    .pres-header-side {
+        width: 150px; height: 80px;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .pres-header-side img { max-height: 100%; max-width: 100%; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
+    
+    .pres-header-center { text-align: center; display: flex; flex-direction: column; align-items: center; }
+    
+    .pres-year { 
+        font-size: 3.5rem; font-weight: 900; line-height: 1;
+        background: #d4a017; /* Dourado */
+        color: #ffffff;
+        padding: 5px 30px;
+        border-radius: 12px;
+        box-shadow: 0 8px 15px rgba(0,0,0,0.4);
+        letter-spacing: 1px;
     }
     
-    .pres-region-title { 
-        font-size: 2rem; font-weight: 300; letter-spacing: 1px; 
-        text-transform: uppercase; text-shadow: 0 4px 10px rgba(0,0,0,0.5); 
-    }
-    .pres-region-title span { font-weight: 900; }
-    
-    .pres-year-box {
-        background: linear-gradient(180deg, #3b82f6 0%, #1e3a8a 100%);
-        font-size: 3.5rem; font-weight: 900; padding: 0px 40px; border-radius: 8px;
-        letter-spacing: 2px; box-shadow: 0 10px 20px rgba(0,0,0,0.6);
-        position: absolute; left: 50%; transform: translateX(-50%);
-        line-height: 1.2; text-shadow: 0 2px 5px rgba(0,0,0,0.4);
+    .pres-turn { 
+        font-size: 1.3rem; font-weight: 400; color: #ffffff; 
+        margin-top: 10px; text-transform: lowercase; letter-spacing: 1px;
     }
     
-    .pres-turn-title { 
-        font-size: 1.8rem; font-weight: 300; letter-spacing: 1px; 
-        text-transform: uppercase; text-shadow: 0 4px 10px rgba(0,0,0,0.5); 
+    /* NOME DA REGIÃO (Abaixo do Header) */
+    .pres-region-title {
+        position: absolute; top: 120px; left: 50%; transform: translateX(-50%);
+        font-size: 1.2rem; font-weight: 800; letter-spacing: 4px;
+        text-transform: uppercase; color: rgba(255,255,255,0.3); z-index: 10;
     }
 
-    .pres-content {
-        flex: 1; display: flex; justify-content: space-between; align-items: center;
-        position: relative; z-index: 10; padding: 0 5vw;
+    /* CONTEÚDO CENTRAL */
+    .pres-content { 
+        flex: 1; display: flex; justify-content: center; align-items: center; 
+        position: relative; z-index: 10; padding: 0 4vw; gap: 20px;
     }
     
+    /* MAPA */
     .pres-map-container { 
-        flex: 1; height: 80vh; display: flex; justify-content: center; align-items: center; position: relative; 
+        flex: 0 0 35%; height: 60vh; display: flex; 
+        justify-content: center; align-items: center; position: relative;
     }
     .pres-map-container svg { 
-        max-width: 90%; max-height: 90%; filter: drop-shadow(0px 20px 30px rgba(0,0,0,0.6)); 
-    }
-
-    /* Candidatos Laterais */
-    .pres-candidate-main { 
-        flex: 0 0 350px; display: flex; flex-direction: column; align-items: center; text-align: center; 
+        width: 100%; height: 100%; 
+        filter: drop-shadow(0px 15px 25px rgba(0,0,0,0.7)); 
     }
     
-    .pres-photo-wrapper {
-        position: relative; width: 340px; height: 440px;
-        border-radius: 4px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); margin-bottom: 40px; background: #111;
+    /* COLUNAS LATERAIS DOS FINALISTAS */
+    .pres-candidate-main { 
+        flex: 0 0 32%; display: flex; flex-direction: column; 
+        align-items: center; text-align: center;
     }
-    .pres-photo { 
-        width: 100%; height: 100%; object-fit: cover; object-position: top center; 
-        border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); 
+    
+    .pres-photo-wrapper { 
+        position: relative; width: 280px; height: 360px; margin-bottom: 20px; 
+        box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        background: #333;
+        /* Borda será definida dinamicamente via JS de acordo com a cor do partido */
+        border-width: 4px; border-style: solid; 
+    }
+    .pres-photo { width: 100%; height: 100%; object-fit: cover; }
+    
+    .pres-party-logo-wrapper {
+        position: absolute; bottom: -15px; right: -15px;
+        z-index: 15;
     }
     
     .pres-party-logo {
-        position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%);
-        width: 70px; height: 50px; background: #ffffff; border-radius: 4px;
+        max-width: 90px; max-height: 50px;
+        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.8));
+    }
+    
+    .pres-cand-number {
+        font-size: 1.8rem; font-weight: 900; color: white;
+        width: 55px; height: 55px; border-radius: 50%;
         display: flex; align-items: center; justify-content: center;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.6); padding: 5px; border: 1px solid rgba(0,0,0,0.1);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.6);
+        border: 3px solid #fff;
     }
-    /* Estilo para acomodar imagens limpas com transparência */
-    .pres-party-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
-    .pres-cand-name-wrapper { 
-        display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 5px; width: 100%; 
-    }
-    .pres-cand-dot { 
-        width: 18px; height: 18px; border-radius: 50%; box-shadow: 0 0 10px currentColor; flex-shrink: 0; 
-    }
     .pres-cand-name { 
-        font-size: 2.8rem; font-weight: 900; text-transform: uppercase; 
-        text-shadow: 0 4px 10px rgba(0,0,0,0.6); line-height: 1; white-space: nowrap; 
+        font-size: 2rem; font-weight: 900; text-transform: uppercase; 
+        display: flex; align-items: center; justify-content: center; gap: 12px;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.8); letter-spacing: -0.5px;
+        margin-bottom: 4px;
     }
-    .pres-cand-vice { font-size: 1.1rem; color: #cbd5e1; font-weight: 400; margin-bottom: 15px; }
-
-    .pres-cand-stats { display: flex; flex-direction: column; align-items: center; gap: 5px; }
-    .pres-cand-huge { font-size: 4.8rem; font-weight: 900; text-shadow: 0 5px 15px rgba(0,0,0,0.6); line-height: 1; }
-    .pres-cand-huge span { font-size: 1.8rem; font-weight: 700; color: #e2e8f0; margin-left: 5px; text-transform: uppercase;}
-    .pres-cand-sub { font-size: 1.3rem; color: #94a3b8; font-weight: 500; }
-
-    /* Meta Central inferior */
-    .pres-footer-center {
-        position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
-        z-index: 10;
-    }
-    .pres-victory-req {
-        font-size: 1.4rem; font-weight: 600; color: #94a3b8;
-        text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    
+    .pres-cand-dot {
+        width: 14px; height: 14px; border-radius: 50%; display: inline-block;
+        box-shadow: 0 0 10px rgba(0,0,0,0.5);
     }
 
-    /* Controles */
-    .pres-controls { position: absolute; top: 30px; right: 40px; display: flex; gap: 15px; z-index: 50;}
+    .pres-cand-vice { 
+        font-size: 1rem; color: #cbd5e1; font-weight: 500; margin-bottom: 12px; 
+    }
+    
+    .pres-cand-pct { 
+        font-size: 5rem; font-weight: 900; line-height: 1; 
+        text-shadow: 0 4px 15px rgba(0,0,0,0.6); margin-bottom: 5px; letter-spacing: -2px;
+    }
+    
+    .pres-cand-votes { font-size: 1.1rem; color: #e2e8f0; font-weight: 400; }
+
+    /* OUTROS CANDIDATOS (RODAPÉ) */
+    .pres-bottom { 
+        position: absolute; bottom: 35px; left: 0; width: 100%; 
+        display: flex; justify-content: center; gap: 60px; z-index: 10; 
+    }
+    .pres-bottom-cand { display: flex; flex-direction: column; align-items: center; text-align: center; }
+    
+    .pres-bottom-photo-wrapper { position: relative; margin-bottom: 12px; }
+    .pres-bottom-photo { 
+        width: 85px; height: 85px; border-radius: 50%; object-fit: cover; 
+        border-width: 3px; border-style: solid;
+        box-shadow: 0 8px 15px rgba(0,0,0,0.6);
+    }
+    
+    .pres-bottom-party-number {
+        position: absolute; bottom: -5px; right: -5px;
+        width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.8rem; font-weight: 800; color: #fff;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.5);
+    }
+
+    .pres-bottom-name { font-size: 1.2rem; font-weight: 800; text-transform: uppercase; margin-bottom: 2px; text-shadow: 0 2px 5px rgba(0,0,0,0.8); }
+    .pres-bottom-pct { font-size: 1.6rem; font-weight: 900; text-shadow: 0 2px 5px rgba(0,0,0,0.8); }
+
+    /* CONTROLES E LOADER DA APRESENTAÇÃO */
+    .pres-controls { position: absolute; top: 30px; right: 40px; display: flex; gap: 15px; z-index: 50000;}
     .pres-btn { 
-        background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 45px; height: 45px; 
-        border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; 
-        font-size: 1.2rem; backdrop-filter: blur(5px); 
+        background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); 
+        color: #fff; width: 45px; height: 45px; border-radius: 50%; 
+        display: flex; align-items: center; justify-content: center; cursor: pointer; 
+        transition: all 0.2s; font-size: 1.2rem; backdrop-filter: blur(5px); 
     }
     .pres-btn:hover { background: rgba(255,255,255,0.3); transform: scale(1.1); }
+    
     .pres-nav-area { 
         position: absolute; top: 0; height: 100%; width: 10vw; z-index: 20; cursor: pointer; 
         display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; 
     }
-    .pres-nav-area:hover { opacity: 1; background: rgba(0,0,0,0.1); }
-    .pres-nav-area i { font-size: 3rem; text-shadow: 0 0 20px rgba(0,0,0,0.8); }
-    .pres-nav-left { left: 0; }
-    .pres-nav-right { right: 0; }
+    .pres-nav-area:hover { opacity: 1; background: rgba(0,0,0,0.15); }
+    .pres-nav-area i { font-size: 4rem; text-shadow: 0 0 20px rgba(0,0,0,0.8); color: rgba(255,255,255,0.6); }
+    .pres-nav-area:hover i { color: white; transform: scale(1.1); }
+    .pres-nav-left { left: 0; background: linear-gradient(90deg, rgba(0,0,0,0.3) 0%, transparent 100%); }
+    .pres-nav-right { right: 0; background: linear-gradient(-90deg, rgba(0,0,0,0.3) 0%, transparent 100%);}
     
-    .pres-loading { position: absolute; inset: 0; background: #000; display: flex; align-items: center; justify-content: center; z-index: 100; font-size: 2rem; flex-direction: column; gap: 20px;}
+    .pres-loading { 
+        position: absolute; inset: 0; background: rgba(13, 16, 46, 0.95); 
+        display: flex; align-items: center; justify-content: center; z-index: 1000; 
+        font-size: 2rem; flex-direction: column; gap: 20px; font-weight: 800; color: #fff;
+    }
 </style>
-    
 </head>
 <body>
 <div id="loader">
@@ -150,20 +299,31 @@
 <h3 id="loaderMsg">Carregando Dados...</h3>
 </div>
 
-<!-- VIEW DE APRESENTAÇÃO (NOVO E FOCADO NO DESIGN ORIGINAL) -->
+<!-- VIEW DE APRESENTAÇÃO E TELA CHEIA (IDÊNTICO À IMAGEM) -->
 <div id="presentationOverlay">
-    <div class="pres-bg-pattern"></div>
     <div class="pres-controls">
+        <button class="pres-btn" onclick="presentation.downloadSlide()" title="Baixar Slide PNG"><i class="fas fa-camera"></i></button>
         <button class="pres-btn" onclick="presentation.close()" title="Sair da Apresentação"><i class="fas fa-times"></i></button>
     </div>
+    
     <div class="pres-nav-area pres-nav-left" onclick="presentation.prev()"><i class="fas fa-chevron-left"></i></div>
     <div class="pres-nav-area pres-nav-right" onclick="presentation.next()"><i class="fas fa-chevron-right"></i></div>
     
     <div class="pres-header">
-        <div class="pres-region-title">BRASIL: <span id="presRegion">COLÉGIO ELEITORAL</span></div>
-        <div class="pres-year-box">2026</div>
-        <div class="pres-turn-title" id="presTurn">TURNO ÚNICO</div>
+        <!-- Espaços vazios deixados no código para colocar caminhos de imagens locais futuramente -->
+        <div class="pres-header-side">
+            <!-- <img src="caminho/para/brasao_republica.png" alt="Brasão"> -->
+        </div>
+        <div class="pres-header-center">
+            <div class="pres-year">2026</div>
+            <div class="pres-turn" id="presTurn">em primeiro turno:</div>
+        </div>
+        <div class="pres-header-side">
+            <!-- <img src="caminho/para/bandeira_brasil.png" alt="Bandeira"> -->
+        </div>
     </div>
+    
+    <div class="pres-region-title" id="presRegion">BRASIL</div>
     
     <div class="pres-content">
         <div class="pres-candidate-main" id="presCand1"></div>
@@ -171,13 +331,11 @@
         <div class="pres-candidate-main" id="presCand2"></div>
     </div>
     
-    <div class="pres-footer-center">
-        <div class="pres-victory-req" id="presVictoryReq">50% + 1 VOTO PARA VENCER</div>
-    </div>
+    <div class="pres-bottom" id="presBottom"></div>
     
     <div id="presLoader" class="pres-loading hidden">
         <div class="spinner"></div>
-        <h3>Processando Mapas...</h3>
+        <h3>Renderizando Cenário...</h3>
     </div>
 </div>
 
@@ -245,18 +403,6 @@
                 </div>
             </div>
 
-            <div class="switch-container">
-                <span class="switch-label">MANUAL (%)</span>
-                <label class="switch">
-                    <input type="checkbox" id="t2ModeSwitch" onchange="app.toggleT2Mode(this.checked)">
-                    <span class="slider"></span>
-                </label>
-                <span class="switch-label">ORGÂNICO</span>
-            </div>
-            <div style="padding:0 5px; font-size:0.65rem; color:#888; margin-bottom:10px; text-align:center;" id="t2ModeDesc">
-                Você define as porcentagens finais, o sistema ajusta os votos.
-            </div>
-
             <div style="text-align:center; border-top:1px solid #333; padding-top:10px;">
                 <label id="lblT2Votes">INTENÇÃO DE VOTOS (2º TURNO)</label>
                 <div id="totalSimValT2" style="font-size:1.3rem; font-weight:800; color:#4ade80; margin-bottom:10px;">100%</div>
@@ -268,7 +414,6 @@
         </div>
     </aside>
 
-    <!-- CENTRO (MAPA) -->
     <div id="map"></div>
 
     <!-- DIREITA (RESULTADOS) -->
@@ -280,7 +425,7 @@
             <div style="font-size: 0.8rem; color: var(--accent-blue); margin-top:2px;" id="regionType">Nacional</div>
         </div>
         <div style="padding: 15px; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border-color);">
-            <button id="btnBack" class="btn-back" onclick="app.goBack()"><i class="fas fa-arrow-left"></i> Voltar</button>
+            <button id="btnBack" class="btn-back" style="display:none;" onclick="app.goBack()"><i class="fas fa-arrow-left"></i> Voltar</button>
             <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Votos Totais (Válidos)</div>
             <div id="totalVotesVal" style="font-size: 1.6rem; font-weight: 800; color: white;">-</div>
         </div>
@@ -288,11 +433,10 @@
     </aside>
 
     <div class="map-controls">
-        <div class="map-btn map-btn-dl" title="Baixar PNG" onclick="app.generateStaticMap('png')"><i class="fas fa-image"></i></div>
-        <div class="map-btn map-btn-dl" title="Baixar Vetor SVG" onclick="app.generateStaticMap('svg')"><i class="fas fa-bezier-curve"></i></div>
+        <div class="map-btn map-btn-dl" title="Baixar PNG" onclick="app.generateStaticMap('png')"><i class="fas fa-image" style="color:var(--accent-blue)"></i></div>
         <div style="height:5px;"></div>
-        <div class="map-btn" onclick="app.map.zoomIn()">+</div>
-        <div class="map-btn" onclick="app.map.zoomOut()">-</div>
+        <div class="map-btn" onclick="app.map.zoomIn()"><i class="fas fa-plus"></i></div>
+        <div class="map-btn" onclick="app.map.zoomOut()"><i class="fas fa-minus"></i></div>
     </div>
 
     <div class="legend">
@@ -303,35 +447,15 @@
         </div>
     </div>
 
-    <!-- NAV BAR MOBILE -->
     <div class="mobile-nav">
-        <div class="nav-item active" id="navMap" onclick="app.mobileNav('map')">
-            <i class="fas fa-map"></i>
-            <span>Mapa</span>
-        </div>
-        <div class="nav-item" id="navConfig" onclick="app.mobileNav('config')">
-            <i class="fas fa-sliders-h"></i>
-            <span>Config</span>
-        </div>
-        <div class="nav-item" id="navResults" onclick="app.mobileNav('results')">
-            <i class="fas fa-chart-bar"></i>
-            <span>Resultados</span>
-        </div>
+        <div class="nav-item active" id="navMap" onclick="app.mobileNav('map')"><i class="fas fa-map"></i><span>Mapa</span></div>
+        <div class="nav-item" id="navConfig" onclick="app.mobileNav('config')"><i class="fas fa-sliders-h"></i><span>Config</span></div>
+        <div class="nav-item" id="navResults" onclick="app.mobileNav('results')"><i class="fas fa-chart-bar"></i><span>Resultados</span></div>
     </div>
 </div>
 
 <script>
 const STATES =[{sigla:'AC', nome:'Acre', id:'12'}, {sigla:'AL', nome:'Alagoas', id:'27'}, {sigla:'AP', nome:'Amapá', id:'16'}, {sigla:'AM', nome:'Amazonas', id:'13'}, {sigla:'BA', nome:'Bahia', id:'29'}, {sigla:'CE', nome:'Ceará', id:'23'}, {sigla:'DF', nome:'Distrito Federal', id:'53'}, {sigla:'ES', nome:'Espírito Santo', id:'32'}, {sigla:'GO', nome:'Goiás', id:'52'}, {sigla:'MA', nome:'Maranhão', id:'21'}, {sigla:'MT', nome:'Mato Grosso', id:'51'}, {sigla:'MS', nome:'Mato Grosso do Sul', id:'50'}, {sigla:'MG', nome:'Minas Gerais', id:'31'}, {sigla:'PA', nome:'Pará', id:'15'}, {sigla:'PB', nome:'Paraíba', id:'25'}, {sigla:'PR', nome:'Paraná', id:'41'}, {sigla:'PE', nome:'Pernambuco', id:'26'}, {sigla:'PI', nome:'Piauí', id:'22'}, {sigla:'RJ', nome:'Rio de Janeiro', id:'33'}, {sigla:'RN', nome:'Rio Grande do Norte', id:'24'}, {sigla:'RS', nome:'Rio Grande do Sul', id:'43'}, {sigla:'RO', nome:'Rondônia', id:'11'}, {sigla:'RR', nome:'Roraima', id:'14'}, {sigla:'SC', nome:'Santa Catarina', id:'42'}, {sigla:'SP', nome:'São Paulo', id:'35'}, {sigla:'SE', nome:'Sergipe', id:'28'}, {sigla:'TO', nome:'Tocantins', id:'17'}];
-
-// AS REGIÕES METROPOLITANAS AGORA TERÃO O MAPA POR ZONA ELEITORAL.
-const METRO_REGIONS = [
-    { id: 'RM_SP', name: 'GRANDE SÃO PAULO', cities:['3550308', '3518800', '3547809', '3503901', '3548708', '3534401', '3513009', '3529401', '3522505', '3515004', '3513801', '3523107', '3525003', '3529005'] },
-    { id: 'RM_RJ', name: 'GRANDE RIO', cities:['3304557', '3301702', '3303500', '3304904', '3305109', '3300456', '3303302', '3302403', '3303203', '3302007', '3302270'] },
-    { id: 'RM_BH', name: 'GRANDE BH', cities:['3106200', '3118601', '3106705', '3157807', '3127701', '3149309', '3156700', '3124104'] },
-    { id: 'RM_REC', name: 'GRANDE RECIFE', cities:['2611606', '2607901', '2609600', '2604106', '2610707', '2602902', '2600500', '2606804'] },
-    { id: 'RM_POA', name: 'GRANDE POA', cities:['4314902', '4304606', '4309209', '4323002', '4300604', '4318705', '4310801'] },
-    { id: 'RM_FOR', name: 'GRANDE FORTALEZA', cities:['2304400', '2303709', '2307651', '2309707', '2304285', '2305233'] }
-];
 
 const CANDIDATE_PHOTOS = {
     'LULA': 'data/lula.jpg', 'FLAVIO': 'data/flavio.jpg', 'TARCISIO': 'data/tarcisio.jpg',
@@ -339,19 +463,19 @@ const CANDIDATE_PHOTOS = {
     'RATINHO': 'data/ratinho.jpg', 'CIRO': 'data/ciro.jpg', 'ALDO': 'data/aldo.jpg', 'CURY': 'data/cury.jpg'
 };
 
+/* CONFIGURAÇÃO EXPANDIDA PARA CONTER LOGOS E VICE-PRESIDENTE CONFORME IMAGEM */
 const CONFIG = {
-    // ATENÇÃO: As propriedades 'party_logo' aceitam imagens em .png 
     candidates:[
-        { id: 'LULA', name: 'Lula da Silva', party: 'PT', val: 40, color: '#E12525', active: true, icon: 'fa-star', party_logo: 'data/logos/pt.png', vice: 'Geraldo Alckmin (PSB)' },
-        { id: 'FLAVIO', name: 'Jair Bolsonaro', party: 'PL', val: 25, color: '#002776', active: true, icon: 'fa-flag', party_logo: 'data/logos/pl.png', vice: 'Braga Netto (PL)' },
-        { id: 'TARCISIO', name: 'Tarcísio', party: 'REP', val: 15, color: '#28a745', active: false, icon: 'fa-shield-alt', party_logo: 'data/logos/rep.png', vice: 'Não definido' }, 
-        { id: 'RENAN', name: 'Renan Santos', party: 'MISSÃO', val: 3, color: '#D4AF37', active: true, icon: 'fa-bolt', party_logo: 'data/logos/missao.png', vice: 'Não definido' },
-        { id: 'CAIADO', name: 'Ronaldo Caiado', party: 'UNIÃO', val: 8, color: '#009EE3', active: true, icon: 'fa-link', party_logo: 'data/logos/uniao.png', vice: 'Não definido' },
-        { id: 'ZEMA', name: 'Romeu Zema', party: 'NOVO', val: 6, color: '#F58220', active: true, icon: 'fa-certificate', party_logo: 'data/logos/novo.png', vice: 'Não definido' },
-        { id: 'RATINHO', name: 'Ratinho Jr', party: 'PSD', val: 4, color: '#FAA21B', active: false, icon: 'fa-building', party_logo: 'data/logos/psd.png', vice: 'Não definido' },
-        { id: 'CIRO', name: 'Ciro Gomes', party: 'PDT', val: 2, color: '#2591cc', active: false, icon: 'fa-crow', party_logo: 'data/logos/pdt.png', vice: 'Não definido' },
-        { id: 'ALDO', name: 'Aldo Rebelo', party: 'MDB', val: 1, color: '#006400', active: true, icon: 'fa-church', party_logo: 'data/logos/mdb.png', vice: 'Não definido' },
-        { id: 'CURY', name: 'Augusto Cury', party: 'AVANTE', val: 1, color: '#2ebf98', active: true, icon: 'fa-book', party_logo: 'data/logos/avante.png', vice: 'Não definido' }
+        { id: 'LULA', name: 'Lula', vice: 'Geraldo Alckmin (PSB)', party: 'PT', number: 13, logo: 'data/logos/PT.png', val: 40, color: '#E12525', active: true, icon: 'fa-star' },
+        { id: 'FLAVIO', name: 'Flávio B.', vice: 'Nome do Vice (PL)', party: 'PL', number: 22, logo: 'data/logos/PL.png', val: 25, color: '#5756d6', active: true, icon: 'fa-flag' },
+        { id: 'TARCISIO', name: 'Tarcísio', vice: 'Nome do Vice (REP)', party: 'REP', number: 10, logo: 'data/logos/REP.png', val: 15, color: '#28a745', active: false, icon: 'fa-shield-alt' }, 
+        { id: 'RENAN', name: 'Renan Santos', vice: 'Nome do Vice (MISSÃO)', party: 'MISSÃO', number: 88, logo: 'data/logos/MISSAO.png', val: 3, color: '#D4AF37', active: true, icon: 'fa-bolt' },
+        { id: 'CAIADO', name: 'Ronaldo Caiado', vice: 'Nome do Vice (UNIÃO)', party: 'UNIÃO', number: 44, logo: 'data/logos/UNIAO.png', val: 8, color: '#009EE3', active: true, icon: 'fa-link' },
+        { id: 'ZEMA', name: 'Romeu Zema', vice: 'Nome do Vice (NOVO)', party: 'NOVO', number: 30, logo: 'data/logos/NOVO.png', val: 6, color: '#F58220', active: true, icon: 'fa-certificate' },
+        { id: 'RATINHO', name: 'Ratinho Jr', vice: 'Nome do Vice (PSD)', party: 'PSD', number: 55, logo: 'data/logos/PSD.png', val: 4, color: '#FAA21B', active: false, icon: 'fa-building' },
+        { id: 'CIRO', name: 'Ciro Gomes', vice: 'Nome do Vice (PSDB)', party: 'PSDB', number: 45, logo: 'data/logos/PSDB.png', val: 2, color: '#2591cc', active: false, icon: 'fa-crow' },
+        { id: 'ALDO', name: 'Aldo Rebelo', vice: 'Nome do Vice (DC)', party: 'DC', number: 27, logo: 'data/logos/DC.png', val: 1, color: '#006400', active: true, icon: 'fa-church' },
+        { id: 'CURY', name: 'Augusto Cury', vice: 'Nome do Vice (AVANTE)', party: 'AVANTE', number: 70, logo: 'data/logos/AVANTE.png', val: 1, color: '#2ebf98', active: true, icon: 'fa-book' }
     ],
     scheme:[
         { min: 0, mix: '#ffffff', ratio: 0.85, ref: '#E6E6E6' }, { min: 20, mix: '#ffffff', ratio: 0.85, ref: '#E6E6E6' },
@@ -362,36 +486,14 @@ const CONFIG = {
     ]
 };
 
-const DEFAULT_SCENARIO = {
-  "t1_polls": { "LULA": 48, "FLAVIO": 43, "TARCISIO": 10, "RENAN": 2, "CAIADO": 3, "ZEMA": 2, "RATINHO": 5, "CIRO": 4, "ALDO": 1, "CURY": 2 },
-  "t1_matrix": {
-    "LULA": { "LULA": 1, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 },
-    "JAIR": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 1, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 },
-    "CIRO": { "LULA": 0.1, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 1, "ALDO": 0, "CURY": 0.01 },
-    "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "TARCISIO": 0, "RENAN": 0.06, "CAIADO": 0.06, "ZEMA": 0.06, "RATINHO": 0.06, "CIRO": 0, "ALDO": 0.25, "CURY": 0.5 }
-  },
-  "t1_matrix_state": {},
-  "t1_mults": {}, "t2_migr": {}, "t2_mults": {},
-  "active_candidates": { "LULA": true, "FLAVIO": true, "TARCISIO": false, "RENAN": false, "CAIADO": false, "ZEMA": false, "RATINHO": false, "CIRO": false, "ALDO": false },
-  "t2_mode": "organic"
-};
+const DEFAULT_SCENARIO = { "t1_polls": { "LULA": 47, "FLAVIO": 45, "TARCISIO": 10, "RENAN": 2, "CAIADO": 3, "ZEMA": 2, "RATINHO": 5, "CIRO": 4, "ALDO": 1, "CURY": 2 }, "t1_matrix": { "LULA": { "LULA": 1, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 }, "JAIR": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 1, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 }, "CIRO": { "LULA": 0.1, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 1, "ALDO": 0, "CURY": 0.01 }, "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "TARCISIO": 0, "RENAN": 0.06, "CAIADO": 0.06, "ZEMA": 0.06, "RATINHO": 0.06, "CIRO": 0, "ALDO": 0.25, "CURY": 0.5 } }, "t1_matrix_state": {}, "t1_mults": {}, "t2_migr": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 1, "RENAN": 0.63, "CAIADO": 0.94, "ZEMA": 0.91, "RATINHO": 1, "CIRO": 0.37, "ALDO": 0.48, "CURY": 0.56 }, "t2_mults": {}, "active_candidates": { "LULA": true, "FLAVIO": true, "TARCISIO": false, "RENAN": true, "CAIADO": true, "ZEMA": false, "RATINHO": false, "CIRO": false, "ALDO": true }};
 
-const CLEAN_SCENARIO = {
-    t1_polls: { "LULA": 30, "FLAVIO": 30, "TARCISIO": 10, "RENAN": 5, "CAIADO": 5, "ZEMA": 5, "RATINHO": 5, "CIRO": 5, "ALDO": 5 },
-    t1_matrix: {
-        "LULA": { "LULA": 1, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 },
-        "JAIR": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 },
-        "CIRO": { "LULA": 0, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 1, "ALDO": 0 },
-        "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 }
-    },
-    t1_matrix_state: {}, t1_mults: {},
-    t2_migr: { "LULA":0, "FLAVIO":1, "TARCISIO":1, "RENAN":0.5, "CAIADO":1, "ZEMA":1, "RATINHO":1, "CIRO":0.5, "ALDO":0.5 },
-    t2_mults: {}, active_candidates: { "LULA": true, "FLAVIO": true, "TARCISIO": true, "RENAN": true, "CAIADO": true, "ZEMA": true, "RATINHO": true, "CIRO": true, "ALDO": true }, t2_mode: "manual"
-};
+const CLEAN_SCENARIO = { t1_polls: { "LULA": 30, "FLAVIO": 30, "TARCISIO": 10, "RENAN": 5, "CAIADO": 5, "ZEMA": 5, "RATINHO": 5, "CIRO": 5, "ALDO": 5 }, t1_matrix: { "LULA": { "LULA": 1, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 }, "JAIR": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 }, "CIRO": { "LULA": 0, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 1, "ALDO": 0 }, "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 } }, t1_matrix_state: {}, t1_mults: {}, t2_migr: { "LULA":0, "FLAVIO":1, "TARCISIO":1, "RENAN":0.5, "CAIADO":1, "ZEMA":1, "RATINHO":1, "CIRO":0.5, "ALDO":0.5 }, t2_mults: {}, active_candidates: { "LULA": true, "FLAVIO": true, "TARCISIO": true, "RENAN": true, "CAIADO": true, "ZEMA": true, "RATINHO": true, "CIRO": true, "ALDO": true } };
 
-// -- APRESENTAÇÃO LOGIC --
+// -- APRESENTAÇÃO E SLIDES METROPOLITANOS --
 const presentation = {
     slides:[], currentIndex: 0, isActive: false,
+    
     open: async () => {
         if(!app.data.base22) return;
         const loader = document.getElementById('loader');
@@ -401,164 +503,163 @@ const presentation = {
         if(!app.data.geoJson) {
             try { const r = await fetch("https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json"); app.data.geoJson = await r.json(); } catch(e) {}
         }
+        
         presentation.slides =[{ id: 'BR', name: 'BRASIL', type: 'nacional' }];
+        
+        // Adiciona todos os Estados
         STATES.forEach(s => presentation.slides.push({ id: s.id, name: s.nome, type: 'estado' }));
-        METRO_REGIONS.forEach(r => presentation.slides.push({ id: r.id, name: r.name, type: 'rm', cities: r.cities }));
+        
+        // ADIÇÃO CRÍTICA: Geração dinâmica das Regiões Metropolitanas (RM) baseada nos IDs lidos do geojson de Zonas Eleitorais
+        if (app.data.zoneToRM) {
+            const rmes =[...new Set(Object.values(app.data.zoneToRM))];
+            rmes.forEach(rmName => {
+                if(rmName) presentation.slides.push({ id: rmName, name: `RM - ${rmName}`, type: 'rm' });
+            });
+        }
         
         presentation.currentIndex = 0; presentation.isActive = true;
         document.getElementById('presentationOverlay').classList.add('active');
         document.addEventListener('keydown', presentation.handleKeydown);
         loader.classList.add('hidden'); presentation.renderSlide();
     },
-    close: () => { presentation.isActive = false; document.getElementById('presentationOverlay').classList.remove('active'); document.removeEventListener('keydown', presentation.handleKeydown); },
+    
+    close: () => { 
+        presentation.isActive = false; 
+        document.getElementById('presentationOverlay').classList.remove('active'); 
+        document.removeEventListener('keydown', presentation.handleKeydown); 
+    },
+    
     prev: () => { presentation.currentIndex = presentation.currentIndex > 0 ? presentation.currentIndex - 1 : presentation.slides.length - 1; presentation.renderSlide(); },
     next: () => { presentation.currentIndex = presentation.currentIndex < presentation.slides.length - 1 ? presentation.currentIndex + 1 : 0; presentation.renderSlide(); },
     handleKeydown: (e) => { if(e.key === 'ArrowRight') presentation.next(); if(e.key === 'ArrowLeft') presentation.prev(); if(e.key === 'Escape') presentation.close(); },
 
+    downloadSlide: async () => {
+        document.body.style.cursor = 'wait';
+        try {
+            const originalOverlay = document.getElementById('presentationOverlay');
+            const exportContainer = document.createElement('div');
+            exportContainer.style.position = 'absolute'; exportContainer.style.top = '0'; exportContainer.style.left = '0';
+            exportContainer.style.width = originalOverlay.offsetWidth + 'px'; exportContainer.style.height = originalOverlay.offsetHeight + 'px';
+            exportContainer.style.background = '#0d102e'; exportContainer.style.zIndex = '-9999'; exportContainer.style.overflow = 'hidden';
+            
+            const clone = originalOverlay.cloneNode(true);
+            clone.id = "presentationOverlayClone"; clone.style.position = 'relative'; clone.style.width = '100%'; clone.style.height = '100%'; clone.style.background = 'transparent';
+            
+            const controls = clone.querySelector('.pres-controls'); if(controls) controls.remove();
+            clone.querySelectorAll('.pres-nav-area').forEach(n => n.remove());
+            clone.querySelectorAll('svg').forEach(svg => { svg.style.filter = 'none'; });
+
+            exportContainer.appendChild(clone); document.body.appendChild(exportContainer);
+            const finalCanvas = await html2canvas(exportContainer, { useCORS: true, scale: 2, backgroundColor: '#0d102e', logging: false });
+            
+            finalCanvas.toBlob((blob) => { const regionName = document.getElementById('presRegion').innerText; saveAs(blob, `Slide_${regionName}_2026.png`); }, 'image/png', 1.0);
+            document.body.removeChild(exportContainer);
+        } catch (error) { alert("Erro ao exportar slide."); } finally { document.body.style.cursor = 'default'; }
+    },
+    
     renderSlide: () => {
         const slide = presentation.slides[presentation.currentIndex];
+        document.getElementById('presRegion').innerText = slide.name;
+        document.getElementById('presTurn').innerText = app.state.turn === 1 ? "em primeiro turno:" : "em segundo turno:";
         
-        let prefix = slide.type === 'nacional' ? "BRASIL" : slide.name;
-        let suffix = slide.type === 'rm' ? 'ZONAS ELEITORAIS' : (slide.type === 'estado' ? 'MUNICÍPIOS' : 'VOTO POPULAR');
-        document.querySelector('.pres-region-title').innerHTML = `${prefix}: <span id="presRegion">${suffix}</span>`;
-        
-        document.getElementById('presTurn').innerText = app.state.turn === 1 ? '1º TURNO' : '2º TURNO';
-        
-        const dataset = app.state.turn === 1 ? app.data.round1 : app.data.round2; 
-        if(!dataset) return;
+        const dataset = app.state.turn === 1 ? app.data.round1 : app.data.round2; if(!dataset) return;
 
         let votes = {};
-        if (slide.type === 'nacional') {
-            votes = dataset.nacional;
-        } else if (slide.type === 'estado') {
-            votes = dataset.estados[slide.id] || {};
-        } else if (slide.type === 'rm') {
-            // Regiões metropolitanas agregadas por zona (se existirem os dados) ou por município
-            if (app.data.zonasGeoJson && dataset.zonas) {
-                const zFeatures = app.data.zonasGeoJson.features.filter(f => slide.cities.includes(String(f.properties.CD_MUN_I)));
-                zFeatures.forEach(f => {
-                    const zId = app.getFeatureId(f, 'zonas');
-                    if (dataset.zonas[zId]) {
-                        for(let c in dataset.zonas[zId]) votes[c] = (votes[c]||0) + dataset.zonas[zId][c];
+        if (slide.type === 'nacional') votes = dataset.nacional;
+        else if (slide.type === 'estado') votes = dataset.estados[slide.id] || {};
+        else if (slide.type === 'rm') {
+            // Soma todos os votos das zonas que compõe esta Região Metropolitana específica
+            for (let zId in dataset.zonas) {
+                if (app.data.zoneToRM[zId] === slide.id) {
+                    for (let cid in dataset.zonas[zId]) {
+                        votes[cid] = (votes[cid] || 0) + dataset.zonas[zId][cid];
                     }
-                });
-            } else if (dataset.municipios) {
-                slide.cities.forEach(cId => {
-                    if (dataset.municipios[cId]) {
-                        for(let c in dataset.municipios[cId]) votes[c] = (votes[c]||0) + dataset.municipios[cId][c];
-                    }
-                });
+                }
             }
         }
 
         const sorted = Object.entries(votes).sort((a,b) => b[1] - a[1]);
         const total = sorted.reduce((a,b) => a+b[1], 0);
 
-        const validSorted = sorted.filter(([cid, v]) => { 
-            const cand = CONFIG.candidates.find(c=>c.id===cid); 
-            return cand && !(app.state.turn===1 && app.state.active_candidates[cid] === false && v === 0); 
-        });
+        const validSorted = sorted.filter(([cid, v]) => { const cand = CONFIG.candidates.find(c=>c.id===cid); return cand && !(app.state.turn===1 && app.state.active_candidates[cid] === false && v === 0); });
 
         presentation.renderMainCand('presCand1', validSorted[0], total);
         presentation.renderMainCand('presCand2', validSorted[1], total);
-
+        
+        const bottomContainer = document.getElementById('presBottom'); bottomContainer.innerHTML = '';
+        for(let i=2; i < Math.min(validSorted.length, 6); i++) presentation.renderBottomCand(bottomContainer, validSorted[i], total);
+        
         presentation.drawMap(slide);
     },
     
     renderMainCand: (elementId, data, total) => {
-        const el = document.getElementById(elementId); 
-        if(!data) { el.innerHTML = ''; return; }
-        const cand = CONFIG.candidates.find(c=>c.id===data[0]); 
-        const pct = total > 0 ? (data[1]/total)*100 : 0;
-        const photoUrl = CANDIDATE_PHOTOS[cand.id] || `https://via.placeholder.com/340x440/${cand.color.substring(1)}/ffffff.png?text=${cand.name.split(' ').join('+')}`;
+        const el = document.getElementById(elementId); if(!data) { el.innerHTML = ''; return; }
+        const cand = CONFIG.candidates.find(c=>c.id===data[0]); const pct = total > 0 ? (data[1]/total)*100 : 0;
+        const photoUrl = CANDIDATE_PHOTOS[cand.id] || `https://via.placeholder.com/300x400/${cand.color.substring(1)}/ffffff.png?text=${cand.name}`;
         
-        // Elementos exatos idênticos à imagem da solicitação (Logo no .png, ponto de cor, Vice e numeração forte)
+        // Construção idêntica à foto
         el.innerHTML = `
-            <div class="pres-photo-wrapper">
-                <img src="${photoUrl}" class="pres-photo" onerror="this.src='https://via.placeholder.com/340x440/333/fff?text=${cand.name}'">
-                <div class="pres-party-logo">
-                    <!-- CAMINHO PARA O LOGO DO PARTIDO EM PNG -->
-                    <!-- Adicione o logo com fundo transparente no caminho definido no CONFIG -->
-                    <img src="${cand.party_logo}" alt="${cand.party}" onerror="this.style.display='none'">
+            <div class="pres-photo-wrapper" style="border-color: ${cand.color}">
+                <img src="${photoUrl}" class="pres-photo" onerror="this.src='https://via.placeholder.com/300x400/333/fff?text=${cand.name}'">
+                <div class="pres-party-logo-wrapper">
+                    <img src="${cand.logo}" class="pres-party-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="pres-cand-number" style="display: ${cand.logo ? 'none' : 'flex'}; background-color: ${cand.color}">${cand.number}</div>
                 </div>
             </div>
-            <div class="pres-cand-name-wrapper">
-                <span class="pres-cand-dot" style="color: ${cand.color}; background: ${cand.color}"></span>
-                <div class="pres-cand-name">${cand.name}</div>
+            <div class="pres-cand-name">
+                <span class="pres-cand-dot" style="background-color: ${cand.color}"></span>
+                ${cand.name}
             </div>
             <div class="pres-cand-vice">Vice: ${cand.vice || 'Não definido'}</div>
-            <div class="pres-cand-stats">
-                <div class="pres-cand-huge">${pct.toFixed(2).replace('.', ',')}<span>%</span></div>
-                <div class="pres-cand-sub">Votos absolutos: ${data[1].toLocaleString('pt-BR')}</div>
-            </div>
+            <div class="pres-cand-pct">${pct.toFixed(2).replace('.', ',')}%</div>
+            <div class="pres-cand-votes">${data[1].toLocaleString('pt-BR')} dos votos</div>
         `;
     },
-
-    drawMap: (slide) => {
-        const container = document.getElementById('presMap'); 
-        let features =[]; 
-        let scope = '';
+    
+    renderBottomCand: (container, data, total) => {
+        if(!data) return; const cand = CONFIG.candidates.find(c=>c.id===data[0]); const pct = total > 0 ? (data[1]/total)*100 : 0;
+        const photoUrl = CANDIDATE_PHOTOS[cand.id] || `https://via.placeholder.com/100x100/${cand.color.substring(1)}/ffffff.png?text=${cand.id.substring(0,3)}`;
         
+        const div = document.createElement('div'); div.className = 'pres-bottom-cand';
+        div.innerHTML = `
+            <div class="pres-bottom-photo-wrapper">
+                <img src="${photoUrl}" class="pres-bottom-photo" style="border-color: ${cand.color}" onerror="this.src='https://via.placeholder.com/100/333/fff'">
+                <div class="pres-bottom-party-number" style="background-color: ${cand.color}">${cand.number}</div>
+            </div>
+            <div class="pres-bottom-name">${cand.name.split(' ')[0]}</div>
+            <div class="pres-bottom-pct">${pct.toFixed(2).replace('.', ',')}%</div>
+        `;
+        container.appendChild(div);
+    },
+    
+    drawMap: (slide) => {
+        const container = document.getElementById('presMap'); let features =[]; let scope = '';
         if(slide.type === 'nacional') { 
-            if(!app.data.brazilGeoJson) return; 
-            features = app.data.brazilGeoJson.features; 
-            scope = 'estados'; 
+            if(!app.data.brazilGeoJson) return; features = app.data.brazilGeoJson.features; scope = 'estados'; 
         } else if (slide.type === 'estado') { 
-            if(!app.data.geoJson) return; 
-            features = app.data.geoJson.features.filter(f => app.getFeatureId(f, 'municipios').startsWith(slide.id)); 
-            scope = 'municipios'; 
+            if(!app.data.geoJson) return; features = app.data.geoJson.features.filter(f => app.getFeatureId(f, 'municipios').startsWith(slide.id)); scope = 'municipios'; 
         } else if (slide.type === 'rm') {
-            if(app.data.zonasGeoJson) {
-                features = app.data.zonasGeoJson.features.filter(f => slide.cities.includes(String(f.properties.CD_MUN_I)));
-                scope = 'zonas';
-            }
-            if(features.length === 0 && app.data.geoJson) {
-                features = app.data.geoJson.features.filter(f => slide.cities.includes(app.getFeatureId(f, 'municipios')));
-                scope = 'municipios';
-            }
+            if(!app.data.zonasGeoJson) return; features = app.data.zonasGeoJson.features.filter(f => f.properties.RME_NOME === slide.id); scope = 'zonas';
         }
         
-        if(features.length === 0) { container.innerHTML = '<div style="color:rgba(255,255,255,0.3); font-size:2rem;">Mapa não disponível</div>'; return; }
+        if(features.length === 0) { container.innerHTML = ''; return; }
         
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        features.forEach(f => { 
-            const scan = (coords) => { 
-                coords.forEach(pt => { 
-                    if(typeof pt[0]==='number') { 
-                        if(pt[0]<minX) minX=pt[0]; if(pt[0]>maxX) maxX=pt[0]; 
-                        if(pt[1]<minY) minY=pt[1]; if(pt[1]>maxY) maxY=pt[1]; 
-                    } else scan(pt); 
-                }); 
-            }; 
-            if(f.geometry && f.geometry.coordinates) scan(f.geometry.coordinates); 
-        });
+        features.forEach(f => { const scan = (coords) => { coords.forEach(pt => { if(typeof pt[0]==='number') { if(pt[0]<minX) minX=pt[0]; if(pt[0]>maxX) maxX=pt[0]; if(pt[1]<minY) minY=pt[1]; if(pt[1]>maxY) maxY=pt[1]; } else scan(pt); }); }; if(f.geometry && f.geometry.coordinates) scan(f.geometry.coordinates); });
         
-        const w = 800; 
-        const latD = maxY - minY; 
-        const lonD = maxX - minX; 
-        const h = w / (lonD/latD); 
-        const proj = (x,y) =>[(x-minX)*(w/lonD), (maxY-y)*(h/latD)];
-        
+        const w = 800; const latD = maxY - minY; const lonD = maxX - minX; const h = w / (lonD/latD); const proj = (x,y) =>[(x-minX)*(w/lonD), (maxY-y)*(h/latD)];
         let svg = '';
+        
         features.forEach(f => { 
             const id = app.getFeatureId(f, scope); 
             const col = app.getColorForId(id, scope).fill; 
             let d = ''; 
-            const draw = (r) => { 
-                let p=''; 
-                r.forEach((pt,i)=>{ 
-                    const[px,py]=proj(pt[0],pt[1]); 
-                    p+=(i===0?'M':'L')+px.toFixed(1)+','+py.toFixed(1); 
-                }); 
-                return p+'Z '; 
-            }; 
+            const draw = (r) => { let p=''; r.forEach((pt,i)=>{ const[px,py]=proj(pt[0],pt[1]); p+=(i===0?'M':'L')+px.toFixed(1)+','+py.toFixed(1); }); return p+'Z '; }; 
             if(f.geometry.type==='Polygon') f.geometry.coordinates.forEach(r=>d+=draw(r)); 
             else if(f.geometry.type==='MultiPolygon') f.geometry.coordinates.forEach(p=>p.forEach(r=>d+=draw(r))); 
-            
-            // As bordas (strokes) ficam bem mais finas para suportar visualizações de município e zona
-            const sw = scope === 'estados' ? 1.5 : (scope === 'municipios' ? 0.3 : 0.1);
-            svg += `<path d="${d}" fill="${col}" stroke="rgba(255,255,255,0.6)" stroke-width="${sw}"/>`; 
+            svg += `<path d="${d}" fill="${col}" stroke="#04285e" stroke-width="0.6"/>`; 
         });
+        
         container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">${svg}</svg>`;
     }
 };
@@ -566,7 +667,7 @@ const presentation = {
 const app = {
     map: null,
     layers: { brazil: null, cities: null, zones: null },
-    data: { base22: null, round1: null, round2: null, geoJson: null, names: {}, brazilGeoJson: null, zonasGeoJson: null },
+    data: { base22: null, round1: null, round2: null, geoJson: null, names: {}, brazilGeoJson: null, zonasGeoJson: null, zoneToRM: {} },
     state: { turn: 1, view: 'states', selectedId: null, selectedName: "Brasil", selectedScope: null, activeCityId: null, t1_polls: {}, t1_matrix: {}, t1_matrix_state: {}, t1_mults: {}, t2_finalists:[], t2_polls: {}, t2_migr: {}, t2_mults: {}, active_candidates: {}, t2_mode: 'manual' },
 
     init: async () => {
@@ -593,6 +694,7 @@ const app = {
         try { 
             const res = await fetch('data/2022_president.json'); const json = await res.json(); 
             app.data.base22 = json['1']; app.data.names = json['1'].meta_nomes || {}; 
+            
             try { 
                 const zRes = await fetch('data/mapazn.geojson'); 
                 if (zRes.ok) { 
@@ -611,14 +713,22 @@ const app = {
     
     processZonasGeoJson: () => {
         app.data.base22.zonas = {};
+        app.data.zoneToRM = {}; // Mapeamento dinâmico para Regiões Metropolitanas
+        
         app.data.zonasGeoJson.features.forEach(f => {
-            const p = f.properties; const id = String(p.CD_MUN_I) + '_' + String(p.ZE_NUM);
+            const p = f.properties; 
+            const id = String(p.CD_MUN_I) + '_' + String(p.ZE_NUM);
             app.data.base22.zonas[id] = { LULA: p.PS22_113 || 0, JAIR: p.PS22_122 || 0, CIRO: p.PS22_112 || 0, SIMONE: p.PS22_115 || 0 };
+            
+            // Se o arquivo contiver o identificador de região metropolitana pedido (RME_NOME)
+            if(p.RME_NOME) {
+                app.data.zoneToRM[id] = p.RME_NOME;
+            }
         });
     },
 
     setTurn: (t) => { app.state.turn = t; document.getElementById('tab1').className = `mode-tab ${t===1?'active':''}`; document.getElementById('tab2').className = `mode-tab ${t===2?'active':''}`; document.getElementById('controlsT1').style.display = t===1?'flex':'none'; document.getElementById('controlsT2').style.display = t===2?'flex':'none'; if(t === 2 && app.state.t2_finalists.length === 0 && app.data.round1) { const nac = app.data.round1.nacional; const sorted = Object.entries(nac).sort((a,b)=>b[1]-a[1]); if(sorted.length >= 2) { app.state.t2_finalists = [sorted[0][0], sorted[1][0]]; app.updateT2UI(); } } app.runSimulation(); },
-    toggleT2Mode: (isOrganic) => { app.state.t2_mode = isOrganic ? 'organic' : 'manual'; document.getElementById('t2ModeDesc').innerText = isOrganic ? "Resultado calculado apenas pela migração." : "Você define porcentagens, o sistema ajusta."; document.getElementById('lblT2Votes').innerText = isOrganic ? "RESULTADO (ORGÂNICO)" : "META (MANUAL)"; app.updateT2UI(); app.runSimulation(); },
+    
     handleViewChange: async () => { app.state.view = document.getElementById('viewModeSelect').value; if(app.state.view === 'all_cities') await app.loadAllMunicipalities(); else app.resetSelection(); },
     
     getFeatureId: (feature, scope) => { const p = feature.properties; if (scope === 'zonas') return String(p.CD_MUN_I) + '_' + String(p.ZE_NUM); if (scope === 'municipios') return String(p.CD_MUN || p.id || p.geocodigo || p.CD_MUN_I || ''); return String(p.CD_UF || (STATES.find(x => x.sigla === p.sigla)||{}).id || p.id || ''); },
@@ -668,7 +778,7 @@ const app = {
     refreshMap: () => { if(app.layers.brazil) app.layers.brazil.setStyle((f) => app.getStyle(f, 'estados')); if(app.layers.cities) app.layers.cities.setStyle((f) => app.getStyle(f, 'municipios')); if(app.layers.zones) app.layers.zones.setStyle((f) => app.getStyle(f, 'zonas')); },
     renderLegend: () => { const el = document.getElementById('legendColors'); el.innerHTML = ''; CONFIG.scheme.forEach(s => { if(s.min >= 20) { const d = document.createElement('div'); d.className = 'legend-item'; d.style.background = s.ref; el.appendChild(d); } }); },
     
-    renderUI: () => { const c = document.getElementById('slidersT1'); c.innerHTML = ''; CONFIG.candidates.forEach(cand => { const isActive = app.state.active_candidates[cand.id] !== false; const div = document.createElement('div'); div.className = `slider-box ${isActive ? '' : 'inactive'}`; div.innerHTML = `<div class="slider-header"><div class="slider-check-group"><input type="checkbox" ${isActive ? 'checked' : ''} onchange="app.toggleCandidate('${cand.id}', this.checked)"><span style="color:${cand.color}; font-weight:700"><i class="fas ${cand.icon}"></i> ${cand.name}</span></div><span id="val_t1_${cand.id}">${app.state.t1_polls[cand.id]}%</span></div><input type="range" min="0" max="100" value="${app.state.t1_polls[cand.id]}" ${isActive ? '' : 'disabled'} oninput="app.updateT1Poll('${cand.id}', this.value)">`; c.appendChild(div); }); const c1 = document.getElementById('candFinal1'), c2 = document.getElementById('candFinal2'); const activeCands = CONFIG.candidates.filter(c => app.state.active_candidates[c.id] !== false); const opts = activeCands.map(c => `<option value="${c.id}">${c.name}</option>`).join(''); c1.innerHTML = opts; c2.innerHTML = opts; if(activeCands.length >= 2) { if(!activeCands.find(c=>c.id === app.state.t2_finalists[0])) app.state.t2_finalists[0] = activeCands[0].id; if(!activeCands.find(c=>c.id === app.state.t2_finalists[1])) app.state.t2_finalists[1] = activeCands[1].id; c1.value = app.state.t2_finalists[0]; c2.value = app.state.t2_finalists[1]; } app.updateTotalT1Label(); app.updateT2UI(); },
+    renderUI: () => { const c = document.getElementById('slidersT1'); c.innerHTML = ''; CONFIG.candidates.forEach(cand => { const isActive = app.state.active_candidates[cand.id] !== false; const div = document.createElement('div'); div.className = `slider-box ${isActive ? '' : 'inactive'}`; div.innerHTML = `<div class="slider-header"><div style="display:flex; align-items:center; gap:8px"><input type="checkbox" ${isActive ? 'checked' : ''} onchange="app.toggleCandidate('${cand.id}', this.checked)"><span style="color:${cand.color}; font-weight:700"><i class="fas ${cand.icon}"></i> ${cand.name}</span></div><span id="val_t1_${cand.id}">${app.state.t1_polls[cand.id]}%</span></div><input type="range" min="0" max="100" value="${app.state.t1_polls[cand.id]}" ${isActive ? '' : 'disabled'} oninput="app.updateT1Poll('${cand.id}', this.value)">`; c.appendChild(div); }); const c1 = document.getElementById('candFinal1'), c2 = document.getElementById('candFinal2'); const activeCands = CONFIG.candidates.filter(c => app.state.active_candidates[c.id] !== false); const opts = activeCands.map(c => `<option value="${c.id}">${c.name}</option>`).join(''); c1.innerHTML = opts; c2.innerHTML = opts; if(activeCands.length >= 2) { if(!activeCands.find(c=>c.id === app.state.t2_finalists[0])) app.state.t2_finalists[0] = activeCands[0].id; if(!activeCands.find(c=>c.id === app.state.t2_finalists[1])) app.state.t2_finalists[1] = activeCands[1].id; c1.value = app.state.t2_finalists[0]; c2.value = app.state.t2_finalists[1]; } app.updateTotalT1Label(); app.updateT2UI(); },
     toggleCandidate: (id, checked) => { app.state.active_candidates[id] = checked; if(checked && app.state.t1_polls[id] === 0) app.state.t1_polls[id] = 5; app.renderUI(); app.runSimulation(); },
     updateT1Poll: (id, val) => { app.state.t1_polls[id] = parseInt(val); document.getElementById(`val_t1_${id}`).innerText = val + "%"; app.updateTotalT1Label(); },
     updateTotalT1Label: () => { const tot = CONFIG.candidates.filter(c => app.state.active_candidates[c.id]!==false).reduce((a,c) => a + (app.state.t1_polls[c.id]||0), 0); const el = document.getElementById('totalSimVal'); el.innerText = tot + "%"; el.style.color = tot===100?'#4ade80':'#facc15'; },
@@ -804,17 +914,6 @@ const app = {
 };
 
 document.addEventListener('DOMContentLoaded', app.init);
-
-document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(function() {
-        const interactiveElements =['.mode-tab', '.btn-io', '.btn-primary', '.btn-secondary', '.btn-back', '.map-btn', '.nav-item', 'select', 'input[type="checkbox"]', 'input[type="range"]', '.switch input', '.pres-btn', '.pres-nav-area'];
-        interactiveElements.forEach(selector => { document.querySelectorAll(selector).forEach(el => { el.style.zIndex = '10000'; if(selector !== '.pres-nav-area') el.style.position = 'relative'; }); });
-        document.querySelectorAll('.mode-tab, .btn-io').forEach(tab => { tab.style.cursor = 'pointer'; tab.style.pointerEvents = 'auto'; });
-    }, 500);
-});
-
-function ensureClickable(element) { if (element) { element.style.pointerEvents = 'auto'; element.style.cursor = 'pointer'; element.style.zIndex = '10000'; element.style.position = 'relative'; } }
-window.addEventListener('load', function() { ensureClickable(document.getElementById('tab1')); ensureClickable(document.getElementById('tab2')); document.querySelectorAll('.btn-io, .map-btn, .nav-item').forEach(ensureClickable); });
 </script>
 </body>
 </html>
