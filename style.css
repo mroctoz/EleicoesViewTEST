@@ -41,7 +41,6 @@
   --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Reset e estilos globais */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -69,23 +68,20 @@ body {
   width: 8px;
   height: 8px;
 }
-
 ::-webkit-scrollbar-track {
   background: rgba(15, 23, 42, 0.5);
   border-radius: var(--border-radius-full);
 }
-
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(to bottom, var(--accent-blue), var(--accent-purple));
   border-radius: var(--border-radius-full);
   transition: all var(--transition-normal);
 }
-
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(to bottom, var(--accent-blue-light), var(--accent-purple));
 }
 
-/* --- LAYOUT PRINCIPAL --- */
+/* Layout principal */
 #app {
   width: 100%;
   height: 100%;
@@ -95,6 +91,7 @@ body {
   overflow: hidden;
 }
 
+/* Linha decorativa no topo (não atrapalha cliques) */
 #app::before {
   content: "";
   position: absolute;
@@ -104,9 +101,10 @@ body {
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--accent-blue), transparent);
   z-index: 100;
+  pointer-events: none; /* Importante: não bloqueia interações */
 }
 
-/* --- MAPA --- */
+/* Mapa */
 #map {
   flex: 1;
   height: 100%;
@@ -116,7 +114,7 @@ body {
   transition: all var(--transition-normal);
 }
 
-/* SIDEBARS NO DESKTOP */
+/* Sidebars */
 .sidebar {
   width: var(--sidebar-width);
   min-width: var(--sidebar-width);
@@ -130,6 +128,7 @@ body {
   height: 100%;
   box-shadow: var(--shadow-xl);
   transition: all var(--transition-normal);
+  pointer-events: auto; /* Garantia extra */
 }
 
 .sidebar-right {
@@ -145,21 +144,18 @@ body {
   height: 100%;
   box-shadow: var(--shadow-xl);
   transition: all var(--transition-normal);
+  pointer-events: auto;
 }
 
-/* BARRA DE NAVEGAÇÃO MOBILE (ESCONDIDA NO PC) */
-.mobile-nav {
-  display: none;
-}
-
-/* --- HEADER --- */
+/* Header */
 .header {
   padding: 20px;
   background: var(--gradient-dark);
   border-bottom: 1px solid var(--border-color);
   flex-shrink: 0;
   position: relative;
-  overflow: hidden;
+  overflow: visible; /* Alterado de hidden para visible para garantir que nada seja cortado */
+  z-index: 2;
 }
 
 .header::before {
@@ -171,6 +167,7 @@ body {
   bottom: 0;
   background: linear-gradient(45deg, transparent 30%, rgba(59, 130, 246, 0.05) 100%);
   z-index: 0;
+  pointer-events: none;
 }
 
 .header-top {
@@ -205,7 +202,7 @@ body {
   border-radius: var(--border-radius-full);
 }
 
-/* --- CONTROLES E CONTAINERS --- */
+/* Controles */
 .controls {
   padding: 20px;
   flex: 1;
@@ -230,12 +227,14 @@ body {
   letter-spacing: 0.5px;
 }
 
-/* --- BOTÕES --- */
+/* Botões principais */
 .io-buttons {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   margin-top: 15px;
+  position: relative;
+  z-index: 5; /* Garantimos que fiquem acima de qualquer fundo */
 }
 
 .btn-io {
@@ -255,6 +254,8 @@ body {
   gap: 6px;
   transition: all var(--transition-fast);
   letter-spacing: 0.3px;
+  pointer-events: auto; /* Essencial */
+  user-select: none;
 }
 
 .btn-io:hover {
@@ -286,6 +287,7 @@ body {
   position: relative;
   overflow: hidden;
   z-index: 1;
+  pointer-events: auto;
 }
 
 .btn-primary::before {
@@ -327,6 +329,7 @@ body {
   justify-content: space-between;
   align-items: center;
   transition: all var(--transition-fast);
+  pointer-events: auto;
 }
 
 .btn-secondary:hover {
@@ -352,6 +355,7 @@ body {
   font-size: 0.9rem;
   font-weight: 600;
   transition: all var(--transition-fast);
+  pointer-events: auto;
 }
 
 .btn-back:hover {
@@ -360,7 +364,7 @@ body {
   color: var(--text-primary);
 }
 
-/* --- ABAS DE MODO --- */
+/* Abas de modo */
 .mode-tabs {
   display: flex;
   gap: 10px;
@@ -368,6 +372,8 @@ body {
   background: rgba(15, 23, 42, 0.5);
   padding: 6px;
   border-radius: var(--border-radius-md);
+  position: relative;
+  z-index: 5;
 }
 
 .mode-tab {
@@ -382,6 +388,7 @@ body {
   font-weight: 700;
   color: var(--text-muted);
   transition: all var(--transition-fast);
+  pointer-events: auto;
 }
 
 .mode-tab:hover {
@@ -396,7 +403,7 @@ body {
   box-shadow: var(--shadow-glow);
 }
 
-/* --- SELECTS --- */
+/* Selects */
 select {
   width: 100%;
   padding: 14px;
@@ -412,6 +419,7 @@ select {
   background-repeat: no-repeat;
   background-position: right 15px center;
   background-size: 12px;
+  pointer-events: auto;
 }
 
 select:focus {
@@ -424,7 +432,7 @@ select:hover {
   border-color: rgba(255, 255, 255, 0.2);
 }
 
-/* --- SLIDERS E CHECKBOXES --- */
+/* Sliders e checkboxes */
 .slider-box {
   margin-bottom: 16px;
   transition: opacity var(--transition-normal);
@@ -497,7 +505,7 @@ input[type="range"]:disabled {
   opacity: 0.5;
 }
 
-/* --- SWITCH --- */
+/* Switch */
 .switch-container {
   display: flex;
   align-items: center;
@@ -563,7 +571,7 @@ input:checked + .slider:before {
   transform: translateX(26px);
 }
 
-/* --- CANDIDATOS --- */
+/* Candidatos */
 .cand-row {
   display: flex;
   align-items: center;
@@ -617,7 +625,7 @@ input:checked + .slider:before {
   border-radius: var(--border-radius-full);
 }
 
-/* --- CONTROLES DO MAPA --- */
+/* Controles do mapa */
 .map-controls {
   position: absolute;
   top: 25px;
@@ -662,7 +670,7 @@ input:checked + .slider:before {
   color: var(--accent-blue-light);
 }
 
-/* --- LEGENDA --- */
+/* Legenda */
 .legend {
   position: absolute;
   bottom: 30px;
@@ -697,7 +705,7 @@ input:checked + .slider:before {
   border-right: 1px solid rgba(0, 0, 0, 0.3);
 }
 
-/* --- TOOLTIP --- */
+/* Tooltip */
 .custom-tooltip {
   background: rgba(15, 23, 42, 0.95);
   backdrop-filter: blur(10px);
@@ -722,7 +730,7 @@ input:checked + .slider:before {
   padding: 12px 16px;
 }
 
-/* --- MODAL --- */
+/* Modal */
 .modal-overlay {
   position: absolute;
   inset: 0;
@@ -809,7 +817,7 @@ input:checked + .slider:before {
   background: rgba(255, 255, 255, 0.1);
 }
 
-/* --- LOADER --- */
+/* Loader */
 #loader {
   position: absolute;
   inset: 0;
@@ -843,16 +851,18 @@ input:checked + .slider:before {
   to { transform: rotate(360deg); }
 }
 
-/* --- MOBILE RESPONSIVE --- */
+/* Mobile */
+.mobile-nav {
+  display: none;
+}
+
 @media (max-width: 1024px) {
   :root {
     --sidebar-width: 340px;
   }
-  
   .map-controls {
     right: 360px;
   }
-  
   .legend {
     right: 360px;
   }
@@ -863,13 +873,11 @@ input:checked + .slider:before {
     display: block;
     position: relative;
   }
-  
   #map {
     width: 100%;
     height: 100%;
     padding-bottom: var(--bottom-nav-height);
   }
-  
   .mobile-nav {
     display: flex;
     position: fixed;
@@ -886,7 +894,6 @@ input:checked + .slider:before {
     align-items: center;
     box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.7);
   }
-  
   .nav-item {
     display: flex;
     flex-direction: column;
@@ -901,20 +908,16 @@ input:checked + .slider:before {
     transition: all var(--transition-fast);
     position: relative;
   }
-  
   .nav-item i {
     font-size: 1.4rem;
     transition: all var(--transition-fast);
   }
-  
   .nav-item.active {
     color: var(--accent-blue);
   }
-  
   .nav-item.active i {
     transform: translateY(-5px);
   }
-  
   .nav-item.active::after {
     content: "";
     position: absolute;
@@ -924,7 +927,6 @@ input:checked + .slider:before {
     background: var(--gradient-primary);
     border-radius: 50%;
   }
-  
   .sidebar, .sidebar-right {
     position: absolute;
     bottom: var(--bottom-nav-height);
@@ -945,50 +947,41 @@ input:checked + .slider:before {
     transform: translateY(110%);
     transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
   }
-  
   .sidebar.active, .sidebar-right.active {
     transform: translateY(0);
   }
-  
   .legend {
     display: none !important;
   }
-  
   .map-controls {
     top: 20px;
     right: 20px;
     flex-direction: row;
     gap: 8px;
   }
-  
   .map-btn {
     width: 44px;
     height: 44px;
   }
-  
   .header {
     padding: 16px;
   }
-  
   .header h1, .header h2 {
     font-size: 1.2rem;
   }
-  
   #btnBack {
     display: none !important;
   }
-  
   .controls {
     padding: 16px;
   }
-  
   .modal-content {
     width: 90%;
     margin: 10px;
   }
 }
 
-/* --- ANIMAÇÕES E EFETOS ADICIONAIS --- */
+/* Animações extras */
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
@@ -1048,9 +1041,8 @@ input:checked + .slider:before {
 }
 
 /* =========================================================
-   --- PRESENTATION MODE (BROADCAST VIEW) ---
+   PRESENTATION MODE (BROADCAST VIEW)
 ========================================================= */
-
 #presentationOverlay {
     position: fixed;
     top: 0;
@@ -1090,23 +1082,9 @@ input:checked + .slider:before {
     align-items: center;
     justify-content: space-between;
 }
-
-.pres-header-left {
-    width: 200px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.pres-header-right {
-    width: 200px;
-    text-align: right;
-}
-
-.pres-header-center {
-    text-align: center;
-    flex: 1;
-}
+.pres-header-left { width: 200px; display: flex; align-items: center; gap: 10px; }
+.pres-header-right { width: 200px; text-align: right; }
+.pres-header-center { text-align: center; flex: 1; }
 
 .pres-region {
     font-size: 2.5rem;
@@ -1117,7 +1095,6 @@ input:checked + .slider:before {
     text-shadow: 0 2px 20px rgba(0,0,0,0.7);
     line-height: 1.1;
 }
-
 .pres-region-sub {
     font-size: 0.9rem;
     color: #8899bb;
@@ -1125,7 +1102,6 @@ input:checked + .slider:before {
     letter-spacing: 2px;
     margin-top: 2px;
 }
-
 .pres-year {
     font-size: 1.1rem;
     font-weight: 600;
@@ -1137,14 +1113,12 @@ input:checked + .slider:before {
     border-radius: 20px;
     margin-top: 6px;
 }
-
 .pres-turn {
     font-size: 0.85rem;
     font-weight: 400;
     font-style: italic;
     color: #8899bb;
 }
-
 .pres-live {
     display: inline-block;
     background: #e53e3e;
@@ -1156,7 +1130,6 @@ input:checked + .slider:before {
     letter-spacing: 2px;
     animation: pulse-live 1.5s infinite;
 }
-
 @keyframes pulse-live {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
@@ -1172,7 +1145,6 @@ input:checked + .slider:before {
     padding: 0 5vw;
     gap: 4vw;
 }
-
 .pres-candidate-main {
     flex: 1;
     display: flex;
@@ -1182,7 +1154,6 @@ input:checked + .slider:before {
     text-align: center;
     max-width: 420px;
 }
-
 .pres-photo-frame {
     position: relative;
     width: 240px;
@@ -1194,7 +1165,6 @@ input:checked + .slider:before {
     box-shadow: 0 20px 50px rgba(0,0,0,0.7), inset 0 0 0 2px rgba(0,0,0,0.2);
     background: #1a1a2e;
 }
-
 .pres-photo {
     width: 100%;
     height: 100%;
@@ -1202,7 +1172,6 @@ input:checked + .slider:before {
     object-position: top center;
     filter: contrast(1.1) brightness(1.05);
 }
-
 .pres-party-logo-overlay {
     position: absolute;
     bottom: 10px;
@@ -1217,23 +1186,18 @@ input:checked + .slider:before {
     box-shadow: 0 4px 15px rgba(0,0,0,0.5);
     overflow: hidden;
 }
-
 .pres-party-logo-overlay img {
     max-width: 80%;
     max-height: 80%;
     object-fit: contain;
 }
-
 .pres-party-logo-overlay .party-initial {
     font-size: 1.5rem;
     font-weight: 900;
     color: #1a1a2e;
 }
 
-.pres-cand-name-block {
-    margin-bottom: 8px;
-}
-
+.pres-cand-name-block { margin-bottom: 8px; }
 .pres-cand-name {
     font-size: 2rem;
     font-weight: 900;
@@ -1243,7 +1207,6 @@ input:checked + .slider:before {
     letter-spacing: -0.5px;
     color: #ffffff;
 }
-
 .pres-cand-party-name {
     font-size: 0.9rem;
     font-weight: 600;
@@ -1251,7 +1214,6 @@ input:checked + .slider:before {
     letter-spacing: 1px;
     text-transform: uppercase;
 }
-
 .pres-cand-vice {
     font-size: 0.85rem;
     color: #8899bb;
@@ -1259,7 +1221,6 @@ input:checked + .slider:before {
     font-weight: 500;
     letter-spacing: 0.5px;
 }
-
 .pres-cand-pct {
     font-size: 4.5rem;
     font-weight: 900;
@@ -1268,7 +1229,6 @@ input:checked + .slider:before {
     margin-bottom: 4px;
     text-shadow: 0 4px 20px rgba(0,0,0,0.6);
 }
-
 .pres-cand-votes {
     font-size: 1rem;
     color: #b0c0dd;
@@ -1295,7 +1255,6 @@ input:checked + .slider:before {
     flex-wrap: wrap;
     position: relative;
 }
-
 .pres-bottom::before {
     content: '';
     position: absolute;
@@ -1305,7 +1264,6 @@ input:checked + .slider:before {
     height: 1px;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
 }
-
 .pres-bottom-cand {
     display: flex;
     flex-direction: column;
@@ -1314,13 +1272,11 @@ input:checked + .slider:before {
     gap: 6px;
     min-width: 70px;
 }
-
 .pres-bottom-photo-wrap {
     position: relative;
     width: 64px;
     height: 64px;
 }
-
 .pres-bottom-photo {
     width: 64px;
     height: 64px;
@@ -1330,7 +1286,6 @@ input:checked + .slider:before {
     object-position: top center;
     box-shadow: 0 5px 15px rgba(0,0,0,0.5);
 }
-
 .pres-bottom-party-dot {
     position: absolute;
     bottom: -2px;
@@ -1347,7 +1302,6 @@ input:checked + .slider:before {
     color: #ffffff;
     box-shadow: 0 2px 6px rgba(0,0,0,0.5);
 }
-
 .pres-bottom-name {
     font-size: 0.8rem;
     font-weight: 700;
@@ -1356,7 +1310,6 @@ input:checked + .slider:before {
     color: #dddddd;
     letter-spacing: 0.5px;
 }
-
 .pres-bottom-pct {
     font-size: 1.1rem;
     font-weight: 900;
@@ -1371,7 +1324,6 @@ input:checked + .slider:before {
     gap: 10px;
     z-index: 50;
 }
-
 .pres-btn {
     background: rgba(255,255,255,0.08);
     border: 1px solid rgba(255,255,255,0.15);
@@ -1387,12 +1339,10 @@ input:checked + .slider:before {
     justify-content: center;
     backdrop-filter: blur(5px);
 }
-
 .pres-btn:hover {
     background: rgba(255,255,255,0.2);
     transform: scale(1.1);
 }
-
 .pres-nav-area {
     position: absolute;
     top: 0;
@@ -1406,25 +1356,17 @@ input:checked + .slider:before {
     opacity: 0;
     transition: opacity 0.3s;
 }
-
 .pres-nav-area:hover {
     opacity: 1;
     background: rgba(255,255,255,0.03);
 }
-
 .pres-nav-area i {
     font-size: 2.5rem;
     color: rgba(255,255,255,0.5);
     text-shadow: 0 0 20px rgba(0,0,0,0.7);
 }
-
-.pres-nav-left {
-    left: 0;
-}
-
-.pres-nav-right {
-    right: 0;
-}
+.pres-nav-left { left: 0; }
+.pres-nav-right { right: 0; }
 
 .pres-loading {
     position: absolute;
@@ -1439,58 +1381,20 @@ input:checked + .slider:before {
     gap: 20px;
 }
 
-/* Ajustes Responsivos da Apresentação */
 @media (max-width: 1100px) {
-    .pres-photo-frame {
-        width: 180px;
-        height: 250px;
-    }
-    .pres-cand-name {
-        font-size: 1.5rem;
-    }
-    .pres-cand-pct {
-        font-size: 3rem;
-    }
-    .pres-region {
-        font-size: 1.8rem;
-    }
-    .pres-bottom {
-        gap: 25px;
-    }
+    .pres-photo-frame { width: 180px; height: 250px; }
+    .pres-cand-name { font-size: 1.5rem; }
+    .pres-cand-pct { font-size: 3rem; }
+    .pres-region { font-size: 1.8rem; }
+    .pres-bottom { gap: 25px; }
 }
-
 @media (max-width: 768px) {
-    .pres-content {
-        flex-direction: column;
-        padding: 0 20px;
-        gap: 10px;
-    }
-    .pres-divider {
-        display: none;
-    }
-    .pres-candidate-main {
-        flex-direction: row;
-        gap: 15px;
-        max-width: 100%;
-        text-align: left;
-    }
-    .pres-photo-frame {
-        width: 100px;
-        height: 130px;
-        margin-bottom: 0;
-    }
-    .pres-cand-pct {
-        font-size: 2rem;
-    }
-    .pres-bottom {
-        gap: 15px;
-        padding: 10px 20px;
-    }
-    .pres-bottom-photo {
-        width: 48px;
-        height: 48px;
-    }
-    .pres-region {
-        font-size: 1.4rem;
-    }
+    .pres-content { flex-direction: column; padding: 0 20px; gap: 10px; }
+    .pres-divider { display: none; }
+    .pres-candidate-main { flex-direction: row; gap: 15px; max-width: 100%; text-align: left; }
+    .pres-photo-frame { width: 100px; height: 130px; margin-bottom: 0; }
+    .pres-cand-pct { font-size: 2rem; }
+    .pres-bottom { gap: 15px; padding: 10px 20px; }
+    .pres-bottom-photo { width: 48px; height: 48px; }
+    .pres-region { font-size: 1.4rem; }
 }
