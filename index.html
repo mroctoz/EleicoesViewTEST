@@ -524,7 +524,7 @@ const presentation = {
     }
 };
 
-// -- RESTANTE DO APP (mantido igual ao original, exceto pequenas adaptações) --
+// -- APP PRINCIPAL --
 const app = {
     map: null,
     layers: { brazil: null, cities: null, zones: null },
@@ -757,16 +757,8 @@ const app = {
     getVotes22: (obj, key) => { let sum = 0; for(let k in obj) { if(k.toUpperCase().includes(key)) sum += obj[k]; } return sum; }
 };
 
-document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(function() {
-        const interactiveElements =['.mode-tab', '.btn-io', '.btn-primary', '.btn-secondary', '.btn-back', '.map-btn', '.nav-item', 'select', 'input[type="checkbox"]', 'input[type="range"]', '.switch input', '.pres-btn', '.pres-nav-area'];
-        interactiveElements.forEach(selector => { document.querySelectorAll(selector).forEach(el => { el.style.zIndex = '10000'; if(selector !== '.pres-nav-area') el.style.position = 'relative'; }); });
-        document.querySelectorAll('.mode-tab, .btn-io').forEach(tab => { tab.style.cursor = 'pointer'; tab.style.pointerEvents = 'auto'; });
-    }, 500);
-});
-
-function ensureClickable(element) { if (element) { element.style.pointerEvents = 'auto'; element.style.cursor = 'pointer'; element.style.zIndex = '10000'; element.style.position = 'relative'; } }
-window.addEventListener('load', function() { ensureClickable(document.getElementById('tab1')); ensureClickable(document.getElementById('tab2')); document.querySelectorAll('.btn-io, .map-btn, .nav-item').forEach(ensureClickable); });
+// Inicialização segura: apenas definimos o que é necessário, sem interferir nos eventos dos botões.
+document.addEventListener('DOMContentLoaded', app.init);
 </script>
 </body>
 </html>
