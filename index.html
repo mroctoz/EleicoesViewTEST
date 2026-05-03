@@ -162,40 +162,44 @@ input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 6px; b
         margin-top: 10px; text-transform: lowercase; letter-spacing: 1px;
     }
     
-    /* NOME DA REGIÃO (Abaixo do Header) */
+/* NOME DA REGIÃO (Abaixo do Header) */
     .pres-region-title {
-        position: absolute; top: 120px; left: 50%; transform: translateX(-50%);
+        position: absolute; top: 155px; left: 50%; transform: translateX(-50%);
         font-size: 1.2rem; font-weight: 800; letter-spacing: 4px;
         text-transform: uppercase; color: rgba(255,255,255,0.3); z-index: 10;
     }
 
-    /* CONTEÚDO CENTRAL */
+/* CONTEÚDO CENTRAL */
     .pres-content { 
-        flex: 1; display: flex; justify-content: center; align-items: center; 
-        position: relative; z-index: 10; padding: 0 4vw; gap: 20px;
+        flex: 1; display: flex; justify-content: center; align-items: flex-start; /* Puxa tudo para cima */
+        position: relative; z-index: 10; padding: 70px 4vw 0 4vw; gap: 20px; /* 70px de distância do cabeçalho */
     }
     
-    /* MAPA */
+/* MAPA */
     .pres-map-container { 
-        flex: 0 0 35%; height: 60vh; display: flex; 
+        flex: 0 0 35%; height: 55vh; display: flex; 
         justify-content: center; align-items: center; position: relative;
+        margin-top: 15px; /* Desce o mapa levemente para alinhar visualmente com as fotos maiores */
+    }
+    .pres-map-container svg { 
+        width: 100%; height: 100%; 
+        filter: drop-shadow(0px 15px 25px rgba(0,0,0,0.7)); 
     }
     .pres-map-container svg { 
         width: 100%; height: 100%; 
         filter: drop-shadow(0px 15px 25px rgba(0,0,0,0.7)); 
     }
     
-    /* COLUNAS LATERAIS DOS FINALISTAS */
+/* COLUNAS LATERAIS DOS FINALISTAS */
     .pres-candidate-main { 
         flex: 0 0 32%; display: flex; flex-direction: column; 
         align-items: center; text-align: center;
     }
     
     .pres-photo-wrapper { 
-        position: relative; width: 280px; height: 360px; margin-bottom: 20px; 
+        position: relative; width: 340px; height: 440px; margin-bottom: 20px; /* TAMANHOS AUMENTADOS */
         box-shadow: 0 20px 40px rgba(0,0,0,0.6);
         background: #333;
-        /* Borda será definida dinamicamente via JS de acordo com a cor do partido */
         border-width: 4px; border-style: solid; 
     }
     .pres-photo { width: 100%; height: 100%; object-fit: cover; }
