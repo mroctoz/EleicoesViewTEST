@@ -121,6 +121,8 @@ body {
 
 .io-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
 .btn-io {
+  position: relative;   /* já está implícito, mas podemos forçar */
+  z-index: 1;           /* garantir que fique acima de pseudo-elementos */
   flex: 1; min-width: 80px; padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(15, 23, 42, 0.8); color: var(--text-secondary); border-radius: var(--border-radius-md);
   font-size: 0.75rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center;
