@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Eleições View - 2026 Final (Estilo Apuração TV)</title>
+<title>Eleições View - 2026 Final c/ Zonas Eleitorais & Metrópoles</title>
 
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -18,45 +18,140 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <link rel="stylesheet" href="style.css">
+
+<style id="presentation-styles">
+    /* ESTILOS DA APRESENTAÇÃO (BROADCAST VIEW - INSPIRADO NO DESIGN DE 1994) */
+    #presentationOverlay {
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: radial-gradient(circle at 50% 50%, #170b3b 0%, #080314 100%);
+        z-index: 999999; display: none; flex-direction: column; color: #fff;
+        font-family: 'Inter', sans-serif; overflow: hidden;
+    }
+    
+    /* Padrão geométrico/isométrico sutil no fundo */
+    #presentationOverlay::before {
+        content: ''; position: absolute; top:0; left:0; right:0; bottom:0;
+        background-image: url("data:image/svg+xml,%3Csvg width='120' height='207.8' viewBox='0 0 120 207.8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M60 0L111.96 30v60L60 120 8.04 90V30z' stroke='rgba(255,255,255,0.03)' stroke-width='2' fill='none'/%3E%3Cpath d='M60 120l51.96-30V30M60 120L8.04 90V30M60 0v60l51.96 30M60 60L8.04 90' stroke='rgba(255,255,255,0.03)' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+        background-size: 100px; opacity: 0.6; pointer-events: none;
+    }
+    
+    #presentationOverlay.active { display: flex; }
+    
+    /* CABEÇALHO */
+    .pres-header { 
+        display: flex; justify-content: space-between; align-items: center; 
+        padding: 40px 60px; position: relative; z-index: 10; 
+    }
+    .pres-region { 
+        font-size: 2.2rem; font-weight: 300; letter-spacing: 1px; 
+        text-transform: uppercase; color: #ffffff; flex: 1; 
+    }
+    .pres-header-center { 
+        position: absolute; left: 50%; transform: translateX(-50%); 
+        display: flex; align-items: center; justify-content: center; 
+    }
+    .pres-year-badge { 
+        background: #004494; color: #00d5ff; font-weight: 900; 
+        font-size: 3.5rem; padding: 0px 25px; line-height: 1.2;
+        letter-spacing: 2px; border-radius: 4px; border: 2px solid #005ce6;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.8);
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+    .pres-turn { 
+        font-size: 1.8rem; font-weight: 300; color: #ffffff; 
+        letter-spacing: 1px; text-transform: uppercase; flex: 1; text-align: right; 
+    }
+
+    /* CONTEÚDO CENTRAL */
+    .pres-content { flex: 1; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 10; padding: 0 8vw; }
+    
+    /* MAPA */
+    .pres-map-container { flex: 1; height: 75%; display: flex; justify-content: center; align-items: center; position: relative; }
+    .pres-map-container svg { width: 100%; height: 100%; filter: drop-shadow(0px 10px 20px rgba(0,0,0,0.6)); }
+
+    /* CANDIDATOS PRINCIPAIS */
+    .pres-candidate-main { flex: 0 0 28%; display: flex; flex-direction: column; align-items: center; text-align: center; }
+    
+    .pres-photo-wrapper { 
+        position: relative; width: 340px; height: 440px; margin-bottom: 25px; 
+        background: transparent; box-shadow: 0 15px 35px rgba(0,0,0,0.7); 
+    }
+    .pres-photo { 
+        width: 100%; height: 100%; object-fit: cover; border-radius: 2px;
+        border-width: 5px; border-style: solid;
+        background: #222; transition: filter 0.3s; 
+    }
+    
+    .pres-party-logo-wrapper {
+        position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%);
+        height: 60px; display: flex; align-items: center; justify-content: center; z-index: 10;
+    }
+    .pres-party-logo-wrapper img {
+        height: 100%; object-fit: contain; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.8));
+    }
+    .pres-party-fallback {
+        padding: 5px 15px; font-weight: 900; font-size: 1.2rem; color: #fff; border-radius: 4px; box-shadow: 0 5px 15px rgba(0,0,0,0.8);
+    }
+
+    .pres-cand-name { 
+        font-size: 2.2rem; font-weight: 900; color: #fff; 
+        text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 2px; 
+    }
+    .pres-cand-name .bullet { font-size: 2.5rem; line-height: 0; margin-top: -6px; }
+    .pres-cand-vice { font-size: 1rem; color: #cbd5e1; font-weight: 400; margin-bottom: 12px; }
+    
+    .pres-cand-pct { font-size: 5.5rem; font-weight: 900; color: #fff; line-height: 1; margin-bottom: 5px; }
+    .pres-cand-votes { font-size: 1rem; color: #cbd5e1; font-weight: 400; }
+
+    /* BARRA INFERIOR (OUTROS CANDIDATOS) */
+    .pres-bottom { position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; justify-content: center; gap: 80px; z-index: 10; }
+    .pres-bottom-cand { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+    .pres-bottom-logo { width: 50px; height: 50px; object-fit: contain; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6)); }
+    .pres-bottom-name { font-size: 1.6rem; font-weight: 900; color: #fff; text-transform: uppercase; line-height: 1;}
+    .pres-bottom-pct { font-size: 1.8rem; font-weight: 400; color: #cbd5e1; line-height: 1; }
+
+    .pres-controls { position: absolute; top: 30px; right: 40px; display: flex; gap: 15px; z-index: 50;}
+    .pres-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; font-size: 1.2rem; backdrop-filter: blur(5px); }
+    .pres-btn:hover { background: rgba(255,255,255,0.3); transform: scale(1.1); }
+    .pres-nav-area { position: absolute; top: 0; height: 100%; width: 10vw; z-index: 20; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
+    .pres-nav-area:hover { opacity: 1; background: rgba(0,0,0,0.1); }
+    .pres-nav-area i { font-size: 3rem; text-shadow: 0 0 20px rgba(0,0,0,0.8); }
+    .pres-nav-left { left: 0; }
+    .pres-nav-right { right: 0; }
+    
+    .pres-loading { position: absolute; inset: 0; background: #000; display: flex; align-items: center; justify-content: center; z-index: 100; font-size: 2rem; flex-direction: column; gap: 20px;}
+</style>
+    
 </head>
 <body>
 <div id="loader">
-    <div class="spinner"></div>
-    <h3 id="loaderMsg">Carregando Dados...</h3>
+<div class="spinner"></div>
+<h3 id="loaderMsg">Carregando Dados...</h3>
 </div>
 
-<!-- VIEW DE APRESENTAÇÃO (ESTILO TELEJORNAL) -->
+<!-- VIEW DE APRESENTAÇÃO (BROADCAST/TV) -->
 <div id="presentationOverlay">
     <div class="pres-controls">
         <button class="pres-btn" onclick="presentation.close()" title="Sair da Apresentação"><i class="fas fa-times"></i></button>
-        <button class="pres-btn" onclick="presentation.downloadSlide()" title="Baixar Slide"><i class="fas fa-download"></i></button>
     </div>
-    
     <div class="pres-nav-area pres-nav-left" onclick="presentation.prev()"><i class="fas fa-chevron-left"></i></div>
     <div class="pres-nav-area pres-nav-right" onclick="presentation.next()"><i class="fas fa-chevron-right"></i></div>
     
     <div class="pres-header">
-        <div class="pres-region" id="presRegion">SÃO CAETANO DO SUL</div>
+        <div class="pres-region" id="presRegion">BRASIL</div>
         <div class="pres-header-center">
-            <div class="pres-year-badge"><span id="presYear">2026</span></div>
+            <div class="pres-year-badge" id="presYear">2026</div>
         </div>
         <div class="pres-turn" id="presTurn">PRIMEIRO TURNO</div>
     </div>
     
     <div class="pres-content">
-        <!-- Candidato Esquerda -->
         <div class="pres-candidate-main" id="presCand1"></div>
-        
-        <!-- Mapa Centro -->
-        <div class="pres-map-col">
-            <div class="pres-map-container" id="presMap"></div>
-            <!-- Candidatos da Parte Inferior (3º em diante) -->
-            <div class="pres-bottom" id="presBottom"></div>
-        </div>
-        
-        <!-- Candidato Direita -->
+        <div class="pres-map-container" id="presMap"></div>
         <div class="pres-candidate-main" id="presCand2"></div>
     </div>
+    
+    <div class="pres-bottom" id="presBottom"></div>
     
     <div id="presLoader" class="pres-loading hidden">
         <div class="spinner"></div>
@@ -174,8 +269,8 @@
         <div class="map-btn map-btn-dl" title="Baixar PNG" onclick="app.generateStaticMap('png')"><i class="fas fa-image"></i></div>
         <div class="map-btn map-btn-dl" title="Baixar Vetor SVG" onclick="app.generateStaticMap('svg')"><i class="fas fa-bezier-curve"></i></div>
         <div style="height:5px;"></div>
-        <div class="map-btn" onclick="app.map.zoomIn()"><i class="fas fa-plus"></i></div>
-        <div class="map-btn" onclick="app.map.zoomOut()"><i class="fas fa-minus"></i></div>
+        <div class="map-btn" onclick="app.map.zoomIn()">+</div>
+        <div class="map-btn" onclick="app.map.zoomOut()">-</div>
     </div>
 
     <div class="legend">
@@ -206,17 +301,10 @@
 <script>
 const STATES =[{sigla:'AC', nome:'Acre', id:'12'}, {sigla:'AL', nome:'Alagoas', id:'27'}, {sigla:'AP', nome:'Amapá', id:'16'}, {sigla:'AM', nome:'Amazonas', id:'13'}, {sigla:'BA', nome:'Bahia', id:'29'}, {sigla:'CE', nome:'Ceará', id:'23'}, {sigla:'DF', nome:'Distrito Federal', id:'53'}, {sigla:'ES', nome:'Espírito Santo', id:'32'}, {sigla:'GO', nome:'Goiás', id:'52'}, {sigla:'MA', nome:'Maranhão', id:'21'}, {sigla:'MT', nome:'Mato Grosso', id:'51'}, {sigla:'MS', nome:'Mato Grosso do Sul', id:'50'}, {sigla:'MG', nome:'Minas Gerais', id:'31'}, {sigla:'PA', nome:'Pará', id:'15'}, {sigla:'PB', nome:'Paraíba', id:'25'}, {sigla:'PR', nome:'Paraná', id:'41'}, {sigla:'PE', nome:'Pernambuco', id:'26'}, {sigla:'PI', nome:'Piauí', id:'22'}, {sigla:'RJ', nome:'Rio de Janeiro', id:'33'}, {sigla:'RN', nome:'Rio Grande do Norte', id:'24'}, {sigla:'RS', nome:'Rio Grande do Sul', id:'43'}, {sigla:'RO', nome:'Rondônia', id:'11'}, {sigla:'RR', nome:'Roraima', id:'14'}, {sigla:'SC', nome:'Santa Catarina', id:'42'}, {sigla:'SP', nome:'São Paulo', id:'35'}, {sigla:'SE', nome:'Sergipe', id:'28'}, {sigla:'TO', nome:'Tocantins', id:'17'}];
 
-/* Definição das Regiões Metropolitanas e Códigos IBGE dos Municípios */
 const METRO_REGIONS =[
-    { id: 'RMSP', name: 'GRANDE SÃO PAULO', cities:['3550308','3518800','3548708','3547809','3548807','3534401','3529401','3513801','3522208','3510609','3522505','3552809','3513009','3515004'] },
-    { id: 'RMRJ', name: 'GRANDE RIO', cities:['3304557','3304904','3301702','3303500','3303302','3300456','3302502','3305109','3303203'] },
-    { id: 'RMBH', name: 'GRANDE BELO HORIZONTE', cities:['3106200','3118601','3106705','3154606','3161106','3157807','3127701','3129806','3124104'] },
-    { id: 'RIDE', name: 'ENTORNO DF', cities:['5300108','5200258','5201108','5201405','5205497','5208707','5212501','5216205','5217609','5221403'] },
-    { id: 'RMPA', name: 'GRANDE PORTO ALEGRE', cities:['4314902','4303103','4304606','4309209','4313409','4318705','4323002'] },
-    { id: 'RMRE', name: 'GRANDE RECIFE', cities:['2611606','2607901','2609600','2610707','2603454','2601904','2606804','2600054'] },
-    { id: 'RMFO', name: 'GRANDE FORTALEZA', cities:['2304400','2303709','2307651','2309707','2301000','2306257','2305234','2304285'] },
-    { id: 'RMSA', name: 'GRANDE SALVADOR', cities:['2927408','2905701','2918100','2919207','2929503','2930709'] },
-    { id: 'RMC', name: 'GRANDE CAMPINAS', cities:['3509502','3552403','3519071','3501608','3556206','3523404'] }
+    { id: 'RMSP', name: 'RMSP - SÃO PAULO', cities:['3503901','3505708','3506607','3509007','3509205','3510609','3513009','3513801','3515004','3515103','3515707','3516309','3516408','3518305','3518800','3522208','3522505','3523107','3525003','3526209','3528502','3529401','3530607','3534401','3538006','3539103','3543303','3544103','3545001','3546801','3547304','3547809','3548708','3548807','3549953','3550308','3552502','3552809','3556453'] },
+    { id: 'RMRJ', name: 'RMRJ - RIO DE JANEIRO', cities:['3300456','3301702','3301850','3301900','3302007','3302270','3302502','3302858','3303203','3303302','3303500','3303609','3304144','3304557','3304904','3305109','3305554','3305752','3302700','3300803','3301009'] },
+    { id: 'RMBH', name: 'RMBH - BELO HORIZONTE', cities:['3106200','3106705','3109006','3111200','3118601','3124104','3127305','3127701','3129806','3132206','3133600','3135100','3137601','3140159','3144805','3149309','3153905','3154606','3156700','3157807','3165537','3168309','3158904','3159803','3151800','3162922','3162955','3167202','3171204','3171303','3104007','3121605','3143302'] }
 ];
 
 const CANDIDATE_PHOTOS = {
@@ -227,16 +315,16 @@ const CANDIDATE_PHOTOS = {
 
 const CONFIG = {
     candidates:[
-        { id: 'LULA', name: 'Lula da Silva', vice: 'Geraldo Alckmin (PSB)', party: 'PT', val: 40, color: '#E12525', active: true, icon: 'fa-star', logo: 'data/logos/pt.png' },
-        { id: 'FLAVIO', name: 'Flávio Bolsonaro', vice: 'Indefinido (PL)', party: 'PL', val: 25, color: '#224292', active: true, icon: 'fa-flag', logo: 'data/logos/pl.png' },
-        { id: 'TARCISIO', name: 'Tarcísio', vice: 'Kassab (PSD)', party: 'REP', val: 15, color: '#28a745', active: false, icon: 'fa-shield-alt', logo: 'data/logos/rep.png' }, 
-        { id: 'RENAN', name: 'Renan Santos', vice: 'Indefinido (MISSÃO)', party: 'MISSÃO', val: 3, color: '#D4AF37', active: true, icon: 'fa-bolt', logo: 'data/logos/missao.png' },
-        { id: 'CAIADO', name: 'Ronaldo Caiado', vice: 'ACM Neto (UNIÃO)', party: 'UNIÃO', val: 8, color: '#009EE3', active: true, icon: 'fa-link', logo: 'data/logos/uniao.png' },
-        { id: 'ZEMA', name: 'Romeu Zema', vice: 'M. Van Hattem (NOVO)', party: 'NOVO', val: 6, color: '#F58220', active: true, icon: 'fa-certificate', logo: 'data/logos/novo.png' },
-        { id: 'RATINHO', name: 'Ratinho Jr', vice: 'Indefinido (PSD)', party: 'PSD', val: 4, color: '#FAA21B', active: false, icon: 'fa-building', logo: 'data/logos/psd.png' },
-        { id: 'CIRO', name: 'Ciro Gomes', vice: 'Indefinido (PSDB)', party: 'PSDB', val: 2, color: '#2591cc', active: false, icon: 'fa-crow', logo: 'data/logos/psdb.png' },
-        { id: 'ALDO', name: 'Aldo Rebelo', vice: 'Indefinido (DC)', party: 'DC', val: 1, color: '#006400', active: true, icon: 'fa-church', logo: 'data/logos/dc.png' },
-        { id: 'CURY', name: 'Augusto Cury', vice: 'Indefinido (AVANTE)', party: 'AVANTE', val: 1, color: '#2ebf98', active: true, icon: 'fa-book', logo: 'data/logos/avante.png' }
+        { id: 'LULA', name: 'Lula da Silva', party: 'PT', val: 40, color: '#E12525', active: true, icon: 'fa-star' },
+        { id: 'FLAVIO', name: 'Flávio Bolsonaro', party: 'PL', val: 25, color: '#5756d6', active: true, icon: 'fa-flag' },
+        { id: 'TARCISIO', name: 'Tarcísio', party: 'REP', val: 15, color: '#28a745', active: false, icon: 'fa-shield-alt' }, 
+        { id: 'RENAN', name: 'Renan Santos', party: 'MISSÃO', val: 3, color: '#D4AF37', active: true, icon: 'fa-bolt' },
+        { id: 'CAIADO', name: 'Ronaldo Caiado', party: 'UNIÃO', val: 8, color: '#009EE3', active: true, icon: 'fa-link' },
+        { id: 'ZEMA', name: 'Romeu Zema', party: 'NOVO', val: 6, color: '#F58220', active: true, icon: 'fa-certificate' },
+        { id: 'RATINHO', name: 'Ratinho Jr', party: 'PSD', val: 4, color: '#FAA21B', active: false, icon: 'fa-building' },
+        { id: 'CIRO', name: 'Ciro Gomes', party: 'PSDB', val: 2, color: '#2591cc', active: false, icon: 'fa-crow' },
+        { id: 'ALDO', name: 'Aldo Rebelo', party: 'DC', val: 1, color: '#006400', active: true, icon: 'fa-church' },
+        { id: 'CURY', name: 'Augusto Cury', party: 'AVANTE', val: 1, color: '#2ebf98', active: true, icon: 'fa-book' }
     ],
     scheme:[
         { min: 0, mix: '#ffffff', ratio: 0.85, ref: '#E6E6E6' }, { min: 20, mix: '#ffffff', ratio: 0.85, ref: '#E6E6E6' },
@@ -247,11 +335,20 @@ const CONFIG = {
     ]
 };
 
-// ... Mantenho toda a carga JSON normal e defaults ...
 const DEFAULT_SCENARIO = {
   "t1_polls": { "LULA": 47, "FLAVIO": 45, "TARCISIO": 10, "RENAN": 2, "CAIADO": 3, "ZEMA": 2, "RATINHO": 5, "CIRO": 4, "ALDO": 1, "CURY": 2 },
-  "t1_matrix": { "LULA": { "LULA": 1, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 }, "JAIR": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 1, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 }, "CIRO": { "LULA": 0.1, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 1, "ALDO": 0, "CURY": 0.01 }, "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "TARCISIO": 0, "RENAN": 0.06, "CAIADO": 0.06, "ZEMA": 0.06, "RATINHO": 0.06, "CIRO": 0, "ALDO": 0.25, "CURY": 0.5 } },
-  "t1_matrix_state": {},
+  "t1_matrix": {
+    "LULA": { "LULA": 1, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 },
+    "JAIR": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 1, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 },
+    "CIRO": { "LULA": 0.1, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 1, "ALDO": 0, "CURY": 0.01 },
+    "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "TARCISIO": 0, "RENAN": 0.06, "CAIADO": 0.06, "ZEMA": 0.06, "RATINHO": 0.06, "CIRO": 0, "ALDO": 0.25, "CURY": 0.5 }
+  },
+  "t1_matrix_state": {
+    "31": { "JAIR": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 1, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 }, "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "TARCISIO": 0, "RENAN": 0.06, "CAIADO": 0.06, "ZEMA": 0.35, "RATINHO": 0.06, "CIRO": 0, "ALDO": 0.25, "CURY": 0.5 } },
+    "35": { "JAIR": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 1, "RENAN": 0.01, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 } },
+    "41": { "JAIR": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 1, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0.01, "CIRO": 0, "ALDO": 0 } },
+    "52": { "JAIR": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 1, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 }, "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "TARCISIO": 0, "RENAN": 0.06, "CAIADO": 0.35, "ZEMA": 0.06, "RATINHO": 0.06, "CIRO": 0, "ALDO": 0.25, "CURY": 0.5 } }
+  },
   "t1_mults": { "33": { "FLAVIO": 1.1 } },
   "t2_migr": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 1, "RENAN": 0.63, "CAIADO": 0.94, "ZEMA": 0.91, "RATINHO": 1, "CIRO": 0.37, "ALDO": 0.48, "CURY": 0.56 },
   "t2_mults": { "21": {}, "31": { "FLAVIO": 1, "LULA": 1 }, "42": {}, "52": { "FLAVIO": 1, "LULA": 1.1 } },
@@ -261,8 +358,14 @@ const DEFAULT_SCENARIO = {
 
 const CLEAN_SCENARIO = {
     t1_polls: { "LULA": 30, "FLAVIO": 30, "TARCISIO": 10, "RENAN": 5, "CAIADO": 5, "ZEMA": 5, "RATINHO": 5, "CIRO": 5, "ALDO": 5 },
-    t1_matrix: { "LULA": { "LULA": 1, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 }, "JAIR": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 }, "CIRO": { "LULA": 0, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 1, "ALDO": 0 }, "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 } },
-    t1_matrix_state: {}, t1_mults: {}, t2_migr: { "LULA":0, "FLAVIO":1, "TARCISIO":1, "RENAN":0.5, "CAIADO":1, "ZEMA":1, "RATINHO":1, "CIRO":0.5, "ALDO":0.5 },
+    t1_matrix: {
+        "LULA": { "LULA": 1, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 },
+        "JAIR": { "LULA": 0, "FLAVIO": 1, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 },
+        "CIRO": { "LULA": 0, "FLAVIO": 0, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 1, "ALDO": 0 },
+        "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "TARCISIO": 0, "RENAN": 0, "CAIADO": 0, "ZEMA": 0, "RATINHO": 0, "CIRO": 0, "ALDO": 0 }
+    },
+    t1_matrix_state: {}, t1_mults: {},
+    t2_migr: { "LULA":0, "FLAVIO":1, "TARCISIO":1, "RENAN":0.5, "CAIADO":1, "ZEMA":1, "RATINHO":1, "CIRO":0.5, "ALDO":0.5 },
     t2_mults: {}, active_candidates: { "LULA": true, "FLAVIO": true, "TARCISIO": true, "RENAN": true, "CAIADO": true, "ZEMA": true, "RATINHO": true, "CIRO": true, "ALDO": true }, t2_mode: "manual"
 };
 
@@ -279,10 +382,11 @@ const presentation = {
             try { const r = await fetch("https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json"); app.data.geoJson = await r.json(); } catch(e) {}
         }
         
-        // Povoa slides (Brasil -> Estados -> Regiões Metropolitanas)
         presentation.slides =[{ id: 'BR', name: 'BRASIL', type: 'nacional' }];
-        STATES.forEach(s => presentation.slides.push({ id: s.id, name: s.nome.toUpperCase(), type: 'estado' }));
-        METRO_REGIONS.forEach(mr => presentation.slides.push({ id: mr.id, name: mr.name, type: 'metropolitana', cities: mr.cities }));
+        // Adiciona Estados
+        STATES.forEach(s => presentation.slides.push({ id: s.id, name: s.nome, type: 'estado' }));
+        // Adiciona Regiões Metropolitanas
+        METRO_REGIONS.forEach(m => presentation.slides.push({ id: m.id, name: m.name, type: 'metro' }));
         
         presentation.currentIndex = 0; presentation.isActive = true;
         document.getElementById('presentationOverlay').classList.add('active');
@@ -294,130 +398,120 @@ const presentation = {
     next: () => { presentation.currentIndex = presentation.currentIndex < presentation.slides.length - 1 ? presentation.currentIndex + 1 : 0; presentation.renderSlide(); },
     handleKeydown: (e) => { if(e.key === 'ArrowRight') presentation.next(); if(e.key === 'ArrowLeft') presentation.prev(); if(e.key === 'Escape') presentation.close(); },
 
-    downloadSlide: async () => {
-        document.body.style.cursor = 'wait';
-        try {
-            const originalOverlay = document.getElementById('presentationOverlay');
-            const exportContainer = document.createElement('div');
-            exportContainer.style.position = 'absolute'; exportContainer.style.top = '0'; exportContainer.style.left = '0';
-            exportContainer.style.width = originalOverlay.offsetWidth + 'px'; exportContainer.style.height = originalOverlay.offsetHeight + 'px';
-            exportContainer.style.background = getComputedStyle(document.getElementById('presentationOverlay')).background;
-            exportContainer.style.zIndex = '-9999'; exportContainer.style.overflow = 'hidden';
-            
-            const clone = originalOverlay.cloneNode(true);
-            clone.id = "presentationOverlayClone"; clone.style.position = 'relative'; clone.style.width = '100%'; clone.style.height = '100%'; clone.style.background = 'transparent';
-            
-            const controls = clone.querySelector('.pres-controls'); if(controls) controls.remove();
-            clone.querySelectorAll('.pres-nav-area').forEach(n => n.remove());
-            
-            exportContainer.appendChild(clone); document.body.appendChild(exportContainer);
-            const finalCanvas = await html2canvas(exportContainer, { useCORS: true, scale: 2, backgroundColor: '#130541', logging: false });
-            
-            finalCanvas.toBlob((blob) => { const regionName = document.getElementById('presRegion').innerText; saveAs(blob, `Apuracao_${regionName}_2026.png`); }, 'image/png', 1.0);
-            document.body.removeChild(exportContainer);
-        } catch (error) { alert("Erro ao exportar slide."); } finally { document.body.style.cursor = 'default'; }
-    },
-    
     renderSlide: () => {
         const slide = presentation.slides[presentation.currentIndex];
         document.getElementById('presRegion').innerText = slide.name;
-        document.getElementById('presTurn').innerText = app.state.turn === 1 ? "PRIMEIRO TURNO" : "SEGUNDO TURNO";
-        document.getElementById('presYear').innerText = "2026";
+        document.getElementById('presTurn').innerText = app.state.turn === 1 ? 'PRIMEIRO TURNO' : 'SEGUNDO TURNO';
         
         const dataset = app.state.turn === 1 ? app.data.round1 : app.data.round2; if(!dataset) return;
 
         let votes = {};
-        if (slide.type === 'nacional') { votes = dataset.nacional; } 
-        else if (slide.type === 'estado') { votes = dataset.estados[slide.id] || {}; }
-        else if (slide.type === 'metropolitana') {
-            slide.cities.forEach(ibge => {
-                const cityVotes = dataset.municipios[ibge];
-                if (cityVotes) { for(let c in cityVotes) { votes[c] = (votes[c] || 0) + cityVotes[c]; } }
-            });
+        if (slide.type === 'nacional') votes = dataset.nacional;
+        else if (slide.type === 'estado') votes = dataset.estados[slide.id] || {};
+        else if (slide.type === 'metro') {
+            const metroData = METRO_REGIONS.find(m => m.id === slide.id);
+            if(metroData && dataset.municipios) {
+                metroData.cities.forEach(cityId => {
+                    const cityVotes = dataset.municipios[cityId];
+                    if(cityVotes) {
+                        for(let cid in cityVotes) {
+                            votes[cid] = (votes[cid] || 0) + cityVotes[cid];
+                        }
+                    }
+                });
+            }
         }
 
         const sorted = Object.entries(votes).sort((a,b) => b[1] - a[1]);
         const total = sorted.reduce((a,b) => a+b[1], 0);
+
         const validSorted = sorted.filter(([cid, v]) => { const cand = CONFIG.candidates.find(c=>c.id===cid); return cand && !(app.state.turn===1 && app.state.active_candidates[cid] === false && v === 0); });
 
         presentation.renderMainCand('presCand1', validSorted[0], total);
         presentation.renderMainCand('presCand2', validSorted[1], total);
-        
         const bottomContainer = document.getElementById('presBottom'); bottomContainer.innerHTML = '';
-        // No estilo retro, mostramos apenas alguns candidatos na base
-        for(let i=2; i < Math.min(validSorted.length, 5); i++) presentation.renderBottomCand(bottomContainer, validSorted[i], total);
-        
+        for(let i=2; i < Math.min(validSorted.length, 6); i++) presentation.renderBottomCand(bottomContainer, validSorted[i], total);
         presentation.drawMap(slide);
     },
-    
     renderMainCand: (elementId, data, total) => {
         const el = document.getElementById(elementId); if(!data) { el.innerHTML = ''; return; }
         const cand = CONFIG.candidates.find(c=>c.id===data[0]); const pct = total > 0 ? (data[1]/total)*100 : 0;
-        const photoUrl = CANDIDATE_PHOTOS[cand.id] || `https://via.placeholder.com/400x500/${cand.color.substring(1)}/ffffff.png?text=${cand.name}`;
-        
+        const photoUrl = CANDIDATE_PHOTOS[cand.id] || `https://via.placeholder.com/340x440/${cand.color.substring(1)}/ffffff.png?text=${cand.name}`;
+        const logoPath = `logos/${cand.party.toLowerCase()}.png`; // Caminho genérico para imagem .png na pasta
+        const viceName = "Nome do Vice"; // Placeholder para Vice
+
         el.innerHTML = `
-            <div class="pres-photo-wrapper" style="border-color: ${cand.color};">
-                <img src="${photoUrl}" class="pres-photo" onerror="this.src='https://via.placeholder.com/400x500/333/fff?text=${cand.name}'">
-                <img src="${cand.logo}" class="pres-party-logo" alt="${cand.party}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <div class="pres-party-logo-fallback" style="display:none; background:${cand.color}"><i class="fas ${cand.icon}"></i> ${cand.party}</div>
+        <div class="pres-photo-wrapper">
+            <img src="${photoUrl}" class="pres-photo" style="border-color: ${cand.color}" onerror="this.src='https://via.placeholder.com/340x440/333/fff?text=${cand.name}'">
+            <div class="pres-party-logo-wrapper">
+                <img src="${logoPath}" alt="${cand.party}" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'pres-party-fallback\\' style=\\'background:${cand.color}\\'>${cand.party}</div>';">
             </div>
-            <div class="pres-cand-name"><span style="color: ${cand.color}">•</span> ${cand.name}</div>
-            <div class="pres-cand-vice">Vice: ${cand.vice || 'Indefinido'}</div>
-            <div class="pres-cand-pct">${pct.toFixed(2).replace('.', ',')}%</div>
-            <div class="pres-cand-votes">Votos: ${data[1].toLocaleString('pt-BR')}</div>
+        </div>
+        <div class="pres-cand-name">
+            <span class="bullet" style="color: ${cand.color}">•</span> ${cand.name}
+        </div>
+        <div class="pres-cand-vice">Vice: ${viceName} (${cand.party})</div>
+        <div class="pres-cand-pct">${pct.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</div>
+        <div class="pres-cand-votes">Votos: ${data[1].toLocaleString('pt-BR')}</div>
         `;
     },
-    
     renderBottomCand: (container, data, total) => {
         if(!data) return; const cand = CONFIG.candidates.find(c=>c.id===data[0]); const pct = total > 0 ? (data[1]/total)*100 : 0;
+        const logoPath = `logos/${cand.party.toLowerCase()}.png`; // Caminho genérico para a imagem .png
+
         const div = document.createElement('div'); div.className = 'pres-bottom-cand';
         div.innerHTML = `
-            <div class="pres-bottom-logo-wrapper">
-                <img src="${cand.logo}" class="pres-bottom-logo" alt="${cand.party}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <div class="pres-bottom-logo-fallback" style="display:none; color:${cand.color}; border-color:${cand.color}">
-                    <i class="fas ${cand.icon}"></i> <span style="font-size:0.6rem; display:block">${cand.party}</span>
-                </div>
-            </div>
-            <div class="pres-bottom-name">${cand.name.split(' ')[0]}</div>
-            <div class="pres-bottom-pct">${pct.toFixed(2).replace('.', ',')}%</div>
+        <img src="${logoPath}" class="pres-bottom-logo" alt="${cand.party}" onerror="this.src='https://via.placeholder.com/50/333/fff?text=${cand.party}'; this.style.borderRadius='50%'">
+        <div class="pres-bottom-name">${cand.name.split(' ')[0]}</div>
+        <div class="pres-bottom-pct">${pct.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</div>
         `;
         container.appendChild(div);
     },
-    
     drawMap: (slide) => {
-        const container = document.getElementById('presMap'); let features =[]; let scope = '';
-        if(slide.type === 'nacional') { 
+        const container = document.getElementById('presMap'); let features =[]; let scope = ''; let mapStyle = 'normal';
+        
+        if (slide.type === 'nacional') { 
             if(!app.data.brazilGeoJson) return; features = app.data.brazilGeoJson.features; scope = 'estados'; 
         } else if (slide.type === 'estado') { 
             if(!app.data.geoJson) return; features = app.data.geoJson.features.filter(f => app.getFeatureId(f, 'municipios').startsWith(slide.id)); scope = 'municipios'; 
-        } else if (slide.type === 'metropolitana') {
-            if(!app.data.geoJson) return; features = app.data.geoJson.features.filter(f => slide.cities.includes(app.getFeatureId(f, 'municipios'))); scope = 'municipios';
+        } else if (slide.type === 'metro') {
+            if(!app.data.geoJson) return;
+            const metroData = METRO_REGIONS.find(m => m.id === slide.id);
+            features = app.data.geoJson.features.filter(f => metroData.cities.includes(app.getFeatureId(f, 'municipios')));
+            scope = 'municipios';
+            mapStyle = 'hollow'; // Metrópoles usam estilo de wireframe vazado conforme imagem indexada
         }
-        
-        if(features.length === 0) { container.innerHTML = '<div style="font-size:4rem; color:rgba(255,255,255,0.4)">?</div>'; return; }
+
+        if(features.length === 0) { container.innerHTML = ''; return; }
         
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         features.forEach(f => { const scan = (coords) => { coords.forEach(pt => { if(typeof pt[0]==='number') { if(pt[0]<minX) minX=pt[0]; if(pt[0]>maxX) maxX=pt[0]; if(pt[1]<minY) minY=pt[1]; if(pt[1]>maxY) maxY=pt[1]; } else scan(pt); }); }; if(f.geometry && f.geometry.coordinates) scan(f.geometry.coordinates); });
         
         const w = 800; const latD = maxY - minY; const lonD = maxX - minX; const h = w / (lonD/latD); const proj = (x,y) =>[(x-minX)*(w/lonD), (maxY-y)*(h/latD)];
+        
         let svg = '';
-        
-        // Estética do mapa retro/broadcast: Preenchimento muito escuro quase invisível, bordas brancas definidas
-        const fillCol = 'rgba(20, 20, 50, 0.4)';
-        const strokeColor = 'rgba(255, 255, 255, 0.9)';
-        const strokeWidth = scope === 'estados' ? 1.5 : 0.6;
-        
         features.forEach(f => { 
-            let d = ''; const draw = (r) => { let p=''; r.forEach((pt,i)=>{ const[px,py]=proj(pt[0],pt[1]); p+=(i===0?'M':'L')+px.toFixed(1)+','+py.toFixed(1); }); return p+'Z '; }; 
-            if(f.geometry.type==='Polygon') f.geometry.coordinates.forEach(r=>d+=draw(r)); else if(f.geometry.type==='MultiPolygon') f.geometry.coordinates.forEach(p=>p.forEach(r=>d+=draw(r))); 
-            svg += `<path d="${d}" fill="${fillCol}" stroke="${strokeColor}" stroke-width="${strokeWidth}" vector-effect="non-scaling-stroke"/>`; 
+            const id = app.getFeatureId(f, scope); 
+            const col = app.getColorForId(id, scope).fill; 
+            let d = ''; 
+            const draw = (r) => { let p=''; r.forEach((pt,i)=>{ const[px,py]=proj(pt[0],pt[1]); p+=(i===0?'M':'L')+px.toFixed(1)+','+py.toFixed(1); }); return p+'Z '; }; 
+            if(f.geometry.type==='Polygon') f.geometry.coordinates.forEach(r=>d+=draw(r)); 
+            else if(f.geometry.type==='MultiPolygon') f.geometry.coordinates.forEach(p=>p.forEach(r=>d+=draw(r))); 
+            
+            if (mapStyle === 'hollow') {
+                svg += `<path d="${d}" fill="transparent" stroke="#ffffff" stroke-width="1.5"/>`;
+            } else {
+                svg += `<path d="${d}" fill="${col}" stroke="rgba(255,255,255,0.4)" stroke-width="${scope==='estados'? 1 : 0.2}"/>`; 
+            }
         });
-        container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">${svg}</svg>`;
+        
+        container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">${svg}</svg>`;
     }
 };
 
 const app = {
-    map: null, layers: { brazil: null, cities: null, zones: null },
+    map: null,
+    layers: { brazil: null, cities: null, zones: null },
     data: { base22: null, round1: null, round2: null, geoJson: null, names: {}, brazilGeoJson: null, zonasGeoJson: null },
     state: { turn: 1, view: 'states', selectedId: null, selectedName: "Brasil", selectedScope: null, activeCityId: null, t1_polls: {}, t1_matrix: {}, t1_matrix_state: {}, t1_mults: {}, t2_finalists:[], t2_polls: {}, t2_migr: {}, t2_mults: {}, active_candidates: {}, t2_mode: 'manual' },
 
@@ -447,14 +541,19 @@ const app = {
             app.data.base22 = json['1']; app.data.names = json['1'].meta_nomes || {}; 
             try { 
                 const zRes = await fetch('data/mapazn.geojson'); 
-                if (zRes.ok) { app.data.zonasGeoJson = await zRes.json(); app.processZonasGeoJson(); } 
-            } catch(ez) { console.warn("Zonas eleitorais não encontradas."); }
+                if (zRes.ok) { 
+                    app.data.zonasGeoJson = await zRes.json(); 
+                    app.processZonasGeoJson(); 
+                } 
+            } catch(ez) {
+                console.warn("Zonas eleitorais não encontradas.");
+            }
             await app.loadBrazilLayer(); app.runSimulation(); 
         } catch(e) { console.error(e); alert("Erro dados. Verifique data/2022_president.json"); } finally { loader.classList.add('hidden'); }
     },
 
     exportConfig: () => { const config = { t1_polls: app.state.t1_polls, t1_matrix: app.state.t1_matrix, t1_matrix_state: app.state.t1_matrix_state, t1_mults: app.state.t1_mults, t2_migr: app.state.t2_migr, t2_mults: app.state.t2_mults, active_candidates: app.state.active_candidates, t2_mode: app.state.t2_mode }; saveAs(new Blob([JSON.stringify(config, null, 2)], {type: "application/json;charset=utf-8"}), "eleicoes_config.json"); },
-    importConfig: (input) => { const file = input.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = (e) => { try { app.loadScenario(JSON.parse(e.target.result)); app.renderUI(); app.runSimulation(); alert("Configuração carregada!"); } catch(err) { alert("Erro JSON: " + err.message); } }; reader.readAsText(file); input.value = ''; },
+    importConfig: (input) => { const file = input.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = (e) => { try { app.loadScenario(JSON.parse(e.target.result)); app.renderUI(); app.runSimulation(); alert("Configuração carregada com sucesso!"); } catch(err) { alert("Erro JSON: " + err.message); } }; reader.readAsText(file); input.value = ''; },
     
     processZonasGeoJson: () => {
         app.data.base22.zonas = {};
@@ -606,13 +705,14 @@ const app = {
             }
             for(let zId in res.zonas) { for(let cid in res.zonas[zId]) { res.zonas[zId][cid] = Math.round(res.zonas[zId][cid] * corrections[cid]); } }
         }
+        
         app.data.round1 = res; if (presentation.isActive) presentation.renderSlide();
     },
     calculateTurn2: () => {
         if(!app.data.round1) app.calculateTurn1(); const r1 = app.data.round1;
         const[id1, id2] = app.state.t2_finalists; if(!id1 || !id2) return;
         const isOrganic = app.state.t2_mode === 'organic';
-        const res = { municipios: {}, estados: {}, nacional: {}, zonas: {} }; let tempNacional = {[id1]:0, [id2]:0}, grandTotal = 0;
+        const res = { municipios: {}, estados: {}, nacional: {}, zonas: {} }; let tempNacional = {[id1]:0,[id2]:0}, grandTotal = 0;
         for(let ibge in r1.municipios) {
             const v1 = r1.municipios[ibge], ufId = ibge.substring(0,2); let vA = 0, vB = 0;
             for(let cid in v1) { const votos = v1[cid]; if(cid === id1) vA += votos; else if(cid === id2) vB += votos; else { let ratio = app.state.t2_migr[cid] !== undefined ? app.state.t2_migr[cid] : 0.5; vA += votos * (1 - ratio); vB += votos * ratio; } }
@@ -651,13 +751,16 @@ const app = {
 
 document.addEventListener('DOMContentLoaded', app.init);
 
-window.addEventListener('load', function() {
+document.addEventListener('DOMContentLoaded', function() {
     setTimeout(function() {
         const interactiveElements =['.mode-tab', '.btn-io', '.btn-primary', '.btn-secondary', '.btn-back', '.map-btn', '.nav-item', 'select', 'input[type="checkbox"]', 'input[type="range"]', '.switch input', '.pres-btn', '.pres-nav-area'];
         interactiveElements.forEach(selector => { document.querySelectorAll(selector).forEach(el => { el.style.zIndex = '10000'; if(selector !== '.pres-nav-area') el.style.position = 'relative'; }); });
         document.querySelectorAll('.mode-tab, .btn-io').forEach(tab => { tab.style.cursor = 'pointer'; tab.style.pointerEvents = 'auto'; });
     }, 500);
 });
+
+function ensureClickable(element) { if (element) { element.style.pointerEvents = 'auto'; element.style.cursor = 'pointer'; element.style.zIndex = '10000'; element.style.position = 'relative'; } }
+window.addEventListener('load', function() { ensureClickable(document.getElementById('tab1')); ensureClickable(document.getElementById('tab2')); document.querySelectorAll('.btn-io, .map-btn, .nav-item').forEach(ensureClickable); });
 </script>
 </body>
 </html>
