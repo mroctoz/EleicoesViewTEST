@@ -121,8 +121,6 @@ body {
 
 .io-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
 .btn-io {
-  position: relative;   /* já está implícito, mas podemos forçar */
-  z-index: 1;           /* garantir que fique acima de pseudo-elementos */
   flex: 1; min-width: 80px; padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(15, 23, 42, 0.8); color: var(--text-secondary); border-radius: var(--border-radius-md);
   font-size: 0.75rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -273,7 +271,7 @@ input:checked + .slider:before { transform: translateX(26px); }
 /* --- PRESENTATION MODE (BROADCAST VIEW) --- */
 #presentationOverlay {
     position: fixed; inset: 0; width: 100vw; height: 100vh;
-    background: url('data/backgrounde.png') center/cover no-repeat, radial-gradient(circle at 50% 40%, #1e293b 0%, #020617 100%);
+    background: radial-gradient(circle at 50% 40%, #1e293b 0%, #020617 100%);
     z-index: 999999; display: none; flex-direction: column; color: #ffffff;
     font-family: 'Inter', sans-serif; overflow: hidden; animation: fadeIn var(--transition-normal);
 }
