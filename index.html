@@ -660,6 +660,8 @@ const app = {
         } finally {
             loader.classList.add('hidden');
         }
+      },
+    
     };
 
     exportConfig: () => { const config = { t1_polls: app.state.t1_polls, t1_matrix: app.state.t1_matrix, t1_matrix_state: app.state.t1_matrix_state, t1_mults: app.state.t1_mults, t2_migr: app.state.t2_migr, t2_mults: app.state.t2_mults, active_candidates: app.state.active_candidates, t2_mode: app.state.t2_mode }; saveAs(new Blob([JSON.stringify(config, null, 2)], {type: "application/json;charset=utf-8"}), "eleicoes_config.json"); },
