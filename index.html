@@ -390,7 +390,7 @@ const STATES =[{sigla:'AC', nome:'Acre', id:'12'}, {sigla:'AL', nome:'Alagoas', 
 const CANDIDATE_PHOTOS = {
     'LULA': 'data/lula.jpg', 'FLAVIO': 'data/flavio.jpg', 'TARCISIO': 'data/tarcisio.jpg',
     'RENAN': 'data/renan.jpg', 'CAIADO': 'data/caiado.jpg', 'ZEMA': 'data/zema.jpg',
-    'RATINHO': 'data/ratinho.jpg', 'CIRO': 'data/ciro.jpg', 'ALDO': 'data/aldo.jpg', 'CURY': 'data/cury.jpg'
+    'RATINHO': 'data/ratinho.jpg', 'CIRO': 'data/ciro.jpg', 'ALDO': 'data/aldo.jpg', 'CURY': 'data/cury.jpg', 'JOAQUIM': 'data/joaquim.jpg', 'AÉCIO': 'data/aecio.jpg'
 };
 
 const CONFIG = {
@@ -559,7 +559,7 @@ const presentation = {
         const el = document.getElementById(elementId); if(!data) { el.innerHTML = ''; return; }
         const cand = CONFIG.candidates.find(c=>c.id===data[0]); const pct = total > 0 ? (data[1]/total)*100 : 0;
         const photoUrl = CANDIDATE_PHOTOS[cand.id] || `https://via.placeholder.com/300x400/${cand.color.substring(1)}/ffffff.png?text=${cand.name}`;
-        el.innerHTML = `<div class="pres-photo-wrapper"><img src="${photoUrl}" class="pres-photo" onerror="this.src='https://via.placeholder.com/300x400/333/fff?text=${cand.name}'"><div class="pres-party-badge" style="background: ${cand.color};"><i class="fas ${cand.icon}"></i> ${cand.party}</div></div><div class="pres-cand-name">${cand.name}</div><div class="pres-cand-vice">VICE NÃO DEFINIDO</div><div class="pres-cand-pct" style="color: ${cand.color}">${pct.toFixed(2)}%</div><div class="pres-cand-votes">Votos: ${data[1].toLocaleString('pt-BR')}</div>`;
+        el.innerHTML = `<div class="pres-photo-wrapper"><img src="${photoUrl}" class="pres-photo" onerror="this.src='https://via.placeholder.com/300x400/333/fff?text=${cand.name}'"><div class="pres-party-badge" style="background: ${cand.color};"><i class="fas ${cand.icon}"></i> ${cand.party}</div></div><div class="pres-cand-name">${cand.name}</div><div class="pres-cand-vice"></div><div class="pres-cand-pct" style="color: ${cand.color}">${pct.toFixed(2)}%</div><div class="pres-cand-votes">Votos: ${data[1].toLocaleString('pt-BR')}</div>`;
     },
     renderBottomCand: (container, data, total) => {
         if(!data) return; const cand = CONFIG.candidates.find(c=>c.id===data[0]); const pct = total > 0 ? (data[1]/total)*100 : 0;
