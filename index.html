@@ -906,10 +906,10 @@ const PARTY_LOGOS = {
 // --- CONFIGURAÇÃO DOS CANDIDATOS (INCLUINDO "OUTROS" E SEM CIRO GOMES) ---
 const CONFIG = {
     candidates: [
-        { id: 'LULA', name: 'Lula', party: 'PT', color: '#E12525' },
-        { id: 'FLAVIO', name: 'Flávio Bolsonaro', party: 'PL', color: '#284F8F' },
-        { id: 'RENAN', name: 'Renan Santos', party: 'MISSÃO', color: '#D4AF37' },
-        { id: 'CAIADO', name: 'Ronaldo Caiado', party: 'PSD', color: '#009EE3' },
+        { id: 'LULA', name: 'Lula', party: 'PT', color: '#de0000' },
+        { id: 'FLAVIO', name: 'Flávio Bolsonaro', party: 'PL', color: '#3a3795' },
+        { id: 'RENAN', name: 'Renan Santos', party: 'MISSÃO', color: '#f6ae08' },
+        { id: 'CAIADO', name: 'Ronaldo Caiado', party: 'PSD', color: '#17a7e9' },
         { id: 'ZEMA', name: 'Romeu Zema', party: 'NOVO', color: '#F58220' },
         { id: 'AÉCIO', name: 'Aécio Neves', party: 'PSDB', color: '#4169E1' },
         { id: 'JOAQUIM', name: 'Joaquim Barbosa', party: 'DC', color: '#363bc7' },
@@ -969,53 +969,300 @@ const PRESETS = {
 // --- MODELO DEFAULT BASEADO NO ELEICOES_CONFIG(23).JSON ---
 const DEFAULT_SCENARIO = {
   "t1_polls": {
-    "LULA": 48,
-    "FLAVIO": 40,
-    "RENAN": 5,
-    "CAIADO": 3.1,
-    "ZEMA": 3,
+    "LULA": 47,
+    "FLAVIO": 39,
+    "RENAN": 8,
+    "CAIADO": 3,
+    "ZEMA": 2,
     "ALDO": 0.5,
-    "CURY": 0.2,
-    "JOAQUIM": 0.1,
+    "CURY": 0.5,
+    "JOAQUIM": 0.5,
     "AÉCIO": 0.1,
-    "OUTROS": 0.0
+    "OUTROS": 0
   },
   "t1_matrix": {
-    "LULA": { "LULA": 1, "FLAVIO": 0, "RENAN": 0.11, "CAIADO": 0, "ZEMA": 0, "ALDO": 0, "OUTROS": 0 },
-    "JAIR": { "LULA": 0, "FLAVIO": 1, "RENAN": 0.07, "CAIADO": 0.04, "ZEMA": 0.04, "ALDO": 0, "OUTROS": 0 },
-    "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "RENAN": 0.11, "CAIADO": 0.06, "ZEMA": 0.06, "ALDO": 0.25, "CURY": 0.5, "AÉCIO": 0.1, "JOAQUIM": 0.05, "OUTROS": 0.1 }
+    "LULA": {
+      "LULA": 1,
+      "FLAVIO": 0,
+      "RENAN": 0.11,
+      "CAIADO": 0,
+      "ZEMA": 0,
+      "ALDO": 0,
+      "OUTROS": 0
+    },
+    "JAIR": {
+      "LULA": 0,
+      "FLAVIO": 1,
+      "RENAN": 0.07,
+      "CAIADO": 0.04,
+      "ZEMA": 0.04,
+      "ALDO": 0,
+      "OUTROS": 0
+    },
+    "SIMONE": {
+      "LULA": 0.5,
+      "FLAVIO": 0.5,
+      "RENAN": 0.11,
+      "CAIADO": 0.06,
+      "ZEMA": 0.06,
+      "ALDO": 0.25,
+      "CURY": 0.5,
+      "AÉCIO": 0.1,
+      "JOAQUIM": 0.05,
+      "OUTROS": 0.1
+    }
   },
   "t1_matrix_state": {
     "21": {
-      "LULA": { "LULA": 1, "FLAVIO": 0, "RENAN": 0.07, "CAIADO": 0, "ZEMA": 0, "ALDO": 0, "CURY": 0.05, "OUTROS": 0 },
-      "JAIR": { "LULA": 0, "FLAVIO": 1, "RENAN": 0.12, "CAIADO": 0.04, "ZEMA": 0.04, "ALDO": 0, "OUTROS": 0 }
+      "LULA": {
+        "LULA": 1,
+        "FLAVIO": 0,
+        "RENAN": 0.07,
+        "CAIADO": 0,
+        "ZEMA": 0,
+        "ALDO": 0,
+        "CURY": 0.15,
+        "OUTROS": 0
+      },
+      "JAIR": {
+        "LULA": 0,
+        "FLAVIO": 1,
+        "RENAN": 0.12,
+        "CAIADO": 0.04,
+        "ZEMA": 0.04,
+        "ALDO": 0,
+        "OUTROS": 0
+      }
     },
-    "23": { "JAIR": { "LULA": 0, "FLAVIO": 1, "RENAN": 0.14, "CAIADO": 0.04, "ZEMA": 0.04, "ALDO": 0, "OUTROS": 0 } },
-    "24": { "JAIR": { "LULA": 0, "FLAVIO": 1, "RENAN": 0.21, "CAIADO": 0.04, "ZEMA": 0.04, "ALDO": 0, "OUTROS": 0 } },
-    "25": { "JAIR": { "LULA": 0, "FLAVIO": 1, "RENAN": 0.22, "CAIADO": 0.04, "ZEMA": 0.04, "ALDO": 0, "OUTROS": 0 } },
-    "26": { "JAIR": { "LULA": 0, "FLAVIO": 1, "RENAN": 0.22, "CAIADO": 0.04, "ZEMA": 0.04, "ALDO": 0, "OUTROS": 0 } },
-    "27": { "JAIR": { "LULA": 0, "FLAVIO": 1, "RENAN": 0.17, "CAIADO": 0.04, "ZEMA": 0.04, "ALDO": 0, "OUTROS": 0 } },
-    "29": { "JAIR": { "LULA": 0, "FLAVIO": 1, "RENAN": 0.18, "CAIADO": 0.04, "ZEMA": 0.04, "ALDO": 0, "OUTROS": 0 } },
+    "22": {
+      "LULA": {
+        "LULA": 1,
+        "FLAVIO": 0,
+        "RENAN": 0.11,
+        "CAIADO": 0,
+        "ZEMA": 0,
+        "ALDO": 0,
+        "OUTROS": 0,
+        "CURY": 0.2
+      }
+    },
+    "23": {
+      "JAIR": {
+        "LULA": 0,
+        "FLAVIO": 1,
+        "RENAN": 0.14,
+        "CAIADO": 0.04,
+        "ZEMA": 0.04,
+        "ALDO": 0,
+        "OUTROS": 0
+      }
+    },
+    "24": {
+      "JAIR": {
+        "LULA": 0,
+        "FLAVIO": 1,
+        "RENAN": 0.21,
+        "CAIADO": 0.04,
+        "ZEMA": 0.04,
+        "ALDO": 0,
+        "OUTROS": 0
+      }
+    },
+    "25": {
+      "JAIR": {
+        "LULA": 0,
+        "FLAVIO": 1,
+        "RENAN": 0.22,
+        "CAIADO": 0.04,
+        "ZEMA": 0.04,
+        "ALDO": 0,
+        "OUTROS": 0
+      }
+    },
+    "26": {
+      "JAIR": {
+        "LULA": 0,
+        "FLAVIO": 1,
+        "RENAN": 0.22,
+        "CAIADO": 0.04,
+        "ZEMA": 0.04,
+        "ALDO": 0,
+        "OUTROS": 0
+      }
+    },
+    "27": {
+      "JAIR": {
+        "LULA": 0,
+        "FLAVIO": 1,
+        "RENAN": 0.17,
+        "CAIADO": 0.04,
+        "ZEMA": 0.04,
+        "ALDO": 0,
+        "OUTROS": 0
+      }
+    },
+    "29": {
+      "JAIR": {
+        "LULA": 0,
+        "FLAVIO": 1,
+        "RENAN": 0.18,
+        "CAIADO": 0.04,
+        "ZEMA": 0.04,
+        "ALDO": 0,
+        "OUTROS": 0
+      }
+    },
     "31": {
-      "JAIR": { "LULA": 0, "FLAVIO": 1, "RENAN": 0.04, "CAIADO": 0.05, "ZEMA": 0.13, "ALDO": 0, "OUTROS": 0 },
-      "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "RENAN": 0.06, "CAIADO": 0.06, "ZEMA": 0.35, "ALDO": 0.25, "CURY": 0.5, "OUTROS": 0.1 }
+      "JAIR": {
+        "LULA": 0,
+        "FLAVIO": 1,
+        "RENAN": 0.04,
+        "CAIADO": 0.05,
+        "ZEMA": 0.13,
+        "ALDO": 0,
+        "OUTROS": 0
+      },
+      "SIMONE": {
+        "LULA": 0.5,
+        "FLAVIO": 0.5,
+        "RENAN": 0.06,
+        "CAIADO": 0.06,
+        "ZEMA": 0.35,
+        "ALDO": 0.25,
+        "CURY": 0.5,
+        "OUTROS": 0.1
+      }
     },
-    "35": { "JAIR": { "LULA": 0, "FLAVIO": 1, "RENAN": 0.05, "CAIADO": 0, "ZEMA": 0, "ALDO": 0, "OUTROS": 0 } },
+    "35": {
+      "JAIR": {
+        "LULA": 0,
+        "FLAVIO": 1,
+        "RENAN": 0.05,
+        "CAIADO": 0,
+        "ZEMA": 0,
+        "ALDO": 0,
+        "OUTROS": 0
+      }
+    },
     "41": {
-      "JAIR": { "LULA": 0, "FLAVIO": 1, "RENAN": 0.12, "CAIADO": 0.04, "ZEMA": 0.05, "ALDO": 0, "OUTROS": 0 },
-      "LULA": { "LULA": 1, "FLAVIO": 0, "RENAN": 0.13, "CAIADO": 0, "ZEMA": 0, "ALDO": 0, "OUTROS": 0 }
+      "JAIR": {
+        "LULA": 0,
+        "FLAVIO": 1,
+        "RENAN": 0.12,
+        "CAIADO": 0.04,
+        "ZEMA": 0.05,
+        "ALDO": 0,
+        "OUTROS": 0
+      },
+      "LULA": {
+        "LULA": 1,
+        "FLAVIO": 0,
+        "RENAN": 0.13,
+        "CAIADO": 0,
+        "ZEMA": 0,
+        "ALDO": 0,
+        "OUTROS": 0
+      }
     },
-    "42": { "LULA": { "LULA": 1, "FLAVIO": 0, "RENAN": 0.16, "CAIADO": 0, "ZEMA": 0, "ALDO": 0, "OUTROS": 0 } },
-    "43": { "LULA": { "LULA": 1, "FLAVIO": 0, "RENAN": 0.18, "CAIADO": 0, "ZEMA": 0, "ALDO": 0, "OUTROS": 0 } },
+    "42": {
+      "LULA": {
+        "LULA": 1,
+        "FLAVIO": 0,
+        "RENAN": 0.16,
+        "CAIADO": 0,
+        "ZEMA": 0,
+        "ALDO": 0,
+        "OUTROS": 0
+      }
+    },
+    "43": {
+      "LULA": {
+        "LULA": 1,
+        "FLAVIO": 0,
+        "RENAN": 0.18,
+        "CAIADO": 0,
+        "ZEMA": 0,
+        "ALDO": 0,
+        "OUTROS": 0
+      }
+    },
     "52": {
-      "JAIR": { "LULA": 0, "FLAVIO": 1, "RENAN": 0.04, "CAIADO": 0.14, "ZEMA": 0.01, "ALDO": 0, "OUTROS": 0 },
-      "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "RENAN": 0.06, "CAIADO": 0.35, "ZEMA": 0.06, "ALDO": 0.25, "CURY": 0.5, "OUTROS": 0.1 }
+      "JAIR": {
+        "LULA": 0,
+        "FLAVIO": 1,
+        "RENAN": 0.07,
+        "CAIADO": 0.09,
+        "ZEMA": 0.07,
+        "ALDO": 0,
+        "OUTROS": 0
+      },
+      "SIMONE": {
+        "LULA": 0.5,
+        "FLAVIO": 0.5,
+        "RENAN": 0.06,
+        "CAIADO": 0.35,
+        "ZEMA": 0.06,
+        "ALDO": 0.25,
+        "CURY": 0.5,
+        "OUTROS": 0.1
+      }
     }
   },
-  "t1_mults": { "21": { "CURY": 1.27 }, "33": { "FLAVIO": 1.1 }, "35": { "RENAN": 1.19 } },
-  "t2_migr": { "LULA": 0, "FLAVIO": 1, "RENAN": 0.54, "CAIADO": 0.89, "ZEMA": 0.91, "ALDO": 0.48, "CURY": 0.5, "AÉCIO": 0.45, "JOAQUIM": 0.45, "OUTROS": 0.5 },
-  "t2_mults": { "21": {}, "31": { "FLAVIO": 1, "LULA": 1 }, "41": { "FLAVIO": 1.14, "LULA": 0.98 }, "42": { "FLAVIO": 1.16, "LULA": 0.9 }, "52": { "FLAVIO": 1, "LULA": 1.1 } },
-  "active_candidates": { "LULA": true, "FLAVIO": true, "RENAN": true, "CAIADO": true, "ZEMA": true, "ALDO": false, "DACIOLO": false, "CURY": true, "JOAQUIM": true, "AÉCIO": true, "OUTROS": true },
+  "t1_mults": {
+    "21": {
+      "CURY": 1.27
+    },
+    "33": {
+      "FLAVIO": 1.1
+    },
+    "35": {
+      "RENAN": 1.19
+    }
+  },
+  "t2_migr": {
+    "LULA": 0,
+    "FLAVIO": 1,
+    "RENAN": 0.54,
+    "CAIADO": 0.89,
+    "ZEMA": 0.91,
+    "ALDO": 0.48,
+    "CURY": 0.5,
+    "AÉCIO": 0.45,
+    "JOAQUIM": 0.45,
+    "OUTROS": 0.5
+  },
+  "t2_mults": {
+    "21": {},
+    "31": {
+      "FLAVIO": 1,
+      "LULA": 1
+    },
+    "41": {
+      "FLAVIO": 1.14,
+      "LULA": 0.98
+    },
+    "42": {
+      "FLAVIO": 1.09,
+      "LULA": 0.94
+    },
+    "52": {
+      "FLAVIO": 1,
+      "LULA": 1.1
+    }
+  },
+  "active_candidates": {
+    "LULA": true,
+    "FLAVIO": true,
+    "RENAN": true,
+    "CAIADO": true,
+    "ZEMA": true,
+    "ALDO": false,
+    "DACIOLO": false,
+    "CURY": true,
+    "JOAQUIM": true,
+    "AÉCIO": false,
+    "OUTROS": false
+  },
   "t2_mode": "organic"
 };
 
