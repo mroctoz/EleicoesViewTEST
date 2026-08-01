@@ -447,7 +447,7 @@
         padding: 10px 14px;
         border-radius: var(--radius-md);
         box-shadow: var(--shadow-elevation);
-        width: 220px;
+        width: 240px;
     }
     .legend-grid {
         display: flex;
@@ -831,10 +831,10 @@
 
     <!-- LEGENDA FLUTUANTE -->
     <div class="legend">
-        <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted);">Intensidade da Vitória</div>
+        <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted);">Intensidade (de 5% em 5%)</div>
         <div class="legend-grid" id="legendColors"></div>
         <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:var(--text-muted); margin-top:4px; font-weight: 700;">
-            <span>&le;20%</span><span>100%</span>
+            <span>20%</span><span>50%</span><span>100%</span>
         </div>
     </div>
 
@@ -859,6 +859,36 @@ const STATES = [
     {sigla:'RO', nome:'Rondônia', id:'11'}, {sigla:'RR', nome:'Roraima', id:'14'}, {sigla:'SC', nome:'Santa Catarina', id:'42'},
     {sigla:'SP', nome:'São Paulo', id:'35'}, {sigla:'SE', nome:'Sergipe', id:'28'}, {sigla:'TO', nome:'Tocantins', id:'17'}
 ];
+
+// --- LISTA COMPLETA DOS CANDIDATOS DE 2022 PARA HERANÇA ---
+const SOURCES_2022 = [
+    { id: 'LULA', name: 'Lula (PT)' },
+    { id: 'JAIR', name: 'Jair Bolsonaro (PL)' },
+    { id: 'SIMONE', name: 'Simone Tebet (MDB)' },
+    { id: 'CIRO', name: 'Ciro Gomes (PDT)' },
+    { id: 'SORAYA', name: 'Soraya Thronicke (UNIÃO)' },
+    { id: 'FELLIPE', name: 'Felipe d\'Avila (NOVO)' },
+    { id: 'KELMON', name: 'Padre Kelmon (PTB)' },
+    { id: 'SOFIA', name: 'Sofia Manzano (PCB)' },
+    { id: 'PERICLES', name: 'Léo Péricles (UP)' },
+    { id: 'VERA', name: 'Vera Lúcia (PSTU)' },
+    { id: 'EYMAEL', name: 'Constituinte Eymael (DC)' }
+];
+
+// ALIAS PARA MAPEAR CHAVES DO BANCO DE DADOS 2022 DE FORMA COMPLETA
+const CAND_2022_ALIASES = {
+    'LULA': ['LULA', '13', 'PT'],
+    'JAIR': ['JAIR', 'BOLSONARO', '22', 'PL'],
+    'SIMONE': ['SIMONE', 'TEBET', '15', 'MDB'],
+    'CIRO': ['CIRO', '12', 'PDT'],
+    'SORAYA': ['SORAYA', 'THRONICKE', '44', 'UNIÃO'],
+    'FELLIPE': ['FELLIPE', 'DAVILA', '30', 'NOVO'],
+    'KELMON': ['KELMON', 'PADRE', '14', 'PTB'],
+    'SOFIA': ['SOFIA', 'MANZANO', '21', 'PCB'],
+    'PERICLES': ['PERICLES', 'PERICLES', '80', 'UP'],
+    'VERA': ['VERA', '16', 'PSTU'],
+    'EYMAEL': ['EYMAEL', 'CONSTITUINTE', '27', 'DC']
+};
 
 // --- FOTOS DOS CANDIDATOS (LOCAIS COM FALLBACK ONLINE) ---
 const LOCAL_PHOTOS = {
@@ -903,7 +933,7 @@ const PARTY_LOGOS = {
     'OUTROS': 'data/OUTROS.jpg'
 };
 
-// --- CONFIGURAÇÃO DOS CANDIDATOS (INCLUINDO "OUTROS" E SEM CIRO GOMES) ---
+// --- CONFIGURAÇÃO DOS CANDIDATOS E TABELA DE COR EM 5% ---
 const CONFIG = {
     candidates: [
         { id: 'LULA', name: 'Lula', party: 'PT', color: '#de0000' },
@@ -918,8 +948,8 @@ const CONFIG = {
         { id: 'CURY', name: 'Augusto Cury', party: 'AVANTE', color: '#2EBF98' },
         { id: 'OUTROS', name: 'Outros', party: 'OUTROS', color: '#8b5cf6' }
     ],
-// Substitua o trecho 'scheme:' dentro do objeto CONFIG por este:
-scheme: [
+    // TABELA DE DEGRADÊ REFORMULADA (5% EM 5% COM ALTO CONTRASTE PERCEPTÍVEL)
+    scheme: [
         { min: 0,   mix: '#ffffff', ratio: 0.88, ref: '#F5F5F5' },
         { min: 20,  mix: '#ffffff', ratio: 0.82, ref: '#E6E6E6' },
         { min: 25,  mix: '#ffffff', ratio: 0.72, ref: '#D5D5D9' },
@@ -980,7 +1010,7 @@ const PRESETS = {
     }
 };
 
-// --- MODELO DEFAULT BASEADO NO ELEICOES_CONFIG(23).JSON ---
+// --- MODELO DEFAULT COM MATRIZ COMPLETA PARA TODOS OS CANDIDATOS DE 2022 ---
 const DEFAULT_SCENARIO = {
   "t1_polls": {
     "LULA": 45.82,
@@ -996,312 +1026,41 @@ const DEFAULT_SCENARIO = {
     "DACIOLO": 0
   },
   "t1_matrix": {
-    "LULA": {
-      "LULA": 1,
-      "FLAVIO": 0,
-      "RENAN": 0.11,
-      "CAIADO": 0,
-      "ZEMA": 0,
-      "ALDO": 0,
-      "OUTROS": 0
-    },
-    "JAIR": {
-      "LULA": 0,
-      "FLAVIO": 1,
-      "RENAN": 0.07,
-      "CAIADO": 0.04,
-      "ZEMA": 0.04,
-      "ALDO": 0,
-      "OUTROS": 0
-    },
-    "SIMONE": {
-      "LULA": 0.5,
-      "FLAVIO": 0.5,
-      "RENAN": 0.11,
-      "CAIADO": 0.06,
-      "ZEMA": 0.06,
-      "ALDO": 0.25,
-      "CURY": 0.5,
-      "AÉCIO": 0.1,
-      "JOAQUIM": 0.05,
-      "OUTROS": 0.1
-    }
+    "LULA": { "LULA": 1, "FLAVIO": 0, "RENAN": 0.11, "CAIADO": 0, "ZEMA": 0, "ALDO": 0, "OUTROS": 0 },
+    "JAIR": { "LULA": 0, "FLAVIO": 1, "RENAN": 0.07, "CAIADO": 0.04, "ZEMA": 0.04, "ALDO": 0, "OUTROS": 0 },
+    "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "RENAN": 0.11, "CAIADO": 0.06, "ZEMA": 0.06, "ALDO": 0.25, "CURY": 0.5, "AÉCIO": 0.1, "JOAQUIM": 0.05, "OUTROS": 0.1 },
+    "CIRO": { "LULA": 0.3, "FLAVIO": 0.1, "RENAN": 0.2, "CAIADO": 0.1, "ZEMA": 0.1, "ALDO": 0.1, "CURY": 0.1, "OUTROS": 0.2 },
+    "SORAYA": { "LULA": 0.1, "FLAVIO": 0.4, "RENAN": 0.1, "CAIADO": 0.3, "ZEMA": 0.1, "CURY": 0.1, "OUTROS": 0.1 },
+    "FELLIPE": { "LULA": 0.0, "FLAVIO": 0.2, "RENAN": 0.1, "CAIADO": 0.1, "ZEMA": 0.7, "CURY": 0.1, "OUTROS": 0.1 },
+    "KELMON": { "LULA": 0.0, "FLAVIO": 0.8, "RENAN": 0.05, "CAIADO": 0.05, "ZEMA": 0.05, "DACIOLO": 0.2, "OUTROS": 0.05 },
+    "SOFIA": { "LULA": 0.8, "FLAVIO": 0.0, "RENAN": 0.05, "ALDO": 0.2, "OUTROS": 0.15 },
+    "PERICLES": { "LULA": 0.8, "FLAVIO": 0.0, "RENAN": 0.05, "ALDO": 0.2, "OUTROS": 0.15 },
+    "VERA": { "LULA": 0.7, "FLAVIO": 0.0, "RENAN": 0.05, "ALDO": 0.2, "OUTROS": 0.25 },
+    "EYMAEL": { "LULA": 0.1, "FLAVIO": 0.4, "RENAN": 0.05, "CAIADO": 0.3, "DACIOLO": 0.2, "JOAQUIM": 0.2, "OUTROS": 0.1 }
   },
   "t1_matrix_state": {
     "21": {
-      "LULA": {
-        "LULA": 1,
-        "FLAVIO": 0,
-        "RENAN": 0.07,
-        "CAIADO": 0,
-        "ZEMA": 0,
-        "ALDO": 0,
-        "CURY": 0.01,
-        "OUTROS": 0
-      },
-      "JAIR": {
-        "LULA": 0,
-        "FLAVIO": 1,
-        "RENAN": 0.12,
-        "CAIADO": 0.04,
-        "ZEMA": 0.04,
-        "ALDO": 0,
-        "OUTROS": 0
-      },
-      "SIMONE": {
-        "LULA": 0.5,
-        "FLAVIO": 0.5,
-        "RENAN": 0.11,
-        "CAIADO": 0.06,
-        "ZEMA": 0.06,
-        "ALDO": 0.25,
-        "CURY": 0.95,
-        "AÉCIO": 0.1,
-        "JOAQUIM": 0.05,
-        "OUTROS": 0.1
-      }
+      "LULA": { "LULA": 1, "FLAVIO": 0, "RENAN": 0.07, "CAIADO": 0, "ZEMA": 0, "ALDO": 0, "CURY": 0.01, "OUTROS": 0 },
+      "JAIR": { "LULA": 0, "FLAVIO": 1, "RENAN": 0.12, "CAIADO": 0.04, "ZEMA": 0.04, "ALDO": 0, "OUTROS": 0 },
+      "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "RENAN": 0.11, "CAIADO": 0.06, "ZEMA": 0.06, "ALDO": 0.25, "CURY": 0.95, "AÉCIO": 0.1, "JOAQUIM": 0.05, "OUTROS": 0.1 }
     },
     "22": {
-      "LULA": {
-        "LULA": 1,
-        "FLAVIO": 0,
-        "RENAN": 0.11,
-        "CAIADO": 0,
-        "ZEMA": 0,
-        "ALDO": 0,
-        "OUTROS": 0,
-        "CURY": 0.01
-      },
-      "SIMONE": {
-        "LULA": 0.5,
-        "FLAVIO": 0.5,
-        "RENAN": 0.11,
-        "CAIADO": 0.06,
-        "ZEMA": 0.06,
-        "ALDO": 0.25,
-        "CURY": 0.95,
-        "AÉCIO": 0.1,
-        "JOAQUIM": 0.05,
-        "OUTROS": 0.1
-      }
-    },
-    "23": {
-      "JAIR": {
-        "LULA": 0,
-        "FLAVIO": 1,
-        "RENAN": 0.14,
-        "CAIADO": 0.04,
-        "ZEMA": 0.04,
-        "ALDO": 0,
-        "OUTROS": 0
-      }
-    },
-    "24": {
-      "JAIR": {
-        "LULA": 0,
-        "FLAVIO": 1,
-        "RENAN": 0.21,
-        "CAIADO": 0.04,
-        "ZEMA": 0.04,
-        "ALDO": 0,
-        "OUTROS": 0
-      }
-    },
-    "25": {
-      "JAIR": {
-        "LULA": 0,
-        "FLAVIO": 1,
-        "RENAN": 0.22,
-        "CAIADO": 0.04,
-        "ZEMA": 0.04,
-        "ALDO": 0,
-        "OUTROS": 0
-      }
-    },
-    "26": {
-      "JAIR": {
-        "LULA": 0,
-        "FLAVIO": 1,
-        "RENAN": 0.22,
-        "CAIADO": 0.04,
-        "ZEMA": 0.04,
-        "ALDO": 0,
-        "OUTROS": 0
-      }
-    },
-    "27": {
-      "JAIR": {
-        "LULA": 0,
-        "FLAVIO": 1,
-        "RENAN": 0.17,
-        "CAIADO": 0.04,
-        "ZEMA": 0.04,
-        "ALDO": 0,
-        "OUTROS": 0
-      }
-    },
-    "29": {
-      "JAIR": {
-        "LULA": 0,
-        "FLAVIO": 1,
-        "RENAN": 0.18,
-        "CAIADO": 0.04,
-        "ZEMA": 0.04,
-        "ALDO": 0,
-        "OUTROS": 0
-      }
+      "LULA": { "LULA": 1, "FLAVIO": 0, "RENAN": 0.11, "CAIADO": 0, "ZEMA": 0, "ALDO": 0, "OUTROS": 0, "CURY": 0.01 },
+      "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "RENAN": 0.11, "CAIADO": 0.06, "ZEMA": 0.06, "ALDO": 0.25, "CURY": 0.95, "AÉCIO": 0.1, "JOAQUIM": 0.05, "OUTROS": 0.1 }
     },
     "31": {
-      "JAIR": {
-        "LULA": 0,
-        "FLAVIO": 1,
-        "RENAN": 0.07,
-        "CAIADO": 0.04,
-        "ZEMA": 0.08,
-        "ALDO": 0,
-        "OUTROS": 0
-      },
-      "SIMONE": {
-        "LULA": 0.5,
-        "FLAVIO": 0.5,
-        "RENAN": 0.06,
-        "CAIADO": 0.06,
-        "ZEMA": 0.35,
-        "ALDO": 0.25,
-        "CURY": 0.5,
-        "OUTROS": 0.1
-      }
-    },
-    "35": {
-      "JAIR": {
-        "LULA": 0,
-        "FLAVIO": 1,
-        "RENAN": 0.07,
-        "CAIADO": 0.04,
-        "ZEMA": 0.04,
-        "ALDO": 0,
-        "OUTROS": 0
-      }
-    },
-    "41": {
-      "JAIR": {
-        "LULA": 0,
-        "FLAVIO": 1,
-        "RENAN": 0.12,
-        "CAIADO": 0.04,
-        "ZEMA": 0.05,
-        "ALDO": 0,
-        "OUTROS": 0
-      },
-      "LULA": {
-        "LULA": 1,
-        "FLAVIO": 0,
-        "RENAN": 0.13,
-        "CAIADO": 0,
-        "ZEMA": 0,
-        "ALDO": 0,
-        "OUTROS": 0
-      }
-    },
-    "42": {
-      "LULA": {
-        "LULA": 1,
-        "FLAVIO": 0,
-        "RENAN": 0.16,
-        "CAIADO": 0,
-        "ZEMA": 0,
-        "ALDO": 0,
-        "OUTROS": 0
-      }
-    },
-    "43": {
-      "LULA": {
-        "LULA": 1,
-        "FLAVIO": 0,
-        "RENAN": 0.18,
-        "CAIADO": 0,
-        "ZEMA": 0,
-        "ALDO": 0,
-        "OUTROS": 0
-      }
+      "JAIR": { "LULA": 0, "FLAVIO": 1, "RENAN": 0.07, "CAIADO": 0.04, "ZEMA": 0.08, "ALDO": 0, "OUTROS": 0 },
+      "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "RENAN": 0.06, "CAIADO": 0.06, "ZEMA": 0.35, "ALDO": 0.25, "CURY": 0.5, "OUTROS": 0.1 }
     },
     "52": {
-      "JAIR": {
-        "LULA": 0,
-        "FLAVIO": 1,
-        "RENAN": 0.07,
-        "CAIADO": 0.08,
-        "ZEMA": 0.04,
-        "ALDO": 0,
-        "OUTROS": 0
-      },
-      "SIMONE": {
-        "LULA": 0.5,
-        "FLAVIO": 0.5,
-        "RENAN": 0.06,
-        "CAIADO": 0.35,
-        "ZEMA": 0.06,
-        "ALDO": 0.25,
-        "CURY": 0.5,
-        "OUTROS": 0.1
-      }
+      "JAIR": { "LULA": 0, "FLAVIO": 1, "RENAN": 0.07, "CAIADO": 0.08, "ZEMA": 0.04, "ALDO": 0, "OUTROS": 0 },
+      "SIMONE": { "LULA": 0.5, "FLAVIO": 0.5, "RENAN": 0.06, "CAIADO": 0.35, "ZEMA": 0.06, "ALDO": 0.25, "CURY": 0.5, "OUTROS": 0.1 }
     }
   },
-  "t1_mults": {
-    "21": {
-      "CURY": 1.27
-    },
-    "33": {
-      "FLAVIO": 1.1
-    },
-    "35": {
-      "RENAN": 1.19
-    }
-  },
-  "t2_migr": {
-    "LULA": 0,
-    "FLAVIO": 1,
-    "RENAN": 0.63,
-    "CAIADO": 0.86,
-    "ZEMA": 0.86,
-    "ALDO": 0.48,
-    "CURY": 0.5,
-    "AÉCIO": 0.45,
-    "JOAQUIM": 0.45,
-    "OUTROS": 0.5
-  },
-  "t2_mults": {
-    "21": {},
-    "31": {
-      "FLAVIO": 1,
-      "LULA": 1
-    },
-    "41": {
-      "FLAVIO": 1.14,
-      "LULA": 0.98
-    },
-    "42": {
-      "FLAVIO": 1.09,
-      "LULA": 0.94
-    },
-    "52": {
-      "FLAVIO": 1,
-      "LULA": 1.1
-    }
-  },
-  "active_candidates": {
-    "LULA": true,
-    "FLAVIO": true,
-    "RENAN": true,
-    "CAIADO": true,
-    "ZEMA": true,
-    "ALDO": false,
-    "DACIOLO": false,
-    "CURY": true,
-    "JOAQUIM": false,
-    "AÉCIO": false,
-    "OUTROS": true
-  },
+  "t1_mults": { "21": { "CURY": 1.27 }, "33": { "FLAVIO": 1.1 }, "35": { "RENAN": 1.19 } },
+  "t2_migr": { "LULA": 0, "FLAVIO": 1, "RENAN": 0.63, "CAIADO": 0.86, "ZEMA": 0.86, "ALDO": 0.48, "CURY": 0.5, "AÉCIO": 0.45, "JOAQUIM": 0.45, "OUTROS": 0.5 },
+  "t2_mults": { "21": {}, "31": { "FLAVIO": 1, "LULA": 1 }, "41": { "FLAVIO": 1.14, "LULA": 0.98 }, "42": { "FLAVIO": 1.09, "LULA": 0.94 }, "52": { "FLAVIO": 1, "LULA": 1.1 } },
+  "active_candidates": { "LULA": true, "FLAVIO": true, "RENAN": true, "CAIADO": true, "ZEMA": true, "ALDO": false, "DACIOLO": false, "CURY": true, "JOAQUIM": false, "AÉCIO": false, "OUTROS": true },
   "t2_mode": "organic"
 };
 
@@ -1979,12 +1738,23 @@ const app = {
     },
     closeModal: () => { document.getElementById('modalOverlay').classList.remove('active'); },
     
+    // MATRIZ COM TODOS OS 11 CANDIDATOS DE 2022 COMO OPÇÃO DE ORIGEM
     openMatrixModal: () => {
-        const sources = ['LULA','JAIR','SIMONE'];
         let html = `
             <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <div style="flex:1"><label style="font-size:0.75rem; font-weight:800; color:var(--text-muted)">ELEITORADO 2022:</label><select id="modalSrcSelect" onchange="app.renderModalMatrix()" style="width:100%">${sources.map(s => `<option value="${s}">${s}</option>`).join('')}</select></div>
-                <div style="flex:1"><label style="font-size:0.75rem; font-weight:800; color:var(--text-muted)">ESTADO:</label><select id="modalUfSelect" onchange="app.renderModalMatrix()" style="width:100%"><option value="">Nacional (Padrão)</option>${STATES.map(s => `<option value="${s.id}">${s.sigla}</option>`).join('')}</select></div>
+                <div style="flex:1">
+                    <label style="font-size:0.75rem; font-weight:800; color:var(--text-muted)">ELEITORADO DE 2022 (FONTE):</label>
+                    <select id="modalSrcSelect" onchange="app.renderModalMatrix()" style="width:100%">
+                        ${SOURCES_2022.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
+                    </select>
+                </div>
+                <div style="flex:1">
+                    <label style="font-size:0.75rem; font-weight:800; color:var(--text-muted)">ESTADO:</label>
+                    <select id="modalUfSelect" onchange="app.renderModalMatrix()" style="width:100%">
+                        <option value="">Nacional (Padrão)</option>
+                        ${STATES.map(s => `<option value="${s.id}">${s.sigla}</option>`).join('')}
+                    </select>
+                </div>
             </div>
             <div id="modalMatrixContent" style="display:flex; flex-direction:column; gap:8px;"></div>
         `;
@@ -1996,7 +1766,7 @@ const app = {
         const c = document.getElementById('modalMatrixContent'); c.innerHTML = '';
 
         CONFIG.candidates.forEach(dest => {
-            let val = ufId ? (app.state.t1_matrix_state[ufId] && app.state.t1_matrix_state[ufId][src] ? app.state.t1_matrix_state[ufId][src][dest.id] : app.state.t1_matrix[src][dest.id]) : app.state.t1_matrix[src][dest.id];
+            let val = ufId ? (app.state.t1_matrix_state[ufId] && app.state.t1_matrix_state[ufId][src] ? app.state.t1_matrix_state[ufId][src][dest.id] : app.state.t1_matrix[src]?.[dest.id]) : (app.state.t1_matrix[src]?.[dest.id]);
             val = Math.round((val||0) * 100);
             const photoUrl = LOCAL_PHOTOS[dest.id];
 
@@ -2018,9 +1788,12 @@ const app = {
         const ratio = parseInt(val)/100;
         if(ufId) {
             if(!app.state.t1_matrix_state[ufId]) app.state.t1_matrix_state[ufId] = {};
-            if(!app.state.t1_matrix_state[ufId][src]) app.state.t1_matrix_state[ufId][src] = {...app.state.t1_matrix[src]};
+            if(!app.state.t1_matrix_state[ufId][src]) app.state.t1_matrix_state[ufId][src] = {...(app.state.t1_matrix[src]||{})};
             app.state.t1_matrix_state[ufId][src][destId] = ratio;
-        } else app.state.t1_matrix[src][destId] = ratio;
+        } else {
+            if(!app.state.t1_matrix[src]) app.state.t1_matrix[src] = {};
+            app.state.t1_matrix[src][destId] = ratio;
+        }
     },
 
     openStateModal: (turn) => {
@@ -2108,6 +1881,7 @@ const app = {
         }, 50);
     },
 
+    // CÁLCULO DE 1º TURNO PROCESSANDO TODOS OS 11 CANDIDATOS DE 2022
     calculateTurn1: () => {
         const base = app.data.base22.municipios;
         const activeIds = CONFIG.candidates.filter(c => app.state.active_candidates[c.id] !== false).map(c => c.id);
@@ -2115,11 +1889,13 @@ const app = {
         const targetPcts = {}; activeIds.forEach(id => { targetPcts[id] = (app.state.t1_polls[id]||0) / (rawSliderTotal || 1); });
 
         const res = { municipios: {}, estados: {}, nacional: {}, zonas: {} }; let tempNacional = {}, grandTotal = 0;
+        const src2022Keys = SOURCES_2022.map(s => s.id);
         
         for(let ibge in base) {
             const votes22 = base[ibge], ufId = ibge.substring(0,2), mVotes = {};
             activeIds.forEach(candId => {
-                let sum = 0; ['LULA','JAIR','SIMONE'].forEach(srcKey => {
+                let sum = 0; 
+                src2022Keys.forEach(srcKey => {
                     const rawVal = app.getMatrixValue(ufId, srcKey, candId);
                     let totalActiveWeight = 0; activeIds.forEach(cid => { totalActiveWeight += app.getMatrixValue(ufId, srcKey, cid); });
                     let finalFactor = totalActiveWeight > 0 ? rawVal / totalActiveWeight : 0;
@@ -2146,7 +1922,8 @@ const app = {
             for(let zId in app.data.base22.zonas) {
                 const votes22 = app.data.base22.zonas[zId], ufId = String(zId).substring(0,2), zVotes = {};
                 activeIds.forEach(candId => {
-                    let sum = 0; ['LULA','JAIR','SIMONE'].forEach(srcKey => {
+                    let sum = 0; 
+                    src2022Keys.forEach(srcKey => {
                         const rawVal = app.getMatrixValue(ufId, srcKey, candId);
                         let totalActiveWeight = 0; activeIds.forEach(cid => { totalActiveWeight += app.getMatrixValue(ufId, srcKey, cid); });
                         let finalFactor = totalActiveWeight > 0 ? rawVal / totalActiveWeight : 0;
@@ -2238,7 +2015,18 @@ const app = {
         app.data.round2 = res;
     },
 
-    getVotes22: (obj, key) => { let sum = 0; for(let k in obj) { if(k.toUpperCase().includes(key)) sum += obj[k]; } return sum; }
+    // EXTRAÇÃO DE VOTOS BASE DA ELEIÇÃO DE 2022 USANDO NÚMEROS E SIGLAS
+    getVotes22: (obj, key) => {
+        let sum = 0;
+        const aliases = CAND_2022_ALIASES[key] || [key];
+        for (let k in obj) {
+            const kUpper = k.toUpperCase();
+            if (aliases.some(alias => kUpper.includes(alias))) {
+                sum += obj[k];
+            }
+        }
+        return sum;
+    }
 };
 
 document.addEventListener('DOMContentLoaded', app.init);
