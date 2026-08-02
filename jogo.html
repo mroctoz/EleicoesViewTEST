@@ -3,57 +3,68 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Desafio Presidencial 2026 - O Jogo da Campanha</title>
+<title>Eleições 2026 - O Jogo Presidencial</title>
+
+<!-- Leaflet Mapa -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <!-- Fonts & Icons -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
+<!-- Export Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
 <style>
     :root {
-        --bg-dark: #080c14;
+        --bg-dark: #070a12;
         --panel-bg: rgba(15, 23, 42, 0.92);
         --panel-border: rgba(255, 255, 255, 0.08);
         --card-bg: rgba(30, 41, 59, 0.7);
-        --card-border: rgba(255, 255, 255, 0.1);
-        --card-hover: rgba(51, 65, 85, 0.9);
-        --text-color: #f8fafc;
+        --card-border: rgba(255, 255, 255, 0.08);
+        --card-hover: rgba(51, 65, 85, 0.85);
+        --text-main: #f8fafc;
         --text-muted: #94a3b8;
         --accent-blue: #3b82f6;
-        --accent-cyan: #06b6d4;
-        --accent-green: #10b981;
         --accent-gold: #f59e0b;
+        --accent-green: #10b981;
         --accent-red: #ef4444;
+        --accent-purple: #8b5cf6;
         --radius-lg: 16px;
         --radius-md: 12px;
         --radius-sm: 8px;
-        --shadow-main: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, sans-serif; user-select: none; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
 
     body {
         background-color: var(--bg-dark);
-        color: var(--text-color);
-        min-height: 100vh;
-        overflow-x: hidden;
-        display: flex;
-        flex-direction: column;
+        color: var(--text-main);
+        overflow: hidden;
+        height: 100vh;
+        width: 100vw;
     }
 
-    /* TOP GAME HEADER BAR */
-    .game-header {
+    /* GAME GRID LAYOUT */
+    #gameContainer {
+        display: grid;
+        grid-template-rows: 64px 1fr;
+        height: 100vh;
+        width: 100vw;
+    }
+
+    /* TOP HEADER BAR */
+    header {
         background: var(--panel-bg);
         backdrop-filter: blur(20px);
         border-bottom: 1px solid var(--panel-border);
-        padding: 12px 24px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        position: sticky;
-        top: 0;
-        z-index: 1000;
-        box-shadow: var(--shadow-main);
+        padding: 0 24px;
+        z-index: 2000;
     }
 
     .brand {
@@ -62,1065 +73,868 @@
         gap: 12px;
     }
     .brand h1 {
-        font-size: 1.2rem;
+        font-size: 1.15rem;
         font-weight: 900;
-        background: linear-gradient(135deg, #f8fafc 30%, var(--accent-blue));
+        letter-spacing: -0.5px;
+        background: linear-gradient(135deg, #fff 30%, var(--accent-blue));
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
     }
     .turn-badge {
-        background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
-        color: #fff;
+        background: rgba(59, 130, 246, 0.15);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        color: var(--accent-blue);
         padding: 4px 12px;
         border-radius: 20px;
-        font-size: 0.75rem;
+        font-size: 0.78rem;
         font-weight: 800;
-        letter-spacing: 0.5px;
     }
 
-    .status-dashboard {
+    .stats-bar {
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 20px;
     }
     .stat-pill {
-        background: var(--card-bg);
-        border: 1px solid var(--card-border);
-        padding: 6px 14px;
-        border-radius: var(--radius-md);
         display: flex;
         align-items: center;
         gap: 8px;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        padding: 6px 14px;
+        border-radius: 20px;
         font-size: 0.82rem;
         font-weight: 800;
     }
     .stat-pill i { font-size: 0.9rem; }
     .stat-pill.money i { color: var(--accent-green); }
-    .stat-pill.polls i { color: var(--accent-cyan); }
+    .stat-pill.poll i { color: var(--accent-blue); }
     .stat-pill.rejection i { color: var(--accent-red); }
-    .stat-pill.momentum i { color: var(--accent-gold); }
+
+    /* MAIN CONTENT DASHBOARD */
+    .game-body {
+        display: grid;
+        grid-template-columns: 340px 1fr 340px;
+        height: calc(100vh - 64px);
+        overflow: hidden;
+    }
+
+    .side-panel {
+        background: var(--panel-bg);
+        border-right: 1px solid var(--panel-border);
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        padding: 16px;
+        gap: 16px;
+    }
+    .side-panel.right { border-right: none; border-left: 1px solid var(--panel-border); }
+
+    .side-panel::-webkit-scrollbar { width: 5px; }
+    .side-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
+
+    /* ACTION BUTTONS */
+    .action-btn {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        color: var(--text-main);
+        padding: 12px 14px;
+        border-radius: var(--radius-md);
+        font-size: 0.82rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: all 0.2s ease;
+        text-align: left;
+    }
+    .action-btn:hover {
+        background: var(--card-hover);
+        border-color: var(--accent-blue);
+        transform: translateY(-2px);
+    }
+    .action-btn i { font-size: 1.1rem; color: var(--accent-blue); }
+    .action-btn.attack { border-color: rgba(239, 68, 68, 0.3); }
+    .action-btn.attack:hover { background: rgba(239, 68, 68, 0.2); border-color: var(--accent-red); }
+    .action-btn.attack i { color: var(--accent-red); }
+
+    /* CENTER MAP AREA */
+    .map-wrapper {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+    #gameMap {
+        width: 100%;
+        height: 100%;
+        background: var(--bg-dark);
+    }
 
     /* NEWS TICKER */
     .news-ticker {
-        background: rgba(15, 23, 42, 0.95);
-        border-bottom: 1px solid var(--panel-border);
-        padding: 8px 24px;
-        font-size: 0.78rem;
-        font-weight: 700;
-        color: var(--accent-cyan);
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        right: 20px;
+        background: rgba(15, 23, 42, 0.88);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--panel-border);
+        border-radius: var(--radius-md);
+        padding: 10px 16px;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
+        z-index: 1000;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
     }
     .news-badge {
         background: var(--accent-red);
         color: #fff;
-        padding: 2px 8px;
-        border-radius: 4px;
         font-size: 0.65rem;
         font-weight: 900;
+        padding: 3px 8px;
+        border-radius: 4px;
         text-transform: uppercase;
+        flex-shrink: 0;
     }
-
-    /* MAIN CONTAINER */
-    .main-container {
-        flex: 1;
-        max-width: 1400px;
-        width: 100%;
-        margin: 0 auto;
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-    }
-
-    /* SCREEN 1: CANDIDATE SELECTION */
-    .selection-screen {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 24px;
-        padding: 20px 0;
-    }
-    .selection-title {
-        text-align: center;
-    }
-    .selection-title h2 { font-size: 2rem; font-weight: 900; margin-bottom: 6px; }
-    .selection-title p { color: var(--text-muted); font-size: 0.9rem; }
-
-    .candidates-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-        gap: 20px;
-        width: 100%;
-    }
-    .candidate-card {
-        background: var(--panel-bg);
-        border: 2px solid var(--panel-border);
-        border-radius: var(--radius-lg);
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        cursor: pointer;
-        transition: all 0.25s ease;
-        position: relative;
+    .news-text {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--text-main);
+        white-space: nowrap;
         overflow: hidden;
+        text-overflow: ellipsis;
     }
-    .candidate-card:hover {
-        border-color: var(--cand-color, var(--accent-blue));
-        transform: translateY(-4px);
-        box-shadow: 0 12px 30px rgba(0,0,0,0.5);
-    }
-    .card-top {
+
+    /* CANDIDATE AVATAR CARD */
+    .candidate-card-profile {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: var(--radius-lg);
+        padding: 16px;
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 14px;
     }
-    .cand-photo {
-        width: 72px;
-        height: 72px;
+    .cand-img-lg {
+        width: 54px;
+        height: 54px;
         border-radius: 50%;
         object-fit: cover;
-        border: 3px solid var(--cand-color, var(--accent-blue));
+        border: 3px solid var(--cand-color, #3b82f6);
         box-shadow: 0 4px 12px rgba(0,0,0,0.4);
     }
-    .cand-title h3 { font-size: 1.2rem; font-weight: 800; }
-    .party-tag {
-        font-size: 0.72rem;
-        font-weight: 900;
-        color: var(--cand-color, var(--accent-blue));
-        text-transform: uppercase;
+
+    /* MODAL OVERLAY & POPUPS */
+    .modal-overlay {
+        position: fixed; inset: 0;
+        background: rgba(3, 7, 18, 0.85);
+        backdrop-filter: blur(12px);
+        z-index: 99999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+    .modal-overlay.active { display: flex; }
+
+    .modal-box {
+        background: var(--panel-bg);
+        border: 1px solid var(--panel-border);
+        border-radius: var(--radius-lg);
+        width: 100%;
+        max-width: 640px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7);
+        animation: modalIn 0.25s ease-out;
+    }
+    @keyframes modalIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    .modal-header {
+        padding: 18px 24px;
+        border-bottom: 1px solid var(--panel-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 800;
+        font-size: 1.1rem;
+    }
+    .modal-body {
+        padding: 24px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+    .modal-footer {
+        padding: 16px 24px;
+        border-top: 1px solid var(--panel-border);
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
     }
 
-    .perk-box {
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px dashed rgba(255, 255, 255, 0.15);
-        border-radius: var(--radius-md);
-        padding: 10px 12px;
-    }
-    .perk-title { font-size: 0.75rem; font-weight: 800; color: var(--accent-gold); display: flex; align-items: center; gap: 6px; }
-    .perk-desc { font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; line-height: 1.3; }
-
-    .stats-row {
+    /* CANDIDATE SELECTOR GRID */
+    .select-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        text-align: center;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
     }
-    .mini-stat {
+    .select-card {
         background: var(--card-bg);
-        padding: 6px;
-        border-radius: var(--radius-sm);
+        border: 2px solid var(--card-border);
+        border-radius: var(--radius-md);
+        padding: 14px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transition: all 0.2s ease;
     }
-    .mini-stat label { font-size: 0.62rem; color: var(--text-muted); font-weight: 700; display: block; }
-    .mini-stat span { font-size: 0.85rem; font-weight: 900; }
+    .select-card:hover, .select-card.selected {
+        border-color: var(--accent-blue);
+        background: var(--card-hover);
+        transform: translateY(-2px);
+    }
 
-    .btn-select {
-        background: linear-gradient(135deg, var(--cand-color, #3b82f6), #1d4ed8);
+    .btn-action-submit {
+        background: linear-gradient(135deg, var(--accent-blue), #2563eb);
         color: #fff;
         border: none;
-        padding: 12px;
+        padding: 12px 24px;
         border-radius: var(--radius-md);
         font-size: 0.85rem;
         font-weight: 800;
         cursor: pointer;
-        text-align: center;
-        transition: opacity 0.2s ease;
+        transition: all 0.2s ease;
     }
-    .btn-select:hover { opacity: 0.9; }
+    .btn-action-submit:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(37,99,235,0.4); }
 
-    /* GAMEPLAY MAIN GRID */
-    .game-grid {
-        display: grid;
-        grid-template-columns: 1.2fr 0.8fr;
-        gap: 20px;
-    }
-
-    /* LEFT: EVENT CARD & CHOICES */
-    .event-card {
-        background: var(--panel-bg);
-        border: 1px solid var(--panel-border);
-        border-radius: var(--radius-lg);
-        padding: 24px;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        box-shadow: var(--shadow-main);
-    }
-    .event-header {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        border-bottom: 1px solid var(--card-border);
-        padding-bottom: 16px;
-    }
-    .event-icon-badge {
-        width: 48px;
-        height: 48px;
-        border-radius: var(--radius-md);
-        background: rgba(59, 130, 246, 0.15);
-        color: var(--accent-blue);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.4rem;
-        flex-shrink: 0;
-    }
-    .event-title-text h3 { font-size: 1.2rem; font-weight: 900; }
-    .event-subtitle { font-size: 0.75rem; color: var(--accent-cyan); font-weight: 700; }
-
-    .event-description {
-        font-size: 0.92rem;
-        line-height: 1.5;
-        color: var(--text-color);
-        background: var(--card-bg);
-        padding: 14px 18px;
-        border-radius: var(--radius-md);
-        border-left: 4px solid var(--accent-blue);
-    }
-
-    .choices-container {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-    .choice-card {
-        background: var(--card-bg);
+    /* DEBATE UI */
+    .debate-question-box {
+        background: rgba(30, 41, 59, 0.9);
         border: 1px solid var(--card-border);
-        border-radius: var(--radius-md);
         padding: 16px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
+        border-radius: var(--radius-md);
+        font-size: 0.9rem;
+        font-weight: 600;
+        line-height: 1.4;
     }
-    .choice-card:hover {
-        background: var(--card-hover);
-        border-color: var(--accent-blue);
-        transform: translateX(4px);
-    }
-    .choice-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .choice-title { font-size: 0.9rem; font-weight: 800; }
-    .choice-impacts {
-        display: flex;
-        gap: 8px;
-    }
-    .impact-badge {
-        font-size: 0.68rem;
-        font-weight: 800;
-        padding: 2px 8px;
-        border-radius: 12px;
-    }
-    .impact-badge.pos { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
-    .impact-badge.neg { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); }
-    .impact-badge.cost { background: rgba(245, 158, 11, 0.2); color: var(--accent-gold); }
-
-    .choice-desc { font-size: 0.78rem; color: var(--text-muted); line-height: 1.3; }
-
-    /* RIGHT: ACTIONS & REGIONAL MAP */
-    .side-panel {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-    }
-
-    .actions-box {
-        background: var(--panel-bg);
-        border: 1px solid var(--panel-border);
-        border-radius: var(--radius-lg);
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-    }
-    .box-title { font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; }
-
-    .action-buttons-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-    }
-    .btn-action {
+    .debate-option {
         background: var(--card-bg);
         border: 1px solid var(--card-border);
-        color: var(--text-color);
-        padding: 10px;
         border-radius: var(--radius-md);
-        font-size: 0.75rem;
-        font-weight: 700;
+        padding: 12px 16px;
         cursor: pointer;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 6px;
-        text-align: center;
+        font-size: 0.82rem;
+        font-weight: 600;
         transition: all 0.2s ease;
     }
-    .btn-action:hover:not(:disabled) {
-        background: var(--card-hover);
+    .debate-option:hover {
         border-color: var(--accent-blue);
+        background: var(--card-hover);
     }
-    .btn-action:disabled { opacity: 0.4; cursor: not-allowed; }
-    .btn-action i { font-size: 1.1rem; color: var(--accent-blue); }
 
-    /* REGIONAL MAP BOX */
-    .map-box {
-        background: var(--panel-bg);
-        border: 1px solid var(--panel-border);
-        border-radius: var(--radius-lg);
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-    .regions-list {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-    .region-row {
+    /* LEADERBOARD LIST */
+    .leaderboard-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
         background: var(--card-bg);
-        padding: 8px 12px;
+        border: 1px solid var(--card-border);
         border-radius: var(--radius-md);
-        font-size: 0.8rem;
+        padding: 10px 12px;
     }
-    .region-info { display: flex; align-items: center; gap: 8px; font-weight: 800; }
-    .region-pct { font-weight: 900; color: var(--accent-cyan); }
 
-    /* BOTTOM LEADERBOARD BAR */
-    .leaderboard-box {
-        background: var(--panel-bg);
-        border: 1px solid var(--panel-border);
-        border-radius: var(--radius-lg);
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-    }
-    .candidates-ranks {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-    .rank-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
+    /* AUDIO CONTROL */
+    .audio-btn {
         background: var(--card-bg);
-        padding: 8px 14px;
-        border-radius: var(--radius-md);
-    }
-    .rank-num { font-size: 0.9rem; font-weight: 900; width: 24px; color: var(--text-muted); }
-    .rank-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid var(--cand-color); }
-    .rank-name { font-size: 0.85rem; font-weight: 800; flex: 1; }
-    .rank-bar-bg { flex: 2; height: 8px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; }
-    .rank-bar-fill { height: 100%; border-radius: 10px; transition: width 0.4s ease; }
-    .rank-pct-val { font-size: 0.95rem; font-weight: 900; width: 65px; text-align: right; }
-
-    /* ELECTION END OVERLAY */
-    .end-overlay {
-        position: fixed; inset: 0;
-        background: rgba(8, 12, 20, 0.92);
-        backdrop-filter: blur(16px);
-        z-index: 10000;
-        display: none;
-        flex-direction: column;
+        border: 1px solid var(--card-border);
+        color: var(--text-main);
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
         align-items: center;
         justify-content: center;
-        padding: 20px;
-    }
-    .end-card {
-        background: var(--panel-bg);
-        border: 2px solid var(--panel-border);
-        border-radius: var(--radius-lg);
-        padding: 36px;
-        max-width: 580px;
-        width: 100%;
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 20px;
-        box-shadow: 0 25px 50px rgba(0,0,0,0.8);
-    }
-    .victory-badge { font-size: 4rem; color: var(--accent-gold); }
-    .defeat-badge { font-size: 4rem; color: var(--accent-red); }
-
-    /* UTILITY CLASSES */
-    .hidden { display: none !important; }
-
-    @media (max-width: 900px) {
-        .game-grid { grid-template-columns: 1fr; }
-        .status-dashboard { flex-wrap: wrap; }
+        cursor: pointer;
     }
 </style>
 </head>
 <body>
 
-<!-- TOP DASHBOARD -->
-<header class="game-header">
-    <div class="brand">
-        <i class="fas fa-vote-yea" style="font-size: 1.4rem; color: var(--accent-blue);"></i>
-        <div>
-            <h1>Desafio Presidencial 2026</h1>
-            <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 800;">SIMULADOR DE ESTRATÉGIA DE CAMPANHA</div>
+<div id="gameContainer">
+    <!-- TOP NAVBAR -->
+    <header>
+        <div class="brand">
+            <i class="fas fa-vote-yea" style="font-size: 1.4rem; color: var(--accent-blue);"></i>
+            <h1>Eleições 2026 <small style="font-size:0.7rem; color:var(--text-muted); font-weight:700;">O JOGO</small></h1>
+            <span class="turn-badge" id="turnDisplay">Turno 1 / 12 (1º Turno)</span>
         </div>
+
+        <div class="stats-bar">
+            <div class="stat-pill money" title="Verba de Campanha"><i class="fas fa-coins"></i> <span id="statBudget">$85.0M</span></div>
+            <div class="stat-pill poll" title="Intenção de Voto Nacional Estipulada"><i class="fas fa-chart-line"></i> <span id="statPoll">44.5%</span></div>
+            <div class="stat-pill rejection" title="Rejeição Eleitoral"><i class="fas fa-user-slash"></i> <span id="statRejection">18.0%</span></div>
+            <button class="audio-btn" id="audioToggleBtn" onclick="game.toggleAudio()" title="Música & Som"><i class="fas fa-volume-up" id="audioIcon"></i></button>
+        </div>
+    </header>
+
+    <!-- MAIN DASHBOARD -->
+    <div class="game-body">
+        <!-- LEFT PANEL: CANDIDATE PROFILE & ACTIONS -->
+        <aside class="side-panel">
+            <div class="candidate-card-profile" id="playerProfileCard"></div>
+
+            <div style="font-size:0.7rem; font-weight:900; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.8px;"><i class="fas fa-chess-knight"></i> AÇÕES DE CAMPANHA</div>
+
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <button class="action-btn" onclick="game.openStateInvestModal()"><div style="display:flex; align-items:center; gap:10px;"><i class="fas fa-map-marked-alt"></i><div><div>Investir em Estado</div><small style="color:var(--text-muted)">Aumentar força regional no mapa</small></div></div><i class="fas fa-chevron-right"></i></button>
+                <button class="action-btn" onclick="game.triggerAction('tv')"><div style="display:flex; align-items:center; gap:10px;"><i class="fas fa-tv"></i><div><div>Horário Eleitoral na TV</div><small style="color:var(--text-muted)">Custo: $12M | Reduz rejeição</small></div></div><i class="fas fa-chevron-right"></i></button>
+                <button class="action-btn" onclick="game.triggerAction('digital')"><div style="display:flex; align-items:center; gap:10px;"><i class="fas fa-hashtag"></i><div><div>Guerra Digital & Memes</div><small style="color:var(--text-muted)">Custo: $5M | Viraliza nas redes</small></div></div><i class="fas fa-chevron-right"></i></button>
+                <button class="action-btn" onclick="game.triggerAction('rally')"><div style="display:flex; align-items:center; gap:10px;"><i class="fas fa-users"></i><div><div>Grande Comício de Rua</div><small style="color:var(--text-muted)">Custo: $8M | Mobiliza a militância</small></div></div><i class="fas fa-chevron-right"></i></button>
+                <button class="action-btn attack" onclick="game.openAttackModal()"><div style="display:flex; align-items:center; gap:10px;"><i class="fas fa-bullhorn"></i><div><div>Ataque Direcionado a Rival</div><small style="color:var(--text-muted)">Custo: $10M | Aumenta rejeição rival</small></div></div><i class="fas fa-chevron-right"></i></button>
+                <button class="action-btn" onclick="game.triggerAction('fundraise')"><div style="display:flex; align-items:center; gap:10px;"><i class="fas fa-hand-holding-usd"></i><div><div>Jantar de Arrecadação</div><small style="color:var(--text-muted)">Ganha +$15M de doações</small></div></div><i class="fas fa-chevron-right"></i></button>
+            </div>
+
+            <button class="btn-action-submit" style="margin-top:auto;" onclick="game.nextTurn()"><i class="fas fa-play"></i> FINALIZAR TURNO</button>
+        </aside>
+
+        <!-- CENTER: INTERACTIVE BRAZIL MAP -->
+        <main class="map-wrapper">
+            <div id="gameMap"></div>
+            <div class="news-ticker">
+                <span class="news-badge"><i class="fas fa-newspaper"></i> NOTÍCIAS</span>
+                <span class="news-text" id="newsTickerText">Corrida presidencial de 2026 esquenta em todo o Brasil. Escolha suas ações estratégicas.</span>
+            </div>
+        </main>
+
+        <!-- RIGHT PANEL: POLLS & OPPONENTS -->
+        <aside class="side-panel right">
+            <div style="font-size:0.7rem; font-weight:900; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.8px;"><i class="fas fa-poll"></i> PESQUISA ELEITORAL (NACIONAL)</div>
+            <div id="pollsLeaderboard" style="display:flex; flex-direction:column; gap:8px;"></div>
+
+            <div style="font-size:0.7rem; font-weight:900; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.8px; margin-top:12px;"><i class="fas fa-history"></i> DIÁRIO DA CAMPANHA</div>
+            <div id="activityLog" style="display:flex; flex-direction:column; gap:6px; font-size:0.75rem; color:var(--text-muted);"></div>
+        </aside>
     </div>
-
-    <div class="turn-badge" id="turnDisplay">SEMANA 1 / 10 • 1º TURNO</div>
-
-    <div class="status-dashboard">
-        <div class="stat-pill money" title="Verba de Campanha"><i class="fas fa-coins"></i> R$ <span id="valBudget">80</span>M</div>
-        <div class="stat-pill polls" title="Intenção de Voto Nacional"><i class="fas fa-chart-line"></i> <span id="valPolls">42.0</span>%</div>
-        <div class="stat-pill rejection" title="Taxa de Rejeição"><i class="fas fa-user-slash"></i> <span id="valRejection">40.0</span>%</div>
-        <div class="stat-pill momentum" title="Momentum / Engajamento"><i class="fas fa-fire"></i> <span id="valMomentum">50</span>%</div>
-    </div>
-</header>
-
-<!-- NEWS TICKER BAR -->
-<div class="news-ticker">
-    <span class="news-badge"><i class="fas fa-bolt"></i> ÚLTIMAS NOTÍCIAS</span>
-    <span id="tickerText">Campanha Eleitoral de 2026 é aberta oficialmente em todo o Brasil!</span>
 </div>
 
-<!-- MAIN CONTENT CONTAINER -->
-<main class="main-container">
-
-    <!-- SELEÇÃO DE CANDIDATO -->
-    <section class="selection-screen" id="screenSelection">
-        <div class="selection-title">
-            <h2>Escolha seu Candidato em 2026</h2>
-            <p>Cada líder possui habilidades passivas únicas, orçamento de campanha e alianças de partida.</p>
+<!-- MODAL: SELEÇÃO DE CANDIDATO (INÍCIO DO JOGO) -->
+<div id="modalSelectCandidate" class="modal-overlay active">
+    <div class="modal-box">
+        <div class="modal-header">
+            <span><i class="fas fa-user-check"></i> ESCOLHA SEU CANDIDATO - ELEIÇÕES 2026</span>
         </div>
+        <div class="modal-body">
+            <div style="font-size:0.82rem; color:var(--text-muted);">Cada candidato possui orçamentos iniciais, vantagens únicas e apelo regional diferente. Seu objetivo é chegar à Presidência!</div>
+            <div class="select-grid" id="candidateSelectGrid"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-action-submit" onclick="game.confirmCandidateSelection()">INICIAR CAMPANHA PRESIDENCIAL <i class="fas fa-arrow-right"></i></button>
+        </div>
+    </div>
+</div>
 
-        <div class="candidates-grid" id="candidatesSelectionGrid"></div>
-    </section>
+<!-- MODAL: EVENTO DE TURNO -->
+<div id="modalEvent" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <span id="eventTitle"><i class="fas fa-exclamation-triangle"></i> EVENTO DE CAMPANHA</span>
+        </div>
+        <div class="modal-body">
+            <div id="eventDescription" style="font-size:0.9rem; font-weight:600; line-height:1.4;"></div>
+            <div id="eventChoicesContainer" style="display:flex; flex-direction:column; gap:8px;"></div>
+        </div>
+    </div>
+</div>
 
-    <!-- TELA DE JOGO PRINCIPAL -->
-    <section class="gameplay-screen hidden" id="screenGameplay">
-        <div class="game-grid">
-            
-            <!-- COLUNA ESQUERDA: EVENTO & DECISÕES -->
-            <div class="event-card">
-                <div class="event-header">
-                    <div class="event-icon-badge" id="eventIcon"><i class="fas fa-tv"></i></div>
-                    <div class="event-title-text">
-                        <div class="event-subtitle" id="eventTag">EVENTO DA SEMANA</div>
-                        <h3 id="eventTitle">Carregando Evento...</h3>
-                    </div>
-                </div>
-
-                <div class="event-description" id="eventDesc">
-                    Descrição do evento estratégico semanal...
-                </div>
-
-                <div style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">
-                    <i class="fas fa-hand-pointer"></i> Escolha sua Decisão Estratégica:
-                </div>
-
-                <div class="choices-container" id="choicesList"></div>
+<!-- MODAL: DEBATE PRESIDENCIAL -->
+<div id="modalDebate" class="modal-overlay">
+    <div class="modal-box" style="max-width: 720px;">
+        <div class="modal-header" style="background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(59,130,246,0.2));">
+            <span><i class="fas fa-microphone-alt"></i> DEBATE PRESIDENCIAL AO VIVO NA TV</span>
+        </div>
+        <div class="modal-body">
+            <div style="display:flex; align-items:center; gap:10px; font-size:0.8rem; font-weight:800; color:var(--accent-gold);">
+                <i class="fas fa-broadcast-tower"></i> PERGUNTA DA BANCTADA DE JORNALISTAS:
             </div>
-
-            <!-- COLUNA DIREITA: AÇÕES DE CAMPANHA & MAPA -->
-            <div class="side-panel">
-                
-                <!-- MENU DE AÇÕES SECUNDÁRIAS -->
-                <div class="actions-box">
-                    <div class="box-title"><i class="fas fa-bullhorn"></i> Ação de Campanha Semanal</div>
-                    
-                    <div class="action-buttons-grid">
-                        <button class="btn-action" onclick="game.executeAction('tv')">
-                            <i class="fas fa-tv"></i>
-                            <span>Inserção na TV</span>
-                            <small style="color:var(--accent-gold);">R$ 8M</small>
-                        </button>
-                        <button class="btn-action" onclick="game.executeAction('digital')">
-                            <i class="fas fa-mobile-alt"></i>
-                            <span>Impulsionamento</span>
-                            <small style="color:var(--accent-gold);">R$ 5M</small>
-                        </button>
-                        <button class="btn-action" onclick="game.executeAction('fundraise')">
-                            <i class="fas fa-hand-holding-usd"></i>
-                            <span>Jantar de Apoiadores</span>
-                            <small style="color:var(--accent-green);">+R$ 20M</small>
-                        </button>
-                        <button class="btn-action" onclick="game.executeAction('rally_ne')">
-                            <i class="fas fa-sun"></i>
-                            <span>Caravana Nordeste</span>
-                            <small style="color:var(--accent-gold);">R$ 6M</small>
-                        </button>
-                        <button class="btn-action" onclick="game.executeAction('rally_se')">
-                            <i class="fas fa-city"></i>
-                            <span>Comício no Sudeste</span>
-                            <small style="color:var(--accent-gold);">R$ 7M</small>
-                        </button>
-                        <button class="btn-action" onclick="game.executeAction('crisis')">
-                            <i class="fas fa-shield-alt"></i>
-                            <span>Gerenciar Rejeição</span>
-                            <small style="color:var(--accent-gold);">R$ 4M</small>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- DESEMPENHO REGIONAL DO BRASIL -->
-                <div class="map-box">
-                    <div class="box-title"><i class="fas fa-map-marked-alt"></i> Desempenho Por Macrorregião</div>
-                    <div class="regions-list" id="regionalPollsList"></div>
-                </div>
-
-            </div>
+            <div class="debate-question-box" id="debateQuestionText"></div>
+            <div style="font-size:0.78rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Escolha sua resposta estratégica:</div>
+            <div id="debateOptionsContainer" style="display:flex; flex-direction:column; gap:8px;"></div>
         </div>
+    </div>
+</div>
 
-        <!-- PLACAR DE LIDERANÇA NACIONAL -->
-        <div class="leaderboard-box">
-            <div class="box-title"><i class="fas fa-trophy"></i> Pesquisa Eleitoral Nacional Atualizada</div>
-            <div class="candidates-ranks" id="leaderboardList"></div>
+<!-- MODAL: ATAQUE A RIVAL -->
+<div id="modalAttack" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <span><i class="fas fa-bullhorn"></i> DIRECIOCIONAR ATAQUE A UM RIVAL</span>
+            <span style="cursor:pointer;" onclick="game.closeModal('modalAttack')"><i class="fas fa-times"></i></span>
         </div>
-    </section>
+        <div class="modal-body">
+            <label style="font-size:0.75rem; font-weight:800; color:var(--text-muted)">SELECIONE O ALVO DO ATAQUE:</label>
+            <select id="attackTargetSelect"></select>
 
-</main>
+            <label style="font-size:0.75rem; font-weight:800; color:var(--text-muted); margin-top:8px;">TEMA DA CAMPANHA DE ATAQUE:</label>
+            <select id="attackThemeSelect">
+                <option value="scandal">Vazar Denúncia e Contradições ($10M)</option>
+                <option value="economy">Atacar Furos no Plano Econômico ($10M)</option>
+                <option value="memes">Campanha de Memes e Descredibilização ($8M)</option>
+            </select>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-action-submit" onclick="game.executeAttack()"><i class="fas fa-bomb"></i> LANÇAR ATAQUE</button>
+        </div>
+    </div>
+</div>
 
-<!-- OVERLAY DE FIM DE ELEIÇÃO -->
-<div class="end-overlay" id="screenEnd">
-    <div class="end-card">
-        <div id="endIcon"></div>
-        <h2 id="endTitle" style="font-size: 2rem; font-weight: 900;">Resultado Final</h2>
-        <div id="endDesc" style="font-size: 1rem; color: var(--text-muted); line-height: 1.5;"></div>
-        <button class="btn-select" onclick="location.reload()" style="width: 100%;"><i class="fas fa-redo"></i> Jogar Novamente</button>
+<!-- MODAL: INVESTIR EM ESTADO -->
+<div id="modalStateInvest" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <span><i class="fas fa-map-marked-alt"></i> INVESTIMENTO REGIONAL</span>
+            <span style="cursor:pointer;" onclick="game.closeModal('modalStateInvest')"><i class="fas fa-times"></i></span>
+        </div>
+        <div class="modal-body">
+            <label style="font-size:0.75rem; font-weight:800; color:var(--text-muted)">SELECIONE O ESTADO:</label>
+            <select id="investStateSelect"></select>
+
+            <label style="font-size:0.75rem; font-weight:800; color:var(--text-muted); margin-top:8px;">VALOR DO INVESTIMENTO:</label>
+            <select id="investAmountSelect">
+                <option value="5">$5.0 Milhões (Aumenta força no estado em +15%)</option>
+                <option value="10">$10.0 Milhões (Aumenta força no estado em +35%)</option>
+                <option value="15">$15.0 Milhões (Aumenta força no estado em +60%)</option>
+            </select>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-action-submit" onclick="game.executeStateInvestment()"><i class="fas fa-coins"></i> CONFIRMAR INVESTIMENTO</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DE APURAÇÃO FINAL & MAPA RESULTADO -->
+<div id="modalElectionResults" class="modal-overlay">
+    <div class="modal-box" style="max-width: 800px;">
+        <div class="modal-header">
+            <span id="resultsTitle"><i class="fas fa-poll-h"></i> RESULTADO DA ELEIÇÃO 2026</span>
+        </div>
+        <div class="modal-body">
+            <div id="resultsWinnerHeader" style="text-align:center; padding:12px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); border-radius:var(--radius-md);"></div>
+            <div id="resultsLeaderboard" style="display:flex; flex-direction:column; gap:8px; margin-top:10px;"></div>
+        </div>
+        <div class="modal-footer" id="resultsFooter"></div>
     </div>
 </div>
 
 <script>
-// --- AUDIO SYNTHESIZER (WEB AUDIO API) ---
-const audio = {
-    ctx: null,
-    init: () => { if (!audio.ctx) audio.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
-    playTone: (freq, duration, type='sine') => {
-        try {
-            audio.init();
-            const osc = audio.ctx.createOscillator();
-            const gain = audio.ctx.createGain();
-            osc.type = type; osc.frequency.value = freq;
-            gain.gain.setValueAtTime(0.1, audio.ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audio.ctx.currentTime + duration);
-            osc.connect(gain); gain.connect(audio.ctx.destination);
-            osc.start(); osc.stop(audio.ctx.currentTime + duration);
-        } catch(e){}
-    },
-    click: () => audio.playTone(600, 0.05),
-    coin: () => { audio.playTone(800, 0.08); setTimeout(()=>audio.playTone(1200, 0.12), 80); },
-    alert: () => { audio.playTone(300, 0.15, 'sawtooth'); },
-    fanfare: () => { [523, 659, 783, 1046].forEach((f, i) => setTimeout(() => audio.playTone(f, 0.25, 'triangle'), i * 150)); }
+// --- BANCO DE DADOS DOS CANDIDATOS COM FOTOS E VANTAGENS ---
+const CANDIDATES_DATA = {
+    'LULA': { id: 'LULA', name: 'Lula', party: 'PT', color: '#de0000', budget: 85, rejection: 18, perk: 'Máquina Partidária (+20% em arrecadações)', photo: 'data/lula.jpg' },
+    'FLAVIO': { id: 'FLAVIO', name: 'Flávio Bolsonaro', party: 'PL', color: '#3632b6', budget: 90, rejection: 22, perk: 'Mobilização Conservadora (Ataques -30% custo)', photo: 'data/flavio.jpg' },
+    'RENAN': { id: 'RENAN', name: 'Renan Santos', party: 'MISSÃO', color: '#f6ae08', budget: 50, rejection: 12, perk: 'Estratégia Viral (Redes 2x mais fortes)', photo: 'data/renan.jpg' },
+    'CAIADO': { id: 'CAIADO', name: 'Ronaldo Caiado', party: 'PSD', color: '#17a7e9', budget: 65, rejection: 10, perk: 'Força do Agro (+40% em estados agrícolas)', photo: 'data/caiado.jpg' },
+    'ZEMA': { id: 'ZEMA', name: 'Romeu Zema', party: 'NOVO', color: '#F58220', budget: 60, rejection: 11, perk: 'Gestão Eficiente (-15% custo geral)', photo: 'data/zema.jpg' },
+    'CURY': { id: 'CURY', name: 'Augusto Cury', party: 'AVANTE', color: '#2EBF98', budget: 40, rejection: 5, perk: 'Oratória do Paz (+25% em debates)', photo: 'data/cury.jpg' }
 };
 
-// --- CANDIDATOS E ATRIBUTOS INICIAIS ---
-const CANDIDATES = [
-    {
-        id: 'LULA', name: 'Lula', party: 'PT', color: '#de0000',
-        photo: 'data/lula.jpg', remotePhoto: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Lula_-_foto_oficial_05_jan_2023_%28cropped%29.jpg/400px-Lula_-_foto_oficial_05_jan_2023_%28cropped%29.jpg',
-        polls: 42.0, rejection: 41.0, budget: 85, alliances: 60, momentum: 50,
-        perkName: 'Carisma Popular', perkDesc: 'Comícios e eventos sociais dão +30% de ganho de votos e engajamento.',
-        regions: { SE: 38, NE: 62, SUL: 28, CO: 30, NO: 45 }
-    },
-    {
-        id: 'FLAVIO', name: 'Flávio Bolsonaro', party: 'PL', color: '#3632b6',
-        photo: 'data/flavio.jpg', remotePhoto: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Senador_Fl%C3%A1vio_Bolsonaro.jpg/400px-Senador_Fl%C3%A1vio_Bolsonaro.jpg',
-        polls: 35.0, rejection: 44.0, budget: 90, alliances: 55, momentum: 55,
-        perkName: 'Engajamento Digital', perkDesc: 'Impulsionamento digital custa 30% a menos e gera o dobro de Momentum.',
-        regions: { SE: 39, NE: 22, SUL: 58, CO: 56, NO: 40 }
-    },
-    {
-        id: 'RENAN', name: 'Renan Santos', party: 'MISSÃO', color: '#f6ae08',
-        photo: 'data/renan.jpg', remotePhoto: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Renan_Santos_em_2021.jpg/400px-Renan_Santos_em_2021.jpg',
-        polls: 8.0, rejection: 22.0, budget: 45, alliances: 25, momentum: 70,
-        perkName: 'Combate Anti-Sistema', perkDesc: 'Desempenho em Debates dá +40% de intenção de voto e reduz rejeição.',
-        regions: { SE: 12, NE: 3, SUL: 8, CO: 6, NO: 4 }
-    },
-    {
-        id: 'CAIADO', name: 'Ronaldo Caiado', party: 'PSD', color: '#17a7e9',
-        photo: 'data/caiado.jpg', remotePhoto: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Ronaldo_Caiado_em_2023.jpg/400px-Ronaldo_Caiado_em_2023.jpg',
-        polls: 5.0, rejection: 18.0, budget: 65, alliances: 70, momentum: 45,
-        perkName: 'Força do Agro & Segurança', perkDesc: 'Jantares de arrecadação rendem +50% de verba e apoio do Agro.',
-        regions: { SE: 4, NE: 2, SUL: 6, CO: 28, NO: 5 }
-    },
-    {
-        id: 'ZEMA', name: 'Romeu Zema', party: 'NOVO', color: '#F58220',
-        photo: 'data/zema.jpg', remotePhoto: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Romeu_Zema_em_2023.jpg/400px-Romeu_Zema_em_2023.jpg',
-        polls: 4.0, rejection: 19.0, budget: 55, alliances: 45, momentum: 50,
-        perkName: 'Gestão Eficiente', perkDesc: 'Todas as ações de campanha custam 20% a menos de verba.',
-        regions: { SE: 10, NE: 1, SUL: 5, CO: 4, NO: 2 }
-    },
-    {
-        id: 'CURY', name: 'Augusto Cury', party: 'AVANTE', color: '#2EBF98',
-        photo: 'data/cury.jpg', remotePhoto: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Augusto_Cury_em_2018.jpg/400px-Augusto_Cury_em_2018.jpg',
-        polls: 2.0, rejection: 12.0, budget: 35, alliances: 30, momentum: 40,
-        perkName: 'Pacificação & Diálogo', perkDesc: 'Gerenciamento de crise reduz o dobro de rejeição sem perda de votos.',
-        regions: { SE: 3, NE: 1, SUL: 2, CO: 1, NO: 1 }
-    }
+const STATES = [
+    {sigla:'AC', nome:'Acre', id:'12'}, {sigla:'AL', nome:'Alagoas', id:'27'}, {sigla:'AP', nome:'Amapá', id:'16'},
+    {sigla:'AM', nome:'Amazonas', id:'13'}, {sigla:'BA', nome:'Bahia', id:'29'}, {sigla:'CE', nome:'Ceará', id:'23'},
+    {sigla:'DF', nome:'Distrito Federal', id:'53'}, {sigla:'ES', nome:'Espírito Santo', id:'32'}, {sigla:'GO', nome:'Goiás', id:'52'},
+    {sigla:'MA', nome:'Maranhão', id:'21'}, {sigla:'MT', nome:'Mato Grosso', id:'51'}, {sigla:'MS', nome:'Mato Grosso do Sul', id:'50'},
+    {sigla:'MG', nome:'Minas Gerais', id:'31'}, {sigla:'PA', nome:'Pará', id:'15'}, {sigla:'PB', nome:'Paraíba', id:'25'},
+    {sigla:'PR', nome:'Paraná', id:'41'}, {sigla:'PE', nome:'Pernambuco', id:'26'}, {sigla:'PI', nome:'Piauí', id:'22'},
+    {sigla:'RJ', nome:'Rio de Janeiro', id:'33'}, {sigla:'RN', nome:'Rio Grande do Norte', id:'24'}, {sigla:'RS', nome:'Rio Grande do Sul', id:'43'},
+    {sigla:'RO', nome:'Rondônia', id:'11'}, {sigla:'RR', nome:'Roraima', id:'14'}, {sigla:'SC', nome:'Santa Catarina', id:'42'},
+    {sigla:'SP', nome:'São Paulo', id:'35'}, {sigla:'SE', nome:'Sergipe', id:'28'}, {sigla:'TO', nome:'Tocantins', id:'17'}
 ];
 
-// MACRORREGIÕES DO BRASIL E PESOS DE ELEITORADO
-const REGIONS = {
-    SE: { name: 'Sudeste', weight: 0.43, icon: 'fa-city' },
-    NE: { name: 'Nordeste', weight: 0.27, icon: 'fa-sun' },
-    SUL: { name: 'Sul', weight: 0.15, icon: 'fa-snowflake' },
-    CO: { name: 'Centro-Oeste', weight: 0.08, icon: 'fa-tractor' },
-    NO: { name: 'Norte', weight: 0.07, icon: 'fa-tree' }
+// SINTETIZADOR DE ÁUDIO WEB AUDIO API (SEM DEPENDÊNCIA DE ARQUIVOS EXTERNOS)
+const AudioEngine = {
+    ctx: null, muted: false,
+    init: () => { if(!AudioEngine.ctx) AudioEngine.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+    playClick: () => {
+        if(AudioEngine.muted) return; AudioEngine.init(); const osc = AudioEngine.ctx.createOscillator(), g = AudioEngine.ctx.createGain();
+        osc.type = 'sine'; osc.frequency.setValueAtTime(800, AudioEngine.ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(400, AudioEngine.ctx.currentTime + 0.05);
+        g.gain.setValueAtTime(0.15, AudioEngine.ctx.currentTime); g.gain.linearRampToValueAtTime(0.01, AudioEngine.ctx.currentTime + 0.05);
+        osc.connect(g); g.connect(AudioEngine.ctx.destination); osc.start(); osc.stop(AudioEngine.ctx.currentTime + 0.05);
+    },
+    playMoney: () => {
+        if(AudioEngine.muted) return; AudioEngine.init(); const osc = AudioEngine.ctx.createOscillator(), g = AudioEngine.ctx.createGain();
+        osc.type = 'triangle'; osc.frequency.setValueAtTime(987.77, AudioEngine.ctx.currentTime); osc.frequency.setValueAtTime(1318.51, AudioEngine.ctx.currentTime + 0.08);
+        g.gain.setValueAtTime(0.2, AudioEngine.ctx.currentTime); g.gain.linearRampToValueAtTime(0.01, AudioEngine.ctx.currentTime + 0.25);
+        osc.connect(g); g.connect(AudioEngine.ctx.destination); osc.start(); osc.stop(AudioEngine.ctx.currentTime + 0.25);
+    },
+    playAttack: () => {
+        if(AudioEngine.muted) return; AudioEngine.init(); const osc = AudioEngine.ctx.createOscillator(), g = AudioEngine.ctx.createGain();
+        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, AudioEngine.ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(40, AudioEngine.ctx.currentTime + 0.3);
+        g.gain.setValueAtTime(0.3, AudioEngine.ctx.currentTime); g.gain.linearRampToValueAtTime(0.01, AudioEngine.ctx.currentTime + 0.3);
+        osc.connect(g); g.connect(AudioEngine.ctx.destination); osc.start(); osc.stop(AudioEngine.ctx.currentTime + 0.3);
+    },
+    playDebateBell: () => {
+        if(AudioEngine.muted) return; AudioEngine.init(); const osc = AudioEngine.ctx.createOscillator(), g = AudioEngine.ctx.createGain();
+        osc.type = 'sine'; osc.frequency.setValueAtTime(1200, AudioEngine.ctx.currentTime);
+        g.gain.setValueAtTime(0.3, AudioEngine.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, AudioEngine.ctx.currentTime + 0.8);
+        osc.connect(g); g.connect(AudioEngine.ctx.destination); osc.start(); osc.stop(AudioEngine.ctx.currentTime + 0.8);
+    },
+    playFanfare: () => {
+        if(AudioEngine.muted) return; AudioEngine.init(); const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((freq, idx) => {
+            const osc = AudioEngine.ctx.createOscillator(), g = AudioEngine.ctx.createGain();
+            osc.type = 'triangle'; osc.frequency.value = freq;
+            g.gain.setValueAtTime(0.2, AudioEngine.ctx.currentTime + idx*0.1);
+            g.gain.exponentialRampToValueAtTime(0.001, AudioEngine.ctx.currentTime + idx*0.1 + 0.6);
+            osc.connect(g); g.connect(AudioEngine.ctx.destination);
+            osc.start(AudioEngine.ctx.currentTime + idx*0.1); osc.stop(AudioEngine.ctx.currentTime + idx*0.1 + 0.6);
+        });
+    }
 };
 
-// BANCO DE EVENTOS DA CAMPANHA
-const EVENTS_POOL = [
-    {
-        title: 'Grande Debate na TV Aberta',
-        tag: 'DEBATE NACIONAL',
-        icon: 'fa-tv',
-        desc: 'Os principais candidatos se enfrentam ao vivo. Milhões de eleitores indecisos estão assistindo no horário nobre.',
-        choices: [
-            {
-                title: 'Atacar o Líder nas Pesquisas',
-                desc: 'Focar nos escândalos do seu rival principal.',
-                impacts: ['+Votos', '+Rejeição', '-R$ 4M'],
-                action: (p) => {
-                    const bonus = p.id === 'RENAN' ? 1.4 : 1.0;
-                    p.polls += 2.5 * bonus; p.rejection += 1.5; p.budget -= 4;
-                    p.ticker = 'Ataques duros no debate movimentam as redes sociais!';
-                }
-            },
-            {
-                title: 'Apresentar Propostas de Economia',
-                desc: 'Adotar tom técnico e focar em empregos e controle de inflação.',
-                impacts: ['+Apoio Mercado', '-Rejeição'],
-                action: (p) => {
-                    p.polls += 1.5; p.rejection -= 1.0; p.alliances += 5;
-                    p.ticker = 'Especialistas elogiam propostas econômicas no debate.';
-                }
-            },
-            {
-                title: 'Criar Cortes Virais para Redes Sociais',
-                desc: 'Usar tiradas rápidas para engajar a militância jovem.',
-                impacts: ['++Momentum', '+Votos'],
-                action: (p) => {
-                    const bonus = p.id === 'FLAVIO' ? 2.0 : 1.0;
-                    p.momentum += 15 * bonus; p.polls += 1.2;
-                    p.ticker = 'Cortes do debate dominam o Trending Topics do X e TikTok!';
-                }
-            }
-        ]
-    },
-    {
-        title: 'Escândalo de Corrupção em Aliado',
-        tag: 'CRISE POLÍTICA',
-        icon: 'fa-exclamation-triangle',
-        desc: 'Um importante partido da sua coligação foi alvo de operação da Polícia Federal na manhã de hoje.',
-        choices: [
-            {
-                title: 'Afastar o Aliado Imediatamente',
-                desc: 'Anunciar o rompimento público com os envolvidos.',
-                impacts: ['-Rejeição', '-Alianças'],
-                action: (p) => {
-                    p.rejection -= 2.0; p.alliances -= 10;
-                    p.ticker = 'Decisão firme de demitir aliado repercute bem entre indecisos.';
-                }
-            },
-            {
-                title: 'Alegar Perseguição Política',
-                desc: 'Defender a coligação e criticar a imprensa.',
-                impacts: ['+Fidelidade', '++Rejeição'],
-                action: (p) => {
-                    p.momentum += 10; p.rejection += 3.0;
-                    p.ticker = 'Discurso inflamado divide a opinião pública nas redes.';
-                }
-            },
-            {
-                title: 'Lançar Propaganda Massiva para Abafar',
-                desc: 'Investir pesado na TV e Rádio para mudar de assunto.',
-                impacts: ['-R$ 12M Verba', 'Neutro'],
-                action: (p) => {
-                    p.budget -= 12;
-                    p.ticker = 'Campanha consegue neutralizar impacto do escândalo no horário eleitoral.';
-                }
-            }
-        ]
-    },
-    {
-        title: 'Negociação do Horário Eleitoral',
-        tag: 'ALIANÇAS POLÍTICAS',
-        icon: 'fa-handshake',
-        desc: 'Lideranças do Centrão pedem cargos e compromissos formais em troca de mais tempo de rádio e TV.',
-        choices: [
-            {
-                title: 'Ceder aos Pedidos e Fechar Acordo',
-                desc: 'Garantir o maior tempo de TV da eleição.',
-                impacts: ['++Alianças', '+Tempo TV', '+Rejeição'],
-                action: (p) => {
-                    p.alliances += 20; p.polls += 2.0; p.rejection += 1.8;
-                    p.ticker = 'Mega coligação garante maior tempo de TV da corrida eleitoral!';
-                }
-            },
-            {
-                title: 'Recusar o Fisiologismo',
-                desc: 'Manter a campanha Ficha Limpa e independente.',
-                impacts: ['-Rejeição', '++Momentum'],
-                action: (p) => {
-                    p.rejection -= 2.5; p.momentum += 15;
-                    p.ticker = 'Recusa ao Centrão fortalece imagem de independência do candidato.';
-                }
-            }
-        ]
-    },
-    {
-        title: 'Sabatina no Jornal de Maior Audiência',
-        tag: 'ENTREVISTA CRUCIAL',
-        icon: 'fa-newspaper',
-        desc: 'Sua entrevista de 40 minutos ao vivo testa seu autocontrole diante dos jornalistas mais duros.',
-        choices: [
-            {
-                title: 'Adotar Tom Conciliador e Sereno',
-                desc: 'Conquistar o eleitor de centro e classe média.',
-                impacts: ['--Rejeição', '+Votos Sudeste'],
-                action: (p) => {
-                    p.rejection -= 3.0; p.regions.SE += 2.5;
-                    p.ticker = 'Desempenho sereno em sabatina reduz rejeição entre moderados.';
-                }
-            },
-            {
-                title: 'Confrontar os Entrevistadores',
-                desc: 'Gerar bate-boca e incendiar a base militante.',
-                impacts: ['++Momentum', '+Rejeição'],
-                action: (p) => {
-                    p.momentum += 20; p.rejection += 2.0;
-                    p.ticker = 'Enfrentamento a jornalistas gera chuva de compartilhamentos!';
-                }
-            }
-        ]
-    },
-    {
-        title: 'Mega Comício de Encerramento',
-        tag: 'MOBILIZAÇÃO DE RUA',
-        icon: 'fa-users',
-        desc: 'Chegou o momento de definir onde concentrar os esforços da equipe de rua nesta semana.',
-        choices: [
-            {
-                title: 'Caravana Massiva no Nordeste',
-                desc: 'Focar nos estados da Bahia, Pernambuco e Ceará.',
-                impacts: ['++Votos Nordeste', '-R$ 8M'],
-                action: (p) => {
-                    const bonus = p.id === 'LULA' ? 1.3 : 1.0;
-                    p.regions.NE += 4.5 * bonus; p.budget -= 8;
-                    p.ticker = 'Multidão ocupa ruas do Nordeste em demonstração de força!';
-                }
-            },
-            {
-                title: 'Giro Pelas Capitais do Sudeste',
-                desc: 'Comícios em São Paulo, Rio e Belo Horizonte.',
-                impacts: ['++Votos Sudeste', '-R$ 10M'],
-                action: (p) => {
-                    p.regions.SE += 3.5; p.budget -= 10;
-                    p.ticker = 'Comícios em SP e MG atraem grande público da classe média!';
-                }
-            },
-            {
-                title: 'Encontro com o Agronegócio no Centro-Oeste',
-                desc: 'Reunião estratégica em Goiás e Mato Grosso.',
-                impacts: ['+R$ 25M Verba', '++Votos CO'],
-                action: (p) => {
-                    const bonus = p.id === 'CAIADO' ? 1.5 : 1.0;
-                    p.budget += 25 * bonus; p.regions.CO += 5.0;
-                    p.ticker = 'Apoio do agronegócio injeta recursos pesados na campanha!';
-                }
-            }
-        ]
-    }
-];
-
-// OBJECTO PRINCIPAL DO JOGO
+// --- MOTOR DO JOGO ---
 const game = {
-    turn: 1,
-    maxTurns: 10,
-    isSecondRound: false,
-    player: null,
-    candidates: [],
+    selectedCandKey: null,
+    turn: 1, maxTurns: 12, round: 1,
+    budget: 0, rejection: 0,
+    polls: {}, stateMults: {}, activeCandidates: {},
+    map: null, geoJsonLayer: null, geoJsonData: null,
 
-    init: () => {
-        game.renderSelection();
+    init: async () => {
+        game.renderCandidateSelection();
+        await game.initMap();
     },
 
-    renderSelection: () => {
-        const grid = document.getElementById('candidatesSelectionGrid');
-        grid.innerHTML = '';
-
-        CANDIDATES.forEach(cand => {
+    renderCandidateSelection: () => {
+        const grid = document.getElementById('candidateSelectGrid'); grid.innerHTML = '';
+        Object.values(CANDIDATES_DATA).forEach(cand => {
             const card = document.createElement('div');
-            card.className = 'candidate-card';
-            card.style.setProperty('--cand-color', cand.color);
-
+            card.className = `select-card ${game.selectedCandKey === cand.id ? 'selected' : ''}`;
+            card.onclick = () => { game.selectedCandKey = cand.id; game.renderCandidateSelection(); AudioEngine.playClick(); };
             card.innerHTML = `
-                <div class="card-top">
-                    <img src="${cand.photo}" class="cand-photo" style="--cand-color:${cand.color}" onerror="this.src='${cand.remotePhoto}'">
-                    <div class="cand-title">
-                        <h3>${cand.name}</h3>
-                        <div class="party-tag">${cand.party}</div>
-                    </div>
+                <img src="${cand.photo}" style="width:48px; height:48px; border-radius:50%; object-fit:cover; border:2px solid ${cand.color}" onerror="this.src='https://via.placeholder.com/48'">
+                <div>
+                    <div style="font-weight:800; font-size:0.9rem;">${cand.name} <small style="color:${cand.color}">(${cand.party})</small></div>
+                    <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">Verba Inicial: <strong>$${cand.budget}.0M</strong></div>
+                    <div style="font-size:0.68rem; color:var(--accent-gold); font-weight:700; margin-top:3px;">⚡ ${cand.perk}</div>
                 </div>
-
-                <div class="perk-box">
-                    <div class="perk-title"><i class="fas fa-star"></i> ${cand.perkName}</div>
-                    <div class="perk-desc">${cand.perkDesc}</div>
-                </div>
-
-                <div class="stats-row">
-                    <div class="mini-stat">
-                        <label>Intenção</label>
-                        <span style="color:var(--accent-cyan);">${cand.polls.toFixed(1)}%</span>
-                    </div>
-                    <div class="mini-stat">
-                        <label>Rejeição</label>
-                        <span style="color:var(--accent-red);">${cand.rejection.toFixed(1)}%</span>
-                    </div>
-                    <div class="mini-stat">
-                        <label>Verba</label>
-                        <span style="color:var(--accent-green);">R$ ${cand.budget}M</span>
-                    </div>
-                </div>
-
-                <button class="btn-select" onclick="game.selectCandidate('${cand.id}')"><i class="fas fa-play"></i> Escolher ${cand.name}</button>
             `;
             grid.appendChild(card);
         });
     },
 
-    selectCandidate: (id) => {
-        audio.click();
-        game.candidates = JSON.parse(JSON.stringify(CANDIDATES));
-        game.player = game.candidates.find(c => c.id === id);
+    confirmCandidateSelection: () => {
+        if(!game.selectedCandKey) game.selectedCandKey = 'LULA';
+        const cand = CANDIDATES_DATA[game.selectedCandKey];
+        game.budget = cand.budget; game.rejection = cand.rejection;
 
-        document.getElementById('screenSelection').classList.add('hidden');
-        document.getElementById('screenGameplay').classList.remove('hidden');
+        // Inicializa pesquisas
+        Object.keys(CANDIDATES_DATA).forEach(k => { game.polls[k] = (k === game.selectedCandKey) ? 38.0 : 12.0; game.activeCandidates[k] = true; });
+        if(game.selectedCandKey === 'LULA') game.polls['FLAVIO'] = 35.0;
+        else if(game.selectedCandKey === 'FLAVIO') game.polls['LULA'] = 42.0;
 
+        // Inicializa multiplicadores estaduais
+        STATES.forEach(s => { game.stateMults[s.id] = {}; Object.keys(CANDIDATES_DATA).forEach(k => game.stateMults[s.id][k] = 1.0); });
+
+        document.getElementById('modalSelectCandidate').classList.remove('active');
         game.updateUI();
-        game.nextTurn();
+        game.logActivity(`Campanha iniciada com ${cand.name} (${cand.party})!`);
+        AudioEngine.playFanfare();
+    },
+
+    initMap: async () => {
+        game.map = L.map('gameMap', { center: [-15, -50], zoom: 4, zoomControl: false, preferCanvas: true });
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { opacity: 0.4 }).addTo(game.map);
+
+        try {
+            const res = await fetch('https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson');
+            game.geoJsonData = await res.json();
+            game.geoJsonLayer = L.geoJSON(game.geoJsonData, {
+                style: (f) => ({ fillColor: '#1e293b', weight: 1.2, color: '#ffffff', opacity: 0.8, fillOpacity: 0.8 }),
+                onEachFeature: (f, l) => {
+                    const ufId = String(f.properties.CD_UF || (STATES.find(x => x.sigla === f.properties.sigla)||{}).id || f.id || '');
+                    const ufName = f.properties.NM_UF || f.properties.name;
+                    l.on('click', () => game.openStateInvestModal(ufId, ufName));
+                    l.bindTooltip(`<b>${ufName}</b><br><small>Clique para investir verba no estado</small>`, { sticky: true });
+                }
+            }).addTo(game.map);
+        } catch(e) {}
     },
 
     updateUI: () => {
-        // Atualizar barra superior do jogador
-        document.getElementById('valBudget').innerText = Math.max(0, Math.round(game.player.budget));
-        document.getElementById('valPolls').innerText = game.calculateNationalPolls(game.player).toFixed(1);
-        document.getElementById('valRejection').innerText = game.player.rejection.toFixed(1);
-        document.getElementById('valMomentum').innerText = Math.round(game.player.momentum);
+        const cand = CANDIDATES_DATA[game.selectedCandKey];
+        document.getElementById('statBudget').innerText = `$${game.budget.toFixed(1)}M`;
+        document.getElementById('statPoll').innerText = `${(game.polls[game.selectedCandKey]||0).toFixed(1)}%`;
+        document.getElementById('statRejection').innerText = `${game.rejection.toFixed(1)}%`;
+        document.getElementById('turnDisplay').innerText = `Turno ${game.turn} / ${game.maxTurns} (${game.round}º Turno)`;
 
-        // Turno
-        document.getElementById('turnDisplay').innerText = game.isSecondRound ? 
-            `SEMANA ${game.turn - 10} / 4 • 2º TURNO` : 
-            `SEMANA ${game.turn} / 10 • 1º TURNO`;
+        document.getElementById('playerProfileCard').innerHTML = `
+            <img src="${cand.photo}" class="cand-img-lg" style="--cand-color:${cand.color}" onerror="this.src='https://via.placeholder.com/54'">
+            <div>
+                <div style="font-weight:900; font-size:1rem;">${cand.name}</div>
+                <div style="font-size:0.75rem; font-weight:800; color:${cand.color}">${cand.party}</div>
+                <div style="font-size:0.65rem; color:var(--accent-gold); font-weight:800; margin-top:2px;">⚡ ${cand.perk}</div>
+            </div>
+        `;
 
-        // Renderizar Macrorregiões
-        const regList = document.getElementById('regionalPollsList');
-        regList.innerHTML = '';
-        Object.entries(REGIONS).forEach(([code, reg]) => {
-            const val = game.player.regions[code] || 0;
-            const row = document.createElement('div');
-            row.className = 'region-row';
-            row.innerHTML = `
-                <div class="region-info"><i class="fas ${reg.icon}"></i> ${reg.name}</div>
-                <div class="region-pct">${val.toFixed(1)}%</div>
-            `;
-            regList.appendChild(row);
-        });
-
-        // Renderizar Placar Geral de Candidatos
-        game.updateLeaderboard();
+        game.renderLeaderboard();
     },
 
-    calculateNationalPolls: (cand) => {
-        let tot = 0;
-        Object.entries(REGIONS).forEach(([code, reg]) => {
-            tot += (cand.regions[code] || 0) * reg.weight;
-        });
-        cand.polls = tot;
-        return tot;
-    },
+    renderLeaderboard: () => {
+        const board = document.getElementById('pollsLeaderboard'); board.innerHTML = '';
+        const sorted = Object.entries(game.polls).sort((a,b) => b[1] - a[1]);
+        const tot = sorted.reduce((a,b)=>a+b[1],0) || 1;
 
-    updateLeaderboard: () => {
-        const board = document.getElementById('leaderboardList');
-        board.innerHTML = '';
-
-        // Recalcular médias nacionais
-        game.candidates.forEach(c => game.calculateNationalPolls(c));
-
-        // Ordenar do 1º ao último
-        const sorted = [...game.candidates].sort((a, b) => b.polls - a.polls);
-
-        sorted.forEach((cand, idx) => {
-            const row = document.createElement('div');
-            row.className = 'rank-row';
+        sorted.forEach(([id, val]) => {
+            const c = CANDIDATES_DATA[id]; if(!c) return;
+            const pct = (val/tot)*100;
+            const marginError = (Math.random() * 1.8 - 0.9).toFixed(1);
+            const row = document.createElement('div'); row.className = 'leaderboard-row';
             row.innerHTML = `
-                <div class="rank-num">#${idx + 1}</div>
-                <img src="${cand.photo}" class="rank-avatar" style="--cand-color:${cand.color}" onerror="this.src='${cand.remotePhoto}'">
-                <div class="rank-name">${cand.name} <small style="color:${cand.color};">(${cand.party})</small></div>
-                <div class="rank-bar-bg">
-                    <div class="rank-bar-fill" style="width:${Math.min(100, cand.polls * 1.8)}%; background:${cand.color}"></div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <img src="${c.photo}" style="width:28px; height:28px; border-radius:50%; object-fit:cover; border:2px solid ${c.color}">
+                    <span style="font-size:0.8rem; font-weight:700;">${c.name}</span>
                 </div>
-                <div class="rank-pct-val" style="color:${cand.color};">${cand.polls.toFixed(1)}%</div>
+                <div style="text-align:right;">
+                    <div style="font-weight:900; color:${c.color}">${pct.toFixed(1)}%</div>
+                    <small style="font-size:0.6rem; color:var(--text-muted)">±1.5%</small>
+                </div>
             `;
             board.appendChild(row);
         });
     },
 
-    nextTurn: () => {
-        if (!game.isSecondRound && game.turn > 10) {
-            game.checkFirstRoundResult();
-            return;
+    triggerAction: (type) => {
+        AudioEngine.playClick();
+        const discount = (game.selectedCandKey === 'ZEMA') ? 0.85 : 1.0;
+
+        if(type === 'tv') {
+            const cost = 12 * discount;
+            if(game.budget < cost) return alert("Verba insuficiente para horário de TV!");
+            game.budget -= cost;
+            game.rejection = Math.max(2, game.rejection - 4.5);
+            game.polls[game.selectedCandKey] += 2.5;
+            game.logActivity(`Propaganda massiva de TV veiculada (-$${cost.toFixed(1)}M). Rejeição caiu!`);
+        } else if(type === 'digital') {
+            const cost = 5 * discount;
+            if(game.budget < cost) return alert("Verba insuficiente!");
+            game.budget -= cost;
+            const boost = (game.selectedCandKey === 'RENAN') ? 5.0 : 2.5;
+            game.polls[game.selectedCandKey] += boost;
+            game.logActivity(`Campanha de redes sociais e memes viralizou (+${boost}% nas pesquisas)!`);
+        } else if(type === 'rally') {
+            const cost = 8 * discount;
+            if(game.budget < cost) return alert("Verba insuficiente!");
+            game.budget -= cost;
+            game.polls[game.selectedCandKey] += 3.0;
+            game.logActivity(`Grande comício realizado com sucesso (+3.0% intenção de voto)!`);
+        } else if(type === 'fundraise') {
+            const bonus = (game.selectedCandKey === 'LULA') ? 18.0 : 15.0;
+            game.budget += bonus;
+            AudioEngine.playMoney();
+            game.logActivity(`Jantar de arrecadação rendeu +$${bonus.toFixed(1)}M em doações!`);
         }
-        if (game.isSecondRound && game.turn > 14) {
-            game.checkSecondRoundResult();
-            return;
-        }
-
-        // Selecionar evento aleatório do banco
-        const evt = EVENTS_POOL[(game.turn - 1) % EVENTS_POOL.length];
-        
-        document.getElementById('eventIcon').innerHTML = `<i class="fas ${evt.icon}"></i>`;
-        document.getElementById('eventTag').innerText = evt.tag;
-        document.getElementById('eventTitle').innerText = evt.title;
-        document.getElementById('eventDesc').innerText = evt.desc;
-
-        // Renderizar Escolhas
-        const choicesDiv = document.getElementById('choicesList');
-        choicesDiv.innerHTML = '';
-
-        evt.choices.forEach((ch, idx) => {
-            const card = document.createElement('div');
-            card.className = 'choice-card';
-            card.onclick = () => game.makeChoice(ch);
-
-            const badges = ch.impacts.map(i => {
-                let cls = 'pos';
-                if (i.includes('-') || i.includes('Rejeição')) cls = 'neg';
-                if (i.includes('R$')) cls = 'cost';
-                return `<span class="impact-badge ${cls}">${i}</span>`;
-            }).join('');
-
-            card.innerHTML = `
-                <div class="choice-header">
-                    <div class="choice-title">${ch.title}</div>
-                    <div class="choice-impacts">${badges}</div>
-                </div>
-                <div class="choice-desc">${ch.desc}</div>
-            `;
-            choicesDiv.appendChild(card);
-        });
-
         game.updateUI();
     },
 
-    makeChoice: (choice) => {
-        audio.click();
-        choice.action(game.player);
-
-        // Processar simulação de IA dos rivais
-        game.simulateAI();
-
-        game.turn++;
-        game.nextTurn();
+    openStateInvestModal: (ufIdDefault, ufNameDefault) => {
+        AudioEngine.playClick();
+        const sel = document.getElementById('investStateSelect'); sel.innerHTML = '';
+        STATES.forEach(s => { sel.innerHTML += `<option value="${s.id}" ${ufIdDefault === s.id ? 'selected' : ''}>${s.nome} (${s.sigla})</option>`; });
+        document.getElementById('modalStateInvest').classList.add('active');
     },
 
-    simulateAI: () => {
-        game.candidates.forEach(cand => {
-            if (cand.id !== game.player.id) {
-                // Crescimento orgânico suave baseado em Momentum e Rejeição
-                const growth = (Math.random() * 0.8) * (1 - cand.rejection / 100);
-                Object.keys(REGIONS).forEach(r => {
-                    cand.regions[r] += growth;
-                });
-            }
+    executeStateInvestment: () => {
+        const ufId = document.getElementById('investStateSelect').value;
+        const amount = parseFloat(document.getElementById('investAmountSelect').value);
+        if(game.budget < amount) return alert("Verba insuficiente para investimento estadual!");
+
+        game.budget -= amount;
+        const multBoost = amount === 5 ? 0.15 : (amount === 10 ? 0.35 : 0.60);
+        game.stateMults[ufId][game.selectedCandKey] = (game.stateMults[ufId][game.selectedCandKey]||1.0) + multBoost;
+
+        AudioEngine.playMoney();
+        game.closeModal('modalStateInvest');
+        const stName = (STATES.find(s=>s.id===ufId)||{}).nome;
+        game.logActivity(`Investido $${amount}M em ${stName} (Multiplicador regional +${(multBoost*100).toFixed(0)}%)!`);
+        game.updateUI();
+    },
+
+    openAttackModal: () => {
+        AudioEngine.playClick();
+        const sel = document.getElementById('attackTargetSelect'); sel.innerHTML = '';
+        Object.keys(CANDIDATES_DATA).forEach(k => {
+            if(k !== game.selectedCandKey) sel.innerHTML += `<option value="${k}">${CANDIDATES_DATA[k].name} (${CANDIDATES_DATA[k].party})</option>`;
         });
+        document.getElementById('modalAttack').classList.add('active');
     },
 
-    executeAction: (type) => {
-        audio.coin();
-        const p = game.player;
+    executeAttack: () => {
+        const targetKey = document.getElementById('attackTargetSelect').value;
+        const cost = (game.selectedCandKey === 'FLAVIO') ? 7 : 10;
+        if(game.budget < cost) return alert("Verba insuficiente para lançar ataques!");
 
-        if (type === 'tv' && p.budget >= 8) {
-            p.budget -= 8;
-            Object.keys(p.regions).forEach(r => p.regions[r] += 1.2);
-            document.getElementById('tickerText').innerText = 'Inserções massivas na TV ampliam o alcance da campanha!';
-        } else if (type === 'digital' && p.budget >= (p.id === 'FLAVIO' ? 3.5 : 5)) {
-            p.budget -= (p.id === 'FLAVIO' ? 3.5 : 5);
-            p.momentum += (p.id === 'FLAVIO' ? 25 : 12);
-            document.getElementById('tickerText').innerText = 'Tráfego pago e redes digitais aquecem o engajamento!';
-        } else if (type === 'fundraise') {
-            const gain = (p.id === 'CAIADO' ? 30 : 20);
-            p.budget += gain;
-            document.getElementById('tickerText').innerText = `Jantar de arrecadação rende R$ ${gain}M para o caixa da campanha!`;
-        } else if (type === 'rally_ne' && p.budget >= 6) {
-            p.budget -= 6;
-            p.regions.NE += (p.id === 'LULA' ? 3.8 : 2.5);
-            document.getElementById('tickerText').innerText = 'Comícios no Nordeste atraem grande público nas capitais!';
-        } else if (type === 'rally_se' && p.budget >= 7) {
-            p.budget -= 7;
-            p.regions.SE += 2.8;
-            document.getElementById('tickerText').innerText = 'Eventos no Sudeste fortalecem palanques em SP e MG!';
-        } else if (type === 'crisis' && p.budget >= 4) {
-            p.budget -= 4;
-            p.rejection -= (p.id === 'CURY' ? 6.0 : 3.0);
-            document.getElementById('tickerText').innerText = 'Gerenciamento de crise consegue suavizar a rejeição do candidato.';
-        } else {
-            audio.alert();
-            alert('Verba de campanha insuficiente!');
-            return;
-        }
+        game.budget -= cost;
+        const targetCand = CANDIDATES_DATA[targetKey];
+        game.polls[targetKey] = Math.max(1, game.polls[targetKey] - 2.5);
+        AudioEngine.playAttack();
+        game.closeModal('modalAttack');
+        game.logActivity(`Ataque pesado contra ${targetCand.name} minou as pesquisas dele em -2.5%!`);
+        game.updateUI();
+    },
 
-        game.simulateAI();
+    nextTurn: () => {
+        AudioEngine.playClick();
         game.turn++;
-        game.nextTurn();
-    },
 
-    checkFirstRoundResult: () => {
-        const sorted = [...game.candidates].sort((a, b) => b.polls - a.polls);
-        const top1 = sorted[0], top2 = sorted[1];
-
-        if (top1.polls >= 50.0) {
-            game.endGame(top1.id === game.player.id, `Vitória no 1º Turno! ${top1.name} alcançou ${top1.polls.toFixed(1)}% dos votos válidos e foi eleito Presidente do Brasil!`);
-        } else {
-            // Avançar para o 2º Turno entre Top 1 e Top 2
-            game.isSecondRound = true;
-            game.candidates = [top1, top2];
-            document.getElementById('tickerText').innerText = `ELEIÇÃO VAI AO 2º TURNO entre ${top1.name} e ${top2.name}!`;
-            audio.fanfare();
-            alert(`ATENÇÃO: A eleição foi para o 2º TURNO!\n\nFinalistas: ${top1.name} (${top1.polls.toFixed(1)}%) vs ${top2.name} (${top2.polls.toFixed(1)}%)\n\nVocê tem 4 semanas para vencer a disputa final!`);
-            game.nextTurn();
+        // Checagem de Debates
+        if(game.round === 1 && (game.turn === 4 || game.turn === 9)) {
+            game.triggerDebate(); return;
+        } else if(game.round === 2 && game.turn === 3) {
+            game.triggerDebate(); return;
         }
+
+        // Fim dos Turnos
+        if(game.turn > game.maxTurns) {
+            game.runElectionSimulation(); return;
+        }
+
+        // Eventos Aleatórios
+        game.triggerRandomEvent();
+        game.updateUI();
     },
 
-    checkSecondRoundResult: () => {
-        const sorted = [...game.candidates].sort((a, b) => b.polls - a.polls);
-        const winner = sorted[0];
-        const isPlayerWin = winner.id === game.player.id;
+    triggerRandomEvent: () => {
+        const events = [
+            { title: "Escândalo Vazado na Imprensa", desc: "Denúncias de irregularidades movimentam a mídia e abalam os eleitores.", choices: [{ text: "Lançar Nota de Esclarecimento Factual", cost: 0, poll: 0 }, { text: "Investir $6M em Contrapropaganda", cost: 6, poll: 2.0 }] },
+            { title: "Meme Viraliza nas Redes Sociais", desc: "Sua campanha emplaca uma tendência orgânica e conquista eleitores jovens.", choices: [{ text: "Aproveitar o Engajamento (+1.8% pesquisas)", cost: 0, poll: 1.8 }] },
+            { title: "Crise na Economia Global", desc: "Mercados oscilam e debate sobre inflação e empregos domina os jornais.", choices: [{ text: "Propor Plano de Emergência Econômica", cost: 4, poll: 2.2 }] },
+            { title: "Apoio de Governador Influente", desc: "Lideranças estaduais oferecem palanque e apoio regional estratégico.", choices: [{ text: "Aceitar Aliança e Realizar Caravana", cost: 5, poll: 2.5 }] }
+        ];
 
-        game.endGame(isPlayerWin, `${winner.name} vence o 2º Turno com ${winner.polls.toFixed(1)}% dos votos e é consagrado Presidente da República Federativa do Brasil em 2026!`);
+        const ev = events[Math.floor(Math.random() * events.length)];
+        document.getElementById('eventTitle').innerText = ev.title;
+        document.getElementById('eventDescription').innerText = ev.desc;
+
+        const container = document.getElementById('eventChoicesContainer'); container.innerHTML = '';
+        ev.choices.forEach(ch => {
+            const btn = document.createElement('button'); btn.className = 'action-btn';
+            btn.innerHTML = `<span>${ch.text}</span><i class="fas fa-chevron-right"></i>`;
+            btn.onclick = () => {
+                if(game.budget < ch.cost) return alert("Verba insuficiente!");
+                game.budget -= ch.cost; game.polls[game.selectedCandKey] += ch.poll;
+                game.closeModal('modalEvent'); game.updateUI();
+            };
+            container.appendChild(btn);
+        });
+
+        document.getElementById('modalEvent').classList.add('active');
+        document.getElementById('newsTickerText').innerText = `${ev.title}: ${ev.desc}`;
     },
 
-    endGame: (isWin, message) => {
-        document.getElementById('screenEnd').style.display = 'flex';
-        document.getElementById('endIcon').innerHTML = isWin ? 
-            `<i class="fas fa-trophy victory-badge"></i>` : 
-            `<i class="fas fa-times-circle defeat-badge"></i>`;
-        
-        document.getElementById('endTitle').innerText = isWin ? 'Você Venceu as Eleições!' : 'Fim de Campanha';
-        document.getElementById('endTitle').style.color = isWin ? 'var(--accent-gold)' : 'var(--accent-red)';
-        document.getElementById('endDesc').innerText = message;
+    triggerDebate: () => {
+        AudioEngine.playDebateBell();
+        const questions = [
+            { q: "Como seu governo pretende controlar a inflação e gerar empregos de alta qualidade?", optA: "Com rigor fiscal, reforma tributária e atração de capitais.", optB: "Aumentando investimentos públicos e protegendo a indústria nacional.", optC: "Focando na inovação digital e apoio a microempreendedores." },
+            { q: "Qual sua proposta concreta para combater o crime organizado e garantir segurança pública?", optA: "Integrando inteligência policial e fortalecendo as fronteiras.", optB: "Investindo em tecnologia, segurança comunitária e educação.", optC: "Aumentando o efetivo policial e endurecendo leis penais." }
+        ];
+        const qObj = questions[Math.floor(Math.random()*questions.length)];
+        document.getElementById('debateQuestionText').innerText = qObj.q;
 
-        if (isWin) audio.fanfare();
-        else audio.alert();
+        const container = document.getElementById('debateOptionsContainer'); container.innerHTML = '';
+        [qObj.optA, qObj.optB, qObj.optC].forEach((optText, idx) => {
+            const div = document.createElement('div'); div.className = 'debate-option';
+            div.innerText = optText;
+            div.onclick = () => {
+                const bonus = (game.selectedCandKey === 'CURY') ? 4.5 : 3.0;
+                game.polls[game.selectedCandKey] += bonus;
+                game.closeModal('modalDebate');
+                game.logActivity(`Desempenho elogiado no Debate da TV (+${bonus}% nas pesquisas)!`);
+                game.updateUI();
+            };
+            container.appendChild(div);
+        });
+
+        document.getElementById('modalDebate').classList.add('active');
+    },
+
+    runElectionSimulation: () => {
+        AudioEngine.playFanfare();
+        const sorted = Object.entries(game.polls).sort((a,b)=>b[1]-a[1]);
+        const totalVotes = sorted.reduce((a,b)=>a+b[1],0)||1;
+
+        const winnerId = sorted[0][0]; const winnerPct = (sorted[0][1]/totalVotes)*100;
+        const secondId = sorted[1][0]; const secondPct = (sorted[1][1]/totalVotes)*100;
+
+        const resultsContainer = document.getElementById('resultsLeaderboard'); resultsContainer.innerHTML = '';
+        const winnerCand = CANDIDATES_DATA[winnerId];
+
+        // RENDERIZAR MAPA DO RESULTADO
+        if(game.geoJsonLayer) {
+            game.geoJsonLayer.setStyle(() => ({ fillColor: winnerCand.color, fillOpacity: 0.9, weight: 1, color: '#fff' }));
+        }
+
+        if(game.round === 1 && winnerPct < 50.0) {
+            // SEGUNDO TURNO NECESSÁRIO!
+            document.getElementById('resultsTitle').innerText = "1º TURNO FINALIZADO - SEGUNDO TURNO CONFIRMADO!";
+            document.getElementById('resultsWinnerHeader').innerHTML = `
+                <div style="font-size:1.1rem; font-weight:900; color:var(--accent-gold);">Nenhum candidato atingiu >50% dos votos válidos!</div>
+                <div style="font-size:0.85rem; font-weight:700; margin-top:4px;">Disputa final confirmada entre <strong>${CANDIDATES_DATA[winnerId].name} (${winnerPct.toFixed(1)}%)</strong> e <strong>${CANDIDATES_DATA[secondId].name} (${secondPct.toFixed(1)}%)</strong>!</div>
+            `;
+            document.getElementById('resultsFooter').innerHTML = `<button class="btn-action-submit" onclick="game.startRoundTwo('${winnerId}', '${secondId}')">AVANÇAR PARA O 2º TURNO <i class="fas fa-arrow-right"></i></button>`;
+        } else {
+            // VITÓRIA DEFINITIVA!
+            document.getElementById('resultsTitle').innerText = "RESULTADO FINAL DA ELEIÇÃO 2026";
+            document.getElementById('resultsWinnerHeader').innerHTML = `
+                <img src="${winnerCand.photo}" style="width:70px; height:70px; border-radius:50%; border:3px solid ${winnerCand.color}; margin-bottom:6px;">
+                <div style="font-size:1.3rem; font-weight:900; color:var(--accent-green); text-transform:uppercase;">${winnerCand.name} É ELEITO PRESIDENTE DO BRASIL!</div>
+                <div style="font-size:0.9rem; font-weight:800;">Vitória com ${winnerPct.toFixed(2)}% dos votos válidos!</div>
+            `;
+            document.getElementById('resultsFooter').innerHTML = `<button class="btn-action-submit" onclick="location.reload()"><i class="fas fa-redo"></i> JOGAR NOVAMENTE</button>`;
+        }
+
+        sorted.forEach(([id, val]) => {
+            const c = CANDIDATES_DATA[id]; if(!c) return;
+            const pct = (val/totalVotes)*100;
+            const row = document.createElement('div'); row.className = 'leaderboard-row';
+            row.innerHTML = `
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <img src="${c.photo}" style="width:32px; height:32px; border-radius:50%; object-fit:cover; border:2px solid ${c.color}">
+                    <span style="font-weight:800;">${c.name} (${c.party})</span>
+                </div>
+                <div style="font-weight:900; color:${c.color}; font-size:1.1rem;">${pct.toFixed(2)}%</div>
+            `;
+            resultsContainer.appendChild(row);
+        });
+
+        document.getElementById('modalElectionResults').classList.add('active');
+    },
+
+    startRoundTwo: (candA, candB) => {
+        game.round = 2; game.turn = 1; game.maxTurns = 6;
+        game.budget += 40; // Verba extra para 2º turno
+
+        // Filtra apenas os 2 finalistas
+        Object.keys(game.polls).forEach(k => { if(k !== candA && k !== candB) game.activeCandidates[k] = false; });
+        game.closeModal('modalElectionResults');
+        game.updateUI();
+        game.logActivity(`Iniciado 2º Turno entre ${CANDIDATES_DATA[candA].name} e ${CANDIDATES_DATA[candB].name}!`);
+    },
+
+    closeModal: (id) => { document.getElementById(id).classList.remove('active'); },
+    logActivity: (msg) => {
+        const log = document.getElementById('activityLog');
+        const item = document.createElement('div');
+        item.innerHTML = `<span style="color:var(--accent-blue); font-weight:800;">[T${game.turn}]</span> ${msg}`;
+        log.prepend(item);
+    },
+    toggleAudio: () => {
+        AudioEngine.muted = !AudioEngine.muted;
+        document.getElementById('audioIcon').className = AudioEngine.muted ? 'fas fa-volume-mute' : 'fas fa-volume-up';
     }
 };
 
