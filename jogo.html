@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Presidente 2026 - O Jogo da Eleição</title>
+
+<!-- Leaflet Mapa -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Fonts & Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+<style>
+    :root {
+        --bg-color: #0b0f19;
+        --sidebar-bg: rgba(15, 23, 42, 0.94);
+        --sidebar-border: rgba(255, 255, 255, 0.1);
+        --card-bg: rgba(30, 41, 59, 0.7);
+        --card-border: rgba(255, 255, 255, 0.08);
+        --card-hover: rgba(51, 65, 85, 0.85);
+        --text-color: #f8fafc;
+        --text-muted: #94a3b8;
+        --accent-blue: #3b82f6;
+        --accent-cyan: #06b6d4;
+        --accent-green: #10b981;
+        --accent-gold: #f59e0b;
+        --accent-red: #ef4444;
+        --radius-lg: 16px;
+        --radius-md: 12px;
+        --radius-sm: 8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, sans-serif; }
+
+    body {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        overflow-x: hidden;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* TICKER DE NOTÍCIAS DA MÍDIA */
+    .news-ticker {
+        background: #020617;
+        border-bottom: 1px solid var(--sidebar-border);
+        padding: 8px 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 0.8rem;
+        z-index: 10000;
+    }
+    .news-badge {
+        background: var(--accent-red);
+        color: #fff;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-weight: 900;
+        font-size: 0.65rem;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+    }
+    .news-text {
+        color: var(--text-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-weight: 600;
+    }
+
+    /* CONTAINER PRINCIPAL DO JOGO */
+    .game-container {
+        flex: 1;
+        max-width: 1280px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    /* TELA DE SELEÇÃO DE CANDIDATO */
+    .selection-screen {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+        text-align: center;
+        padding: 20px 0;
+    }
+    .game-title h1 {
+        font-size: 2.5rem;
+        font-weight: 900;
+        background: linear-gradient(135deg, #f8fafc 30%, var(--accent-blue));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: -1px;
+    }
+    .candidate-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        width: 100%;
+    }
+    .cand-card {
+        background: var(--card-bg);
+        border: 2px solid var(--card-border);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    .cand-card:hover {
+        border-color: var(--cand-color, var(--accent-blue));
+        transform: translateY(-4px);
+        background: var(--card-hover);
+        box-shadow: 0 12px 30px -10px rgba(0,0,0,0.5);
+    }
+    .cand-card img {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--cand-color, #fff);
+    }
+    .cand-card-name { font-size: 1.1rem; font-weight: 800; }
+    .cand-card-party { font-size: 0.75rem; font-weight: 900; color: var(--cand-color); }
+    .cand-stats-list {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-align: left;
+        margin-top: 8px;
+    }
+    .cand-stat-item { display: flex; justify-content: space-between; font-weight: 700; }
+
+    /* DASHBOARD PRINCIPAL DA CAMPANHA */
+    .dashboard {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 20px;
+    }
+    @media (max-width: 900px) { .dashboard { grid-template-columns: 1fr; } }
+
+    /* PAINEL LATERAL DE STATUS DO PLAYER */
+    .status-panel {
+        background: var(--sidebar-bg);
+        border: 1px solid var(--sidebar-border);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+    .player-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--sidebar-border);
+    }
+    .player-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--cand-color);
+    }
+    .stat-box {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: var(--radius-md);
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .stat-box-val { font-size: 1.2rem; font-weight: 900; }
+
+    /* PAINEL DE AÇÕES E EVENTOS */
+    .main-actions-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    /* CARD DE EVENTO DA SEMANA (CRISE / OPORTUNIDADE) */
+    .event-card {
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+        border: 2px solid var(--accent-blue);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    .event-title {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: var(--accent-cyan);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .event-options {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .btn-option {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        color: var(--text-color);
+        padding: 12px 16px;
+        border-radius: var(--radius-md);
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-align: left;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .btn-option:hover {
+        background: var(--card-hover);
+        border-color: var(--accent-blue);
+        transform: translateX(4px);
+    }
+
+    /* ABAS DE AÇÃO DE CAMPANHA */
+    .action-category-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+    }
+    .action-btn-card {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: var(--radius-md);
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .action-btn-card:hover {
+        border-color: var(--accent-blue);
+        background: var(--card-hover);
+        transform: translateY(-2px);
+    }
+    .action-title { font-size: 0.88rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+    .action-cost { font-size: 0.72rem; font-weight: 800; color: var(--accent-gold); }
+
+    /* TELA DE APURAÇÃO DA ELEIÇÃO */
+    .tally-screen {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    .tally-map-container {
+        height: 380px;
+        width: 100%;
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        border: 1px solid var(--sidebar-border);
+    }
+    #tallyMap { width: 100%; height: 100%; background: #0b0f19; }
+
+    .tally-progress-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+    }
+    .tally-cand-box {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: var(--radius-md);
+        padding: 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    /* BOTOES PRIMARIOS */
+    .btn-main {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: #fff;
+        border: none;
+        padding: 14px 28px;
+        border-radius: var(--radius-md);
+        font-size: 0.95rem;
+        font-weight: 800;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+    }
+    .btn-main:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5); }
+
+    /* LOG DE NOTÍCIAS DO JOGO */
+    .log-box {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid var(--card-border);
+        border-radius: var(--radius-md);
+        padding: 12px;
+        max-height: 140px;
+        overflow-y: auto;
+        font-size: 0.78rem;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .log-item { color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<div class="news-ticker">
+    <span class="news-badge"><i class="fas fa-broadcast-tower"></i> NOTÍCIAS 2026</span>
+    <span class="news-text" id="newsTickerText">Eleições 2026: Pré-candidatos iniciam articulações em todo o país!</span>
+</div>
+
+<div class="game-container">
+
+    <!-- 1. TELA DE SELEÇÃO DE CANDIDATO -->
+    <div id="screenSelect" class="selection-screen">
+        <div class="game-title">
+            <h1>Presidente 2026: O Jogo</h1>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 6px;">Escolha seu candidato, gerencie a campanha e vença a eleição presidencial!</p>
+        </div>
+
+        <div class="candidate-grid" id="candidateSelectGrid"></div>
+    </div>
+
+    <!-- 2. DASHBOARD DE CAMPANHA (TURNO A TURNO) -->
+    <div id="screenDashboard" class="dashboard" style="display: none;">
+        <aside class="status-panel">
+            <div class="player-header">
+                <img id="pAvatar" class="player-avatar" src="" alt="">
+                <div>
+                    <div id="pName" style="font-size: 1.1rem; font-weight: 800;">-</div>
+                    <div id="pParty" style="font-size: 0.75rem; font-weight: 900;">-</div>
+                </div>
+            </div>
+
+            <div class="stat-box">
+                <div>
+                    <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 800;">SEMANA DE CAMPANHA</div>
+                    <div id="statTurn" class="stat-box-val" style="color: var(--accent-cyan)">Semana 1 / 8</div>
+                </div>
+                <i class="fas fa-calendar-alt" style="font-size: 1.5rem; color: var(--accent-cyan)"></i>
+            </div>
+
+            <div class="stat-box">
+                <div>
+                    <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 800;">CAIXA DE CAMPANHA</div>
+                    <div id="statBudget" class="stat-box-val" style="color: var(--accent-gold)">R$ 15,0 Mi</div>
+                </div>
+                <i class="fas fa-coins" style="font-size: 1.5rem; color: var(--accent-gold)"></i>
+            </div>
+
+            <div class="stat-box">
+                <div>
+                    <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 800;">INTENÇÃO NACIONAL</div>
+                    <div id="statPoll" class="stat-box-val" style="color: var(--accent-green)">0.0%</div>
+                </div>
+                <i class="fas fa-chart-line" style="font-size: 1.5rem; color: var(--accent-green)"></i>
+            </div>
+
+            <div class="stat-box">
+                <div>
+                    <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 800;">REJEIÇÃO</div>
+                    <div id="statRejection" class="stat-box-val" style="color: var(--accent-red)">0.0%</div>
+                </div>
+                <i class="fas fa-user-slash" style="font-size: 1.5rem; color: var(--accent-red)"></i>
+            </div>
+
+            <div style="font-size: 0.72rem; font-weight: 800; color: var(--text-muted); margin-top: 6px;">DESEMPENHO REGIONAL</div>
+            <div id="regionalBars" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        </aside>
+
+        <main class="main-actions-panel">
+            <!-- EVENTO/CRISE DA SEMANA -->
+            <div class="event-card" id="eventCard">
+                <div class="event-title" id="eventTitle"><i class="fas fa-exclamation-triangle"></i> Crise da Semana</div>
+                <p id="eventDesc" style="font-size: 0.88rem; color: #cbd5e1; line-height: 1.4;"></p>
+                <div class="event-options" id="eventOptions"></div>
+            </div>
+
+            <!-- OPÇÕES DE AÇÃO DE CAMPANHA -->
+            <div style="font-size: 0.8rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;"><i class="fas fa-bullhorn"></i> Ações Estratégicas de Campanha</div>
+            <div class="action-category-grid" id="actionGrid"></div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Avançar para a próxima semana quando estiver pronto:</div>
+                <button class="btn-main" onclick="game.nextTurn()"><i class="fas fa-forward"></i> Próxima Semana</button>
+            </div>
+
+            <div style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); margin-top: 8px;">HISTÓRICO DA CAMPANHA</div>
+            <div class="log-box" id="gameLog"></div>
+        </main>
+    </div>
+
+    <!-- 3. TELA DE APURAÇÃO DOS VOTOS (1º OU 2º TURNO) -->
+    <div id="screenTally" class="tally-screen" style="display: none;">
+        <div style="text-align: center;">
+            <h2 id="tallyHeaderTitle" style="font-size: 1.8rem; font-weight: 900;">APURAÇÃO DOS VOTOS - 1º TURNO</h2>
+            <p id="tallySubTitle" style="color: var(--text-muted); font-size: 0.88rem;">Contagem oficial de votos em todos os 27 Estados do Brasil</p>
+        </div>
+
+        <div class="tally-map-container">
+            <div id="tallyMap"></div>
+        </div>
+
+        <div class="tally-progress-grid" id="tallyCandidatesGrid"></div>
+
+        <div style="display: flex; justify-content: center; margin-top: 10px;">
+            <button class="btn-main" id="btnContinueTally" onclick="game.finishTally()"><i class="fas fa-trophy"></i> Ver Resultado Final</button>
+        </div>
+    </div>
+
+    <!-- 4. TELA DE RESULTADO / VITÓRIA / DERROTA -->
+    <div id="screenResult" class="selection-screen" style="display: none;">
+        <div class="game-title">
+            <h1 id="resultTitle">RESULTADO FINAL</h1>
+            <p id="resultDesc" style="color: var(--text-muted); font-size: 1.1rem; margin-top: 8px;"></p>
+        </div>
+
+        <div id="resultCardWinner" class="cand-card" style="width: 320px; cursor: default;"></div>
+
+        <button class="btn-main" onclick="location.reload()"><i class="fas fa-redo"></i> Jogar Novamente</button>
+    </div>
+
+</div>
+
+<script>
+// --- LISTA DE CANDIDATOS COM FOTOS E ATRIBUTOS INICIAIS ---
+const CANDIDATES_DATA = [
+    {
+        id: 'LULA', name: 'Lula', party: 'PT', color: '#de0000',
+        photo: 'data/lula.jpg',
+        remotePhoto: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Lula_-_foto_oficial_05_jan_2023_%28cropped%29.jpg/400px-Lula_-_foto_oficial_05_jan_2023_%28cropped%29.jpg',
+        budget: 25.0, rejection: 38.0, basePoll: 42.0,
+        regionalSupport: { 'Nordeste': 62, 'Sudeste': 38, 'Sul': 30, 'Centro-Oeste': 32, 'Norte': 45 }
+    },
+    {
+        id: 'FLAVIO', name: 'Flávio Bolsonaro', party: 'PL', color: '#3632b6',
+        photo: 'data/flavio.jpg',
+        remotePhoto: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Senador_Fl%C3%A1vio_Bolsonaro.jpg/400px-Senador_Fl%C3%A1vio_Bolsonaro.jpg',
+        budget: 22.0, rejection: 42.0, basePoll: 36.0,
+        regionalSupport: { 'Nordeste': 25, 'Sudeste': 42, 'Sul': 54, 'Centro-Oeste': 52, 'Norte': 40 }
+    },
+    {
+        id: 'RENAN', name: 'Renan Santos', party: 'MISSÃO', color: '#f6ae08',
+        photo: 'data/renan.jpg',
+        remotePhoto: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Renan_Santos_em_2021.jpg/400px-Renan_Santos_em_2021.jpg',
+        budget: 12.0, rejection: 22.0, basePoll: 8.0,
+        regionalSupport: { 'Nordeste': 5, 'Sudeste': 14, 'Sul': 10, 'Centro-Oeste': 8, 'Norte': 6 }
+    },
+    {
+        id: 'CAIADO', name: 'Ronaldo Caiado', party: 'PSD', color: '#17a7e9',
+        photo: 'data/caiado.jpg',
+        remotePhoto: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Ronaldo_Caiado_em_2023.jpg/400px-Ronaldo_Caiado_em_2023.jpg',
+        budget: 15.0, rejection: 18.0, basePoll: 5.0,
+        regionalSupport: { 'Nordeste': 8, 'Sudeste': 8, 'Sul': 12, 'Centro-Oeste': 35, 'Norte': 10 }
+    },
+    {
+        id: 'ZEMA', name: 'Romeu Zema', party: 'NOVO', color: '#F58220',
+        photo: 'data/zema.jpg',
+        remotePhoto: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Romeu_Zema_em_2023.jpg/400px-Romeu_Zema_em_2023.jpg',
+        budget: 14.0, rejection: 16.0, basePoll: 4.5,
+        regionalSupport: { 'Nordeste': 4, 'Sudeste': 18, 'Sul': 12, 'Centro-Oeste': 10, 'Norte': 5 }
+    },
+    {
+        id: 'CURY', name: 'Augusto Cury', party: 'AVANTE', color: '#2EBF98',
+        photo: 'data/cury.jpg',
+        remotePhoto: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Augusto_Cury_em_2018.jpg/400px-Augusto_Cury_em_2018.jpg',
+        budget: 8.0, rejection: 10.0, basePoll: 2.0,
+        regionalSupport: { 'Nordeste': 4, 'Sudeste': 5, 'Sul': 4, 'Centro-Oeste': 4, 'Norte': 4 }
+    }
+];
+
+// BANCO DE EVENTOS/CRISES COM MÚLTIPLAS ESCOLHAS
+const GAME_EVENTS = [
+    {
+        title: "🔥 Sabatina Agitada na Mídia",
+        desc: "Você foi convidado para uma entrevista ao vivo de alta audiência. Os jornalistas pressionam sobre temas polêmicos.",
+        options: [
+            { text: "Atacar os adversários e manter postura firme", budget: 0, poll: +1.5, rej: +1.0, msg: "Sua militância adorou a postura firme!" },
+            { text: "Apresentar propostas moderadas e de conciliação", budget: -0.5, poll: +2.0, rej: -1.0, msg: "Eleitores moderados elogiaram seu equilíbrio." },
+            { text: "Evitar polêmicas e focar em conquistas passadas", budget: 0, poll: +0.5, rej: 0, msg: "Entrevista sem grandes sobressaltos." }
+        ]
+    },
+    {
+        title: "🌾 O Dilema do Agronegócio",
+        desc: "Lideranças do setor agropecuário pedem compromissos firmes em infraestrutura e segurança jurídica.",
+        options: [
+            { text: "Prometer incentivos fiscais e apoio total ao setor", budget: -1.0, poll: +2.5, rej: +0.5, msg: "Ganhou forte apoio no Centro-Oeste e Sul!" },
+            { text: "Defender pauta ambiental rigorosa e sustentável", budget: 0, poll: +1.0, rej: -1.5, msg: "Aumentou simpatia entre os jovens e na Europa." }
+        ]
+    },
+    {
+        title: "📱 Onda de Memes & Cortes Ff":
+        desc: "Um vídeo seu viralizou nas redes sociais. A oposição tenta usar contra você, mas a militância reage.",
+        options: [
+            { text: "Entrar na brincadeira e gravar vídeos humorísticos", budget: -0.5, poll: +2.0, rej: -2.0, msg: "Bombou no TikTok e atraiu eleitores jovens!" },
+            { text: "Processar os responsáveis e emitir nota oficial", budget: -0.5, poll: -1.0, rej: +1.5, msg: "A resposta pareceu burocrática demais." }
+        ]
+    },
+    {
+        title: "📺 Primeiro Debate na TV",
+        desc: "Hora de encarar os adversários ao vivo em rede nacional!",
+        options: [
+            { text: "Focar em propostas para a economia e empregos", budget: -1.0, poll: +3.0, rej: -1.0, msg: "Desempenho elogiado pelos analistas econômicos!" },
+            { text: "Partir para o confronto direto com o líder das pesquisas", budget: 0, poll: +2.0, rej: +2.0, msg: "O debate pegou fogo! Ganhou atenção da imprensa." }
+        ]
+    }
+];
+
+// ESTADOS DO BRASIL COM PESOS ELEITORAIS
+const STATES_DATA = [
+    { id: 'SP', name: 'São Paulo', reg: 'Sudeste', weight: 34 },
+    { id: 'MG', name: 'Minas Gerais', reg: 'Sudeste', weight: 16 },
+    { id: 'RJ', name: 'Rio de Janeiro', reg: 'Sudeste', weight: 13 },
+    { id: 'BA', name: 'Bahia', reg: 'Nordeste', weight: 11 },
+    { id: 'RS', name: 'Rio Grande do Sul', reg: 'Sul', weight: 8.5 },
+    { id: 'PR', name: 'Paraná', reg: 'Sul', weight: 8.5 },
+    { id: 'PE', name: 'Pernambuco', reg: 'Nordeste', weight: 7 },
+    { id: 'CE', name: 'Ceará', reg: 'Nordeste', weight: 6.8 },
+    { id: 'PA', name: 'Pará', reg: 'Norte', weight: 5.5 },
+    { id: 'GO', name: 'Goiás', reg: 'Centro-Oeste', weight: 5.2 },
+    { id: 'MA', name: 'Maranhão', reg: 'Nordeste', weight: 4.8 },
+    { id: 'SC', name: 'Santa Catarina', reg: 'Sul', weight: 5.0 },
+    { id: 'PB', name: 'Paraíba', reg: 'Nordeste', weight: 3.2 },
+    { id: 'ES', name: 'Espírito Santo', reg: 'Sudeste', weight: 3.0 },
+    { id: 'AM', name: 'Amazonas', reg: 'Norte', weight: 2.8 },
+    { id: 'RN', name: 'Rio Grande do Norte', reg: 'Nordeste', weight: 2.5 },
+    { id: 'MT', name: 'Mato Grosso', reg: 'Centro-Oeste', weight: 2.8 },
+    { id: 'MS', name: 'Mato Grosso do Sul', reg: 'Centro-Oeste', weight: 2.2 },
+    { id: 'PI', name: 'Piauí', reg: 'Nordeste', weight: 2.4 },
+    { id: 'AL', name: 'Alagoas', reg: 'Nordeste', weight: 2.2 },
+    { id: 'DF', name: 'Distrito Federal', reg: 'Centro-Oeste', weight: 2.2 },
+    { id: 'SE', name: 'Sergipe', reg: 'Nordeste', weight: 1.6 },
+    { id: 'RO', name: 'Rondônia', reg: 'Norte', weight: 1.2 },
+    { id: 'TO', name: 'Tocantins', reg: 'Norte', weight: 1.1 },
+    { id: 'AC', name: 'Acre', reg: 'Norte', weight: 0.6 },
+    { id: 'AP', name: 'Amapá', reg: 'Norte', weight: 0.5 },
+    { id: 'RR', name: 'Roraima', reg: 'Norte', weight: 0.4 }
+];
+
+// LOGICA CENTRAL DO JOGO
+const game = {
+    player: null,
+    turn: 1,
+    maxTurns: 8,
+    isRunoff: false,
+    opponents: [],
+    tallyMap: null,
+    tallyGeoJson: null,
+
+    init: () => {
+        game.renderSelectionGrid();
+    },
+
+    renderSelectionGrid: () => {
+        const grid = document.getElementById('candidateSelectGrid'); grid.innerHTML = '';
+        CANDIDATES_DATA.forEach(cand => {
+            const card = document.createElement('div');
+            card.className = 'cand-card';
+            card.style.setProperty('--cand-color', cand.color);
+            card.onclick = () => game.selectCandidate(cand.id);
+            card.innerHTML = `
+                <img src="${cand.photo}" onerror="this.src='${cand.remotePhoto}'">
+                <div class="cand-card-name">${cand.name}</div>
+                <div class="cand-card-party">${cand.party}</div>
+                <div class="cand-stats-list">
+                    <div class="cand-stat-item"><span>Intenção Base:</span> <span>${cand.basePoll}%</span></div>
+                    <div class="cand-stat-item"><span>Caixa Inicial:</span> <span>R$ ${cand.budget.toFixed(1)}M</span></div>
+                    <div class="cand-stat-item"><span>Rejeição:</span> <span>${cand.rejection}%</span></div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    },
+
+    selectCandidate: (id) => {
+        const selected = CANDIDATES_DATA.find(c => c.id === id);
+        game.player = JSON.parse(JSON.stringify(selected));
+        game.player.poll = selected.basePoll;
+        
+        // Criar oponentes
+        game.opponents = CANDIDATES_DATA.filter(c => c.id !== id).map(c => {
+            let o = JSON.parse(JSON.stringify(c));
+            o.poll = c.basePoll;
+            return o;
+        });
+
+        document.getElementById('screenSelect').style.display = 'none';
+        document.getElementById('screenDashboard').style.display = 'grid';
+        
+        game.updateUI();
+        game.loadTurnEvent();
+        game.renderActionGrid();
+        game.log(`Campanha de ${game.player.name} (${game.player.party}) iniciada com sucesso!`);
+    },
+
+    updateUI: () => {
+        document.getElementById('pAvatar').src = game.player.photo;
+        document.getElementById('pAvatar').onerror = () => { document.getElementById('pAvatar').src = game.player.remotePhoto; };
+        document.getElementById('pAvatar').style.borderColor = game.player.color;
+        document.getElementById('pName').innerText = game.player.name;
+        document.getElementById('pParty').innerText = game.player.party;
+        document.getElementById('pParty').style.color = game.player.color;
+
+        document.getElementById('statTurn').innerText = `Semana ${game.turn} / ${game.maxTurns}`;
+        document.getElementById('statBudget').innerText = `R$ ${game.player.budget.toFixed(1)} Mi`;
+        document.getElementById('statPoll').innerText = `${game.player.poll.toFixed(1)}%`;
+        document.getElementById('statRejection').innerText = `${game.player.rejection.toFixed(1)}%`;
+
+        // Renderizar barras regionais
+        const barsDiv = document.getElementById('regionalBars'); barsDiv.innerHTML = '';
+        Object.entries(game.player.regionalSupport).forEach(([reg, val]) => {
+            const row = document.createElement('div');
+            row.style.fontSize = '0.72rem';
+            row.innerHTML = `
+                <div style="display:flex; justify-content:space-between; margin-bottom:2px; font-weight:700;">
+                    <span>${reg}</span><span>${val.toFixed(0)}%</span>
+                </div>
+                <div style="height:5px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden;">
+                    <div style="height:100%; width:${Math.min(100, val)}%; background:${game.player.color}"></div>
+                </div>
+            `;
+            barsDiv.appendChild(row);
+        });
+    },
+
+    loadTurnEvent: () => {
+        const ev = GAME_EVENTS[(game.turn - 1) % GAME_EVENTS.length];
+        document.getElementById('eventTitle').innerHTML = `<i class="fas fa-newspaper"></i> ${ev.title}`;
+        document.getElementById('eventDesc').innerText = ev.desc;
+
+        const optsDiv = document.getElementById('eventOptions'); optsDiv.innerHTML = '';
+        ev.options.forEach((opt) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-option';
+            btn.innerHTML = `<span>${opt.text}</span> <i class="fas fa-chevron-right"></i>`;
+            btn.onclick = () => {
+                game.player.budget += opt.budget;
+                game.player.poll = Math.max(1, game.player.poll + opt.poll);
+                game.player.rejection = Math.max(0, game.player.rejection + opt.rej);
+                game.log(opt.msg);
+                document.getElementById('eventCard').style.display = 'none';
+                game.updateUI();
+            };
+            optsDiv.appendChild(btn);
+        });
+        document.getElementById('eventCard').style.display = 'flex';
+    },
+
+    renderActionGrid: () => {
+        const grid = document.getElementById('actionGrid'); grid.innerHTML = '';
+        const actions = [
+            { title: 'Comício no Nordeste', cost: 1.5, reg: 'Nordeste', boost: 4, icon: 'fa-sun' },
+            { title: 'Giro pelo Agro (Centro-Oeste)', cost: 1.5, reg: 'Centro-Oeste', boost: 5, icon: 'fa-tractor' },
+            { title: 'Caminhada em SP / RJ', cost: 2.0, reg: 'Sudeste', boost: 3, icon: 'fa-city' },
+            { title: 'Invasão no Sul', cost: 1.5, reg: 'Sul', boost: 4, icon: 'fa-mountain' },
+            { title: 'TV & Horário Eleitoral', cost: 3.0, pollBoost: 1.8, icon: 'fa-tv' },
+            { title: 'Podcast de 4 Horas', cost: 0.5, pollBoost: 1.2, rejCut: -1.0, icon: 'fa-microphone' },
+            { title: 'Jantar com o Mercado', cost: -3.0, pollBoost: 0.2, icon: 'fa-handshake' } // Ganha dinheiro
+        ];
+
+        actions.forEach(act => {
+            const card = document.createElement('div');
+            card.className = 'action-btn-card';
+            const isFund = act.cost < 0;
+            card.innerHTML = `
+                <div class="action-title"><i class="fas ${act.icon}" style="color:var(--accent-blue)"></i> ${act.title}</div>
+                <div class="action-cost">${isFund ? 'Ganha R$ '+Math.abs(act.cost).toFixed(1)+'Mi' : 'Custo: R$ '+act.cost.toFixed(1)+'Mi'}</div>
+            `;
+            card.onclick = () => game.executeAction(act);
+            grid.appendChild(card);
+        });
+    },
+
+    executeAction: (act) => {
+        if(act.cost > 0 && game.player.budget < act.cost) {
+            alert("Orçamento insuficiente de campanha!"); return;
+        }
+        game.player.budget -= act.cost;
+        if(act.reg) {
+            game.player.regionalSupport[act.reg] = Math.min(100, game.player.regionalSupport[act.reg] + act.boost);
+            game.player.poll += (act.boost * 0.25);
+            game.log(`Realizou ${act.title}. Ganhou +${act.boost}% no ${act.reg}!`);
+        } else {
+            if(act.pollBoost) game.player.poll += act.pollBoost;
+            if(act.rejCut) game.player.rejection = Math.max(0, game.player.rejection + act.rejCut);
+            game.log(`Executou ${act.title}. Nacionais atualizados!`);
+        }
+        game.updateUI();
+    },
+
+    nextTurn: () => {
+        game.turn++;
+        // SimularIA de adversários
+        game.opponents.forEach(o => { o.poll += (Math.random() * 1.2 - 0.4); });
+
+        if(game.turn > game.maxTurns) {
+            game.startTally();
+        } else {
+            document.getElementById('newsTickerText').innerText = `Semana ${game.turn}: Pesquisas mostram disputa acirrada entre os candidatos!`;
+            game.loadTurnEvent();
+            game.updateUI();
+        }
+    },
+
+    log: (msg) => {
+        const box = document.getElementById('gameLog');
+        const item = document.createElement('div');
+        item.className = 'log-item';
+        item.innerText = `[Semana ${game.turn}] ${msg}`;
+        box.prepend(item);
+    },
+
+    // --- TELA DE APURAÇÃO DA ELEIÇÃO ---
+    startTally: async () => {
+        document.getElementById('screenDashboard').style.display = 'none';
+        document.getElementById('screenTally').style.display = 'flex';
+
+        if(!game.tallyMap) {
+            game.tallyMap = L.map('tallyMap', { center: [-15, -50], zoom: 4, zoomControl: false });
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { opacity: 0.5 }).addTo(game.tallyMap);
+            try {
+                const res = await fetch('https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson');
+                game.tallyGeoJson = await res.json();
+            } catch(e){}
+        }
+
+        // Calcular votos totais por estado
+        const allCands = [game.player, ...game.opponents];
+        let totalVotesMap = {}; allCands.forEach(c => totalVotesMap[c.id] = 0);
+        let grandTotal = 0;
+
+        STATES_DATA.forEach(st => {
+            let winner = game.player;
+            let maxScore = -1;
+            allCands.forEach(c => {
+                let baseReg = c.regionalSupport ? (c.regionalSupport[st.reg] || 20) : (c.poll * 0.8);
+                let score = baseReg * st.weight * (1 + (Math.random()*0.3 - 0.15));
+                totalVotesMap[c.id] += score;
+                grandTotal += score;
+                if(score > maxScore) { maxScore = score; winner = c; }
+            });
+            st.winner = winner;
+        });
+
+        // Desenhar Mapa de Vencedores por Estado
+        if(game.tallyGeoJson) {
+            L.geoJSON(game.tallyGeoJson, {
+                style: (f) => {
+                    const stId = f.properties.sigla || f.properties.CD_UF;
+                    const st = STATES_DATA.find(s => s.id === stId);
+                    return { fillColor: st ? st.winner.color : '#333', weight: 1, color: '#fff', fillOpacity: 0.8 };
+                }
+            }).addTo(game.tallyMap);
+        }
+
+        // Renderizar Placar Final de Votos
+        const grid = document.getElementById('tallyCandidatesGrid'); grid.innerHTML = '';
+        const sorted = allCands.sort((a,b) => totalVotesMap[b.id] - totalVotesMap[a.id]);
+        
+        sorted.forEach((c, index) => {
+            const pct = (totalVotesMap[c.id] / grandTotal) * 100;
+            c.finalPct = pct;
+            const box = document.createElement('div');
+            box.className = 'tally-cand-box';
+            box.innerHTML = `
+                <img src="${c.photo}" style="width:50px; height:50px; border-radius:50%; border:2px solid ${c.color}" onerror="this.src='${c.remotePhoto}'">
+                <div style="flex:1">
+                    <div style="font-size:0.9rem; font-weight:800;">${index+1}º ${c.name} (${c.party})</div>
+                    <div style="font-size:1.3rem; font-weight:900; color:${c.color}">${pct.toFixed(2)}%</div>
+                </div>
+            `;
+            grid.appendChild(box);
+        });
+
+        game.sortedResults = sorted;
+    },
+
+    finishTally: () => {
+        document.getElementById('screenTally').style.display = 'none';
+        document.getElementById('screenResult').style.display = 'flex';
+
+        const winner = game.sortedResults[0];
+        const isPlayerWinner = winner.id === game.player.id;
+
+        document.getElementById('resultTitle').innerText = isPlayerWinner ? "🏆 VOCÊ FOI ELEITO PRESIDENTE!" : "ELEIÇÃO ENCERRADA";
+        document.getElementById('resultDesc').innerText = isPlayerWinner ?
+            `Parabéns! ${game.player.name} venceu a eleição com ${winner.finalPct.toFixed(2)}% dos votos válidos e governará o Brasil a partir de 2027!` :
+            `${winner.name} (${winner.party}) venceu a eleição com ${winner.finalPct.toFixed(2)}% dos votos. Sua campanha obteve ${game.player.finalPct.toFixed(2)}%.`;
+
+        const winnerCard = document.getElementById('resultCardWinner');
+        winnerCard.style.setProperty('--cand-color', winner.color);
+        winnerCard.innerHTML = `
+            <img src="${winner.photo}" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:4px solid ${winner.color}" onerror="this.src='${winner.remotePhoto}'">
+            <div class="cand-card-name" style="font-size:1.4rem;">${winner.name}</div>
+            <div class="cand-card-party" style="font-size:1rem;">${winner.party}</div>
+            <div style="font-size:1.8rem; font-weight:900; color:${winner.color}; margin-top:8px;">${winner.finalPct.toFixed(2)}%</div>
+            <div style="font-size:0.8rem; color:var(--text-muted);">PRESIDENTE ELEITO DO BRASIL</div>
+        `;
+    }
+};
+
+document.addEventListener('DOMContentLoaded', game.init);
+</script>
+</body>
+</html>
