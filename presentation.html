@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eleições View - Modo Apresentação TV</title>
+
+<!-- Fonts & Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+<!-- Export Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+
+    body {
+        background: #080d16;
+        color: #ffffff;
+        overflow: hidden;
+        width: 100vw;
+        height: 100vh;
+        user-select: none;
+    }
+
+    /* BARRA SUPERIOR DE CONTROLES FLUTUANTES */
+    .controls-top {
+        position: fixed;
+        top: 15px;
+        right: 20px;
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(15, 23, 42, 0.85);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 8px 14px;
+        border-radius: 30px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+
+    .btn-pres {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #ffffff;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+    }
+    .btn-pres:hover {
+        background: #3b82f6;
+        border-color: #3b82f6;
+        transform: translateY(-1px);
+    }
+
+    select.select-slide {
+        background: rgba(15, 23, 42, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #fff;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        outline: none;
+    }
+
+    /* ESTÚDIO DE TV CONTAINER */
+    #presStage {
+        width: 100vw;
+        height: 100vh;
+        background: radial-gradient(circle at 50% 40%, #1a2a40 0%, #060a12 100%);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 30px 50px;
+        position: relative;
+    }
+
+    /* MARCA D'ÁGUA TEXTURIZADA DE CIDADE / ESTÚDIO */
+    #presStage::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.015) 2px, rgba(255,255,255,0.015) 4px);
+        pointer-events: none;
+        opacity: 0.6;
+    }
+
+    /* NAVEGAÇÃO LATERAL INVISÍVEL */
+    .nav-zone {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 12vw;
+        z-index: 5000;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    .nav-zone:hover {
+        opacity: 1;
+        background: linear-gradient(90deg, rgba(0,0,0,0.3), transparent);
+    }
+    .nav-zone.right:hover {
+        background: linear-gradient(-90deg, rgba(0,0,0,0.3), transparent);
+    }
+    .nav-zone left { left: 0; }
+    .nav-zone right { right: 0; }
+    .nav-zone i { font-size: 3rem; color: #fff; text-shadow: 0 0 20px rgba(0,0,0,0.8); }
+
+    /* CABEÇALHO DA TRANSMISSÃO */
+    .pres-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        z-index: 10;
+        height: 80px;
+    }
+    .pres-region-title {
+        font-size: 2rem;
+        font-weight: 300;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #e2e8f0;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+    }
+    .pres-year-box {
+        text-align: center;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        top: 20px;
+    }
+    .pres-year-text {
+        font-size: 4.5rem;
+        font-weight: 900;
+        line-height: 1;
+        letter-spacing: -1px;
+        text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+    }
+    .pres-turn-text {
+        font-size: 1.1rem;
+        font-weight: 600;
+        font-style: italic;
+        color: #94a3b8;
+        margin-top: -6px;
+    }
+
+    /* ÁREA CENTRAL (CANDIDATO 1 | MAPA VETORIAL | CANDIDATO 2) */
+    .pres-main-content {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 10;
+        padding: 0 20px;
+        gap: 20px;
+    }
+
+    /* CARD DE CANDIDATO PRINCIPAL */
+    .pres-cand-card {
+        width: 320px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .pres-photo-frame {
+        width: 250px;
+        height: 330px;
+        border: 3px solid #ffffff;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+        position: relative;
+        background: #1e293b;
+        margin-bottom: 24px;
+    }
+    .pres-photo-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* BADGE DA LOGO DO PARTIDO ANEXADO À PARTE INFERIOR DA MOLDURA DA FOTO */
+    .pres-party-badge {
+        position: absolute;
+        bottom: -22px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 48px;
+        height: 48px;
+        background: #ffffff;
+        border-radius: 50%;
+        box-shadow: 0 6px 16px rgba(0,0,0,0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 5px;
+        z-index: 20;
+    }
+    .pres-party-badge img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .pres-cand-name {
+        font-size: 1.8rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        line-height: 1.1;
+        margin-bottom: 4px;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+    }
+    .pres-cand-vice {
+        font-size: 0.82rem;
+        color: #cbd5e1;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    .pres-cand-pct {
+        font-size: 4.2rem;
+        font-weight: 900;
+        line-height: 1;
+        text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+    }
+    .pres-cand-votes {
+        font-size: 1rem;
+        color: #94a3b8;
+        font-weight: 600;
+        margin-top: 4px;
+    }
+
+    /* MAPA VETORIAL CENTRAL */
+    .pres-map-wrapper {
+        flex: 1;
+        height: 100%;
+        max-height: 520px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+    .pres-map-wrapper svg {
+        width: 100%;
+        height: 100%;
+        filter: drop-shadow(0px 15px 30px rgba(0,0,0,0.8));
+    }
+
+    /* RODAPÉ COM DEMAIS CANDIDATOS */
+    .pres-bottom-bar {
+        height: 110px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 60px;
+        z-index: 10;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        padding-top: 10px;
+    }
+    .pres-bottom-cand {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    .pres-bottom-party-logo {
+        height: 26px;
+        width: auto;
+        object-fit: contain;
+        margin-bottom: 4px;
+        filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6));
+    }
+    .pres-bottom-name {
+        font-size: 1.2rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+    }
+    .pres-bottom-pct {
+        font-size: 2rem;
+        font-weight: 900;
+        text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+    }
+
+    /* LOADER */
+    #loader {
+        position: fixed; inset: 0;
+        background: #060a12;
+        z-index: 100000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+    }
+    #loader.hidden { display: none; }
+    .spinner {
+        width: 48px; height: 48px;
+        border: 4px solid rgba(255,255,255,0.1);
+        border-left-color: #3b82f6;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div id="loader">
+    <div class="spinner"></div>
+    <h3 id="loaderMsg" style="font-weight: 700;">Carregando Transmissão de TV...</h3>
+</div>
+
+<!-- CONTROLES DA TRANSMISSÃO -->
+<div class="controls-top">
+    <button class="btn-pres" onclick="document.getElementById('jsonFileInput').click()">
+        <i class="fas fa-file-import"></i> Carregar .JSON
+    </button>
+    <input type="file" id="jsonFileInput" style="display:none" onchange="presApp.importJSON(this)" accept=".json">
+
+    <select id="slideSelect" class="select-slide" onchange="presApp.goToSlide(parseInt(this.value))"></select>
+
+    <button class="btn-pres" onclick="presApp.toggleAutoplay()" id="btnAutoplay">
+        <i class="fas fa-play" id="iconAutoplay"></i> Auto
+    </button>
+
+    <button class="btn-pres" onclick="presApp.downloadPNG()" title="Baixar PNG do Slide">
+        <i class="fas fa-camera"></i> PNG
+    </button>
+
+    <button class="btn-pres" onclick="presApp.toggleFullscreen()">
+        <i class="fas fa-expand"></i>
+    </button>
+</div>
+
+<!-- NAVEGAÇÃO LATERAL POR CLIQUES -->
+<div class="nav-zone left" onclick="presApp.prevSlide()"><i class="fas fa-chevron-left"></i></div>
+<div class="nav-zone right" onclick="presApp.nextSlide()"><i class="fas fa-chevron-right"></i></div>
+
+<!-- PALCO DA APRESENTAÇÃO DE TV -->
+<div id="presStage">
+    <div class="pres-header">
+        <div class="pres-region-title" id="presRegionTitle">BRASIL</div>
+        <div class="pres-year-box">
+            <div class="pres-year-text" id="presYearText">2026</div>
+            <div class="pres-turn-text" id="presTurnText">no 1º turno</div>
+        </div>
+        <div style="width: 200px;"></div>
+    </div>
+
+    <div class="pres-main-content">
+        <div class="pres-cand-card" id="presCandCard1"></div>
+        <div class="pres-map-wrapper" id="presMapWrapper"></div>
+        <div class="pres-cand-card" id="presCandCard2"></div>
+    </div>
+
+    <div class="pres-bottom-bar" id="presBottomBar"></div>
+</div>
+
+<script>
+// --- ESTADOS DO BRASIL ---
+const STATES = [
+    {sigla:'AC', nome:'Acre', id:'12'}, {sigla:'AL', nome:'Alagoas', id:'27'}, {sigla:'AP', nome:'Amapá', id:'16'},
+    {sigla:'AM', nome:'Amazonas', id:'13'}, {sigla:'BA', nome:'Bahia', id:'29'}, {sigla:'CE', nome:'Ceará', id:'23'},
+    {sigla:'DF', nome:'Distrito Federal', id:'53'}, {sigla:'ES', nome:'Espírito Santo', id:'32'}, {sigla:'GO', nome:'Goiás', id:'52'},
+    {sigla:'MA', nome:'Maranhão', id:'21'}, {sigla:'MT', nome:'Mato Grosso', id:'51'}, {sigla:'MS', nome:'Mato Grosso do Sul', id:'50'},
+    {sigla:'MG', nome:'Minas Gerais', id:'31'}, {sigla:'PA', nome:'Pará', id:'15'}, {sigla:'PB', nome:'Paraíba', id:'25'},
+    {sigla:'PR', nome:'Paraná', id:'41'}, {sigla:'PE', nome:'Pernambuco', id:'26'}, {sigla:'PI', nome:'Piauí', id:'22'},
+    {sigla:'RJ', nome:'Rio de Janeiro', id:'33'}, {sigla:'RN', nome:'Rio Grande do Norte', id:'24'}, {sigla:'RS', nome:'Rio Grande do Sul', id:'43'},
+    {sigla:'RO', nome:'Rondônia', id:'11'}, {sigla:'RR', nome:'Roraima', id:'14'}, {sigla:'SC', nome:'Santa Catarina', id:'42'},
+    {sigla:'SP', nome:'São Paulo', id:'35'}, {sigla:'SE', nome:'Sergipe', id:'28'}, {sigla:'TO', nome:'Tocantins', id:'17'}
+];
+
+// --- FOTOS E LOGOS OFICIAIS ---
+const REMOTE_PARTY_LOGOS = {
+    'PT': 'https://mroctoz.github.io/EleicoesViewTEST/data/PT.png',
+    'PL': 'https://mroctoz.github.io/EleicoesViewTEST/data/PL.png',
+    'PSD': 'https://mroctoz.github.io/EleicoesViewTEST/data/PSD.png',
+    'MISSÃO': 'https://mroctoz.github.io/EleicoesViewTEST/data/MISS%C3%83O.png',
+    'NOVO': 'https://mroctoz.github.io/EleicoesViewTEST/data/NOVO.png',
+    'PDT': 'https://mroctoz.github.io/EleicoesViewTEST/data/PDT.png',
+    'PSDB': 'https://mroctoz.github.io/EleicoesViewTEST/data/PSDB.png',
+    'DC': 'https://mroctoz.github.io/EleicoesViewTEST/data/DC.png',
+    'MOBILIZA': 'https://mroctoz.github.io/EleicoesViewTEST/data/MOBILIZA.png',
+    'AVANTE': 'https://mroctoz.github.io/EleicoesViewTEST/data/AVANTE.png',
+    'MDB': 'https://mroctoz.github.io/EleicoesViewTEST/data/MDB.png'
+};
+
+const LOCAL_PARTY_LOGOS = {
+    'PT': 'data/PT.png', 'PL': 'data/PL.png', 'PSD': 'data/PSD.png',
+    'MISSÃO': 'data/MISSÃO.png', 'NOVO': 'data/NOVO.png', 'PDT': 'data/PDT.png',
+    'PSDB': 'data/PSDB.png', 'DC': 'data/DC.png', 'MOBILIZA': 'data/MOBILIZA.png',
+    'AVANTE': 'data/AVANTE.png', 'MDB': 'data/MDB.png'
+};
+
+const REMOTE_PHOTOS = {
+    'LULA': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Lula_-_foto_oficial_05_jan_2023_%28cropped%29.jpg/400px-Lula_-_foto_oficial_05_jan_2023_%28cropped%29.jpg',
+    'FLAVIO': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Senador_Fl%C3%A1vio_Bolsonaro.jpg/400px-Senador_Fl%C3%A1vio_Bolsonaro.jpg',
+    'RENAN': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Renan_Santos_em_2021.jpg/400px-Renan_Santos_em_2021.jpg',
+    'CAIADO': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Ronaldo_Caiado_em_2023.jpg/400px-Ronaldo_Caiado_em_2023.jpg',
+    'ZEMA': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Romeu_Zema_em_2023.jpg/400px-Romeu_Zema_em_2023.jpg',
+    'AÉCIO': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/A%C3%A9cio_Neves.jpg/400px-A%C3%A9cio_Neves.jpg',
+    'JOAQUIM': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Joaquim_Barbosa_13112012.jpg/400px-Joaquim_Barbosa_13112012.jpg',
+    'ALDO': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Aldo_Rebelo_2015.jpg/400px-Aldo_Rebelo_2015.jpg',
+    'DACIOLO': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Cabo_Daciolo_em_2018.jpg/400px-Cabo_Daciolo_em_2018.jpg',
+    'CURY': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Augusto_Cury_em_2018.jpg/400px-Augusto_Cury_em_2018.jpg'
+};
+
+const LOCAL_PHOTOS = {
+    'LULA': 'data/lula.jpg', 'FLAVIO': 'data/flavio.jpg', 'RENAN': 'data/renan.jpg',
+    'CAIADO': 'data/caiado.jpg', 'ZEMA': 'data/zema.jpg', 'AÉCIO': 'data/aecio.jpg',
+    'JOAQUIM': 'data/joaquim.jpg', 'ALDO': 'data/aldo.jpg', 'DACIOLO': 'data/daciolo.jpg',
+    'CURY': 'data/cury.jpg'
+};
+
+const VICES_MAP = {
+    'LULA': 'Geraldo Alckmin (PSB)',
+    'FLAVIO': 'Braga Netto (PL)',
+    'RENAN': 'Kim Kataguiri (MISSÃO)',
+    'CAIADO': 'Eduardo Leite (PSD)',
+    'ZEMA': 'Marcel van Hattem (NOVO)',
+    'CURY': 'Vice a Definir (AVANTE)',
+    'OUTROS': 'A Definir'
+};
+
+const CONFIG = {
+    candidates: [
+        { id: 'LULA', name: 'Lula', party: 'PT', color: '#de0000' },
+        { id: 'FLAVIO', name: 'Flávio Bolsonaro', party: 'PL', color: '#3632b6' },
+        { id: 'RENAN', name: 'Renan Santos', party: 'MISSÃO', color: '#f6ae08' },
+        { id: 'CAIADO', name: 'Ronaldo Caiado', party: 'PSD', color: '#17a7e9' },
+        { id: 'ZEMA', name: 'Romeu Zema', party: 'NOVO', color: '#F58220' },
+        { id: 'AÉCIO', name: 'Aécio Neves', party: 'PSDB', color: '#4169E1' },
+        { id: 'JOAQUIM', name: 'Joaquim Barbosa', party: 'DC', color: '#363bc7' },
+        { id: 'ALDO', name: 'Aldo Rebelo', party: 'DC', color: '#E67E22' },
+        { id: 'DACIOLO', name: 'Cabo Daciolo', party: 'MOBILIZA', color: '#E74C3C' },
+        { id: 'CURY', name: 'Augusto Cury', party: 'AVANTE', color: '#2EBF98' },
+        { id: 'OUTROS', name: 'Outros', party: 'OUTROS', color: '#8b5cf6' }
+    ],
+    scheme: [
+        { min: 0,   mix: '#ffffff', ratio: 0.88 }, { min: 20,  mix: '#ffffff', ratio: 0.82 },
+        { min: 25,  mix: '#ffffff', ratio: 0.72 }, { min: 30,  mix: '#ffffff', ratio: 0.62 },
+        { min: 35,  mix: '#ffffff', ratio: 0.52 }, { min: 40,  mix: '#ffffff', ratio: 0.40 },
+        { min: 45,  mix: '#ffffff', ratio: 0.26 }, { min: 50,  mix: '#ffffff', ratio: 0.10 },
+        { min: 55,  mix: '#000000', ratio: 0.08 }, { min: 60,  mix: '#000000', ratio: 0.20 },
+        { min: 65,  mix: '#000000', ratio: 0.32 }, { min: 70,  mix: '#000000', ratio: 0.44 },
+        { min: 75,  mix: '#000000', ratio: 0.56 }, { min: 80,  mix: '#000000', ratio: 0.68 },
+        { min: 85,  mix: '#000000', ratio: 0.78 }, { min: 90,  mix: '#000000', ratio: 0.86 },
+        { min: 95,  mix: '#000000', ratio: 0.92 }, { min: 100, mix: '#000000', ratio: 0.97 }
+    ]
+};
+
+// --- ESTRUTURA DO APLICATIVO DA APRESENTAÇÃO ---
+const presApp = {
+    slides: [],
+    currentIndex: 0,
+    autoplayTimer: null,
+    isAutoplay: false,
+    data: { base22: null, round1: null, round2: null, geoJson: null, brazilGeoJson: null },
+    state: { turn: 1, scenarioConfig: null },
+
+    init: async () => {
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') presApp.nextSlide();
+            if (e.key === 'ArrowLeft') presApp.prevSlide();
+        });
+
+        await presApp.loadGeoData();
+    },
+
+    loadGeoData: async () => {
+        const loader = document.getElementById('loader');
+        try {
+            const r1 = await fetch('https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson');
+            presApp.data.brazilGeoJson = await r1.json();
+
+            const r2 = await fetch('https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-100-mun.json');
+            presApp.data.geoJson = await r2.json();
+
+            const r3 = await fetch('data/2022_president.json');
+            const b22 = await r3.json();
+            presApp.data.base22 = b22['1'];
+
+            // Tenta carregar o último cenário padrão
+            presApp.runSimulation();
+            presApp.buildSlides();
+        } catch(e) {
+            console.warn(e);
+            alert("Aviso: Dados eleitorais base sendo simulados.");
+        } finally {
+            loader.classList.add('hidden');
+        }
+    },
+
+    importJSON: (input) => {
+        const file = input.files[0]; if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                presApp.state.scenarioConfig = JSON.parse(e.target.result);
+                presApp.runSimulation();
+                presApp.buildSlides();
+                alert("Cenário importado com sucesso para a Apresentação!");
+            } catch(err) { alert("Erro ao carregar arquivo JSON: " + err.message); }
+        };
+        reader.readAsText(file); input.value = '';
+    },
+
+    runSimulation: () => {
+        if(!presApp.data.base22) return;
+        const conf = presApp.state.scenarioConfig || {};
+        const activeIds = conf.active_candidates ? Object.keys(conf.active_candidates).filter(k => conf.active_candidates[k]) : CONFIG.candidates.map(c=>c.id);
+        const polls = conf.t1_polls || { "LULA": 45.82, "FLAVIO": 36.53, "RENAN": 7.96, "CAIADO": 3.16, "ZEMA": 2.86, "CURY": 1.63, "OUTROS": 2.04 };
+        
+        const rawTotal = activeIds.reduce((s, id) => s + (polls[id]||0), 0) || 1;
+        const targetPcts = {}; activeIds.forEach(id => targetPcts[id] = (polls[id]||0) / rawTotal);
+
+        const base = presApp.data.base22.municipios;
+        const res = { municipios: {}, estados: {}, nacional: {} };
+        let tempNacional = {}, grandTotal = 0;
+
+        for(let ibge in base) {
+            const votes22 = base[ibge], ufId = ibge.substring(0,2), mVotes = {};
+            activeIds.forEach(cid => {
+                let sum = (votes22.LULA||0)*0.5 + (votes22.JAIR||0)*0.5;
+                if(cid === 'LULA') sum = (votes22.LULA||0) * 0.9;
+                if(cid === 'FLAVIO') sum = (votes22.JAIR||0) * 0.85;
+                mVotes[cid] = sum; tempNacional[cid] = (tempNacional[cid]||0) + sum; grandTotal += sum;
+            });
+            res.municipios[ibge] = mVotes;
+        }
+
+        const corrections = {}; activeIds.forEach(id => { const currPct = tempNacional[id] / (grandTotal||1); corrections[id] = (currPct > 0) ? targetPcts[id]/currPct : 1; });
+        for(let ibge in res.municipios) {
+            const ufId = ibge.substring(0,2); if(!res.estados[ufId]) res.estados[ufId] = {};
+            for(let cid in res.municipios[ibge]) {
+                let v = Math.round(res.municipios[ibge][cid] * corrections[cid]);
+                res.municipios[ibge][cid] = v;
+                res.estados[ufId][cid] = (res.estados[ufId][cid]||0) + v;
+                res.nacional[cid] = (res.nacional[cid]||0) + v;
+            }
+        }
+        presApp.data.round1 = res;
+    },
+
+    buildSlides: () => {
+        presApp.slides = [];
+        // Slides 0 a 26: Estados em ordem alfabética
+        STATES.forEach(s => presApp.slides.push({ id: s.id, name: s.nome, type: 'estado' }));
+        // Slide 27 (Final): BRASIL Nacional
+        presApp.slides.push({ id: 'BR', name: 'BRASIL', type: 'nacional' });
+
+        const select = document.getElementById('slideSelect'); select.innerHTML = '';
+        presApp.slides.forEach((s, idx) => {
+            const opt = document.createElement('option'); opt.value = idx;
+            opt.textContent = `${idx + 1}. ${s.name}`;
+            select.appendChild(opt);
+        });
+
+        presApp.currentIndex = 0;
+        presApp.renderSlide();
+    },
+
+    renderSlide: () => {
+        const slide = presApp.slides[presApp.currentIndex]; if(!slide) return;
+        document.getElementById('slideSelect').value = presApp.currentIndex;
+
+        document.getElementById('presRegionTitle').innerText = slide.name;
+        document.getElementById('presYearText').innerText = "2026";
+        document.getElementById('presTurnText').innerText = `no ${presApp.state.turn}º turno`;
+
+        const dataset = presApp.data.round1; if(!dataset) return;
+        let votes = slide.type === 'nacional' ? dataset.nacional : (dataset.estados[slide.id] || {});
+        const sorted = Object.entries(votes).sort((a,b) => b[1] - a[1]);
+        const total = sorted.reduce((a,b) => a+b[1], 0);
+
+        presApp.renderCandCard('presCandCard1', sorted[0], total);
+        presApp.renderCandCard('presCandCard2', sorted[1], total);
+
+        const bottomBar = document.getElementById('presBottomBar'); bottomBar.innerHTML = '';
+        for(let i=2; i < Math.min(sorted.length, 6); i++) {
+            presApp.renderBottomCand(bottomBar, sorted[i], total);
+        }
+
+        presApp.drawVectorMap(slide);
+    },
+
+    renderCandCard: (elId, data, total) => {
+        const card = document.getElementById(elId); if(!data) { card.innerHTML = ''; return; }
+        const cand = CONFIG.candidates.find(c => c.id === data[0]) || { name: data[0], party: 'OUTROS', color: '#8b5cf6' };
+        const pct = total > 0 ? (data[1]/total)*100 : 0;
+        const photoUrl = LOCAL_PHOTOS[cand.id] || REMOTE_PHOTOS[cand.id] || presApp.getAvatarSvg(cand.id);
+        const partyLogoUrl = LOCAL_PARTY_LOGOS[cand.party] || REMOTE_PARTY_LOGOS[cand.party];
+        const viceName = VICES_MAP[cand.id] || 'Vice a Definir';
+
+        card.innerHTML = `
+            <div class="pres-photo-frame">
+                <img src="${photoUrl}" class="pres-photo-img" onerror="this.src=REMOTE_PHOTOS['${cand.id}'] || presApp.getAvatarSvg('${cand.id}')">
+                <div class="pres-party-badge">
+                    <img src="${partyLogoUrl}" onerror="this.style.display='none'; this.parentElement.innerText='${cand.party}'">
+                </div>
+            </div>
+            <div class="pres-cand-name">• ${cand.name}</div>
+            <div class="pres-cand-vice">Vice: ${viceName}</div>
+            <div class="pres-cand-pct" style="color:${cand.color}">${pct.toFixed(2).replace('.',',')}%</div>
+            <div class="pres-cand-votes">Votos: ${data[1].toLocaleString('pt-BR')}</div>
+        `;
+    },
+
+    renderBottomCand: (container, data, total) => {
+        if(!data) return;
+        const cand = CONFIG.candidates.find(c => c.id === data[0]) || { name: data[0], party: 'OUTROS', color: '#8b5cf6' };
+        const pct = total > 0 ? (data[1]/total)*100 : 0;
+        const partyLogoUrl = LOCAL_PARTY_LOGOS[cand.party] || REMOTE_PARTY_LOGOS[cand.party];
+
+        const div = document.createElement('div'); div.className = 'pres-bottom-cand';
+        div.innerHTML = `
+            <img src="${partyLogoUrl}" class="pres-bottom-party-logo" onerror="this.style.display='none'">
+            <div class="pres-bottom-name">• ${cand.name.split(' ')[0]}</div>
+            <div class="pres-bottom-pct" style="color:${cand.color}">${pct.toFixed(2).replace('.',',')}%</div>
+        `;
+        container.appendChild(div);
+    },
+
+    drawVectorMap: (slide) => {
+        const container = document.getElementById('presMapWrapper'); let features = []; let scope = '';
+        if(slide.type === 'nacional') {
+            if(!presApp.data.brazilGeoJson) return;
+            features = presApp.data.brazilGeoJson.features; scope = 'estados';
+        } else {
+            if(!presApp.data.geoJson) return;
+            features = presApp.data.geoJson.features.filter(f => {
+                const id = f.properties.id || f.properties.codarea || f.properties.CD_MUN;
+                return id && id.toString().startsWith(slide.id);
+            });
+            scope = 'municipios';
+        }
+
+        if(features.length === 0) { container.innerHTML = ''; return; }
+
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        features.forEach(f => {
+            const scan = (coords) => {
+                coords.forEach(pt => {
+                    if(typeof pt[0]==='number') {
+                        if(pt[0]<minX) minX=pt[0]; if(pt[0]>maxX) maxX=pt[0];
+                        if(pt[1]<minY) minY=pt[1]; if(pt[1]>maxY) maxY=pt[1];
+                    } else scan(pt);
+                });
+            };
+            if(f.geometry && f.geometry.coordinates) scan(f.geometry.coordinates);
+        });
+
+        const w = 800; const lonD = maxX - minX || 1; const latD = maxY - minY || 1;
+        const h = Math.max(400, Math.min(700, w * (latD / lonD)));
+        const proj = (x,y) => [(x-minX)*(w/lonD), (maxY-y)*(h/latD)];
+
+        let svgPaths = '';
+        const dataset = presApp.data.round1;
+
+        features.forEach(f => {
+            const id = f.properties.id || f.properties.codarea || f.properties.CD_MUN;
+            let votes = scope === 'estados' ? dataset.estados[id] : dataset.municipios[id];
+            let col = '#333';
+            if(votes) {
+                const sorted = Object.entries(votes).sort((a,b)=>b[1]-a[1]);
+                const total = sorted.reduce((a,b)=>a+b[1],0);
+                const winner = CONFIG.candidates.find(c=>c.id===sorted[0][0]);
+                const pct = total > 0 ? (sorted[0][1]/total)*100 : 0;
+                col = presApp.getDiscreteColor(winner ? winner.color : '#555', pct);
+            }
+
+            let d = '';
+            const draw = (r) => {
+                let p=''; r.forEach((pt,i)=>{ const[px,py]=proj(pt[0],pt[1]); p+=(i===0?'M':'L')+px.toFixed(1)+','+py.toFixed(1); });
+                return p+'Z ';
+            };
+            if(f.geometry.type==='Polygon') f.geometry.coordinates.forEach(r=>d+=draw(r));
+            else if(f.geometry.type==='MultiPolygon') f.geometry.coordinates.forEach(p=>p.forEach(r=>d+=draw(r)));
+
+            svgPaths += `<path d="${d}" fill="${col}" stroke="rgba(255,255,255,0.4)" stroke-width="${scope==='estados'? 1.2 : 0.4}"/>`;
+        });
+
+        container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">${svgPaths}</svg>`;
+    },
+
+    getDiscreteColor: (hex, pct) => {
+        let config = CONFIG.scheme[0];
+        for (let i = 0; i < CONFIG.scheme.length; i++) if (pct >= CONFIG.scheme[i].min) config = CONFIG.scheme[i];
+        return presApp.mixColor(hex, config.mix, config.ratio);
+    },
+    mixColor: (hex1, hex2, amount) => {
+        const c1 = presApp.hexToRgb(hex1), c2 = presApp.hexToRgb(hex2);
+        return `rgb(${Math.round(c1.r + (c2.r - c1.r) * amount)}, ${Math.round(c1.g + (c2.g - c1.g) * amount)}, ${Math.round(c1.b + (c2.b - c1.b) * amount)})`;
+    },
+    hexToRgb: (hex) => {
+        let c = hex.substring(1).split('');
+        if(c.length==3) c= [c[0], c[0], c[1], c[1], c[2], c[2]];
+        c = '0x'+c.join('');
+        return { r: (c>>16)&255, g: (c>>8)&255, b: c&255 };
+    },
+
+    getAvatarSvg: (id) => {
+        const cand = CONFIG.candidates.find(c => c.id === id);
+        const color = cand ? cand.color : '#8b5cf6';
+        const initials = id.substring(0,2).toUpperCase();
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="${color}"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="#fff" font-weight="900" font-size="40">${initials}</text></svg>`;
+        return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+    },
+
+    goToSlide: (idx) => { presApp.currentIndex = idx; presApp.renderSlide(); },
+    prevSlide: () => { presApp.currentIndex = presApp.currentIndex > 0 ? presApp.currentIndex - 1 : presApp.slides.length - 1; presApp.renderSlide(); },
+    nextSlide: () => { presApp.currentIndex = presApp.currentIndex < presApp.slides.length - 1 ? presApp.currentIndex + 1 : 0; presApp.renderSlide(); },
+
+    toggleAutoplay: () => {
+        const btn = document.getElementById('btnAutoplay');
+        const icon = document.getElementById('iconAutoplay');
+        if (presApp.isAutoplay) {
+            clearInterval(presApp.autoplayTimer);
+            presApp.isAutoplay = false;
+            btn.style.background = 'rgba(255,255,255,0.1)';
+            icon.className = 'fas fa-play';
+        } else {
+            presApp.isAutoplay = true;
+            btn.style.background = '#10b981';
+            icon.className = 'fas fa-pause';
+            presApp.autoplayTimer = setInterval(() => { presApp.nextSlide(); }, 4000);
+        }
+    },
+
+    toggleFullscreen: () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+        } else {
+            if (document.exitFullscreen) document.exitFullscreen();
+        }
+    },
+
+    downloadPNG: async () => {
+        const stage = document.getElementById('presStage');
+        document.body.style.cursor = 'wait';
+        try {
+            const canvas = await html2canvas(stage, { useCORS: true, scale: 2, backgroundColor: '#060a12' });
+            const slideName = presApp.slides[presApp.currentIndex].name;
+            canvas.toBlob((blob) => { saveAs(blob, `Slide_TV_${slideName}_2026.png`); });
+        } catch(e) { alert("Erro ao capturar imagem do slide."); } finally { document.body.style.cursor = 'default'; }
+    }
+};
+
+document.addEventListener('DOMContentLoaded', presApp.init);
+</script>
+</body>
+</html>
