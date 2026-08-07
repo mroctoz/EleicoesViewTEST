@@ -1,5 +1,5 @@
 /* ==========================================================================
-   ELEIÇÕES VIEW 2026 - REATOR DE SIMULAÇÃO COM MATEMÁTICA CONSISTENTE (BOTTOM-UP)
+   ELEIÇÕES VIEW 2026 - LÓGICA ELEITORAL E SINCRO DE ZONAS ELEITORAIS
    ========================================================================== */
 
 // --- ESTADOS DO BRASIL ---
@@ -1554,8 +1554,8 @@ const app = {
             }
         }
 
+        const corrections = {};
         if (unadjustedTotal > 0) {
-            const corrections = {};
             activeIds.forEach(id => {
                 const currPct = unadjustedNacional[id] / (unadjustedTotal||1);
                 corrections[id] = (currPct > 0) ? targetPcts[id]/currPct : 1;
@@ -1586,9 +1586,14 @@ const app = {
             }
         }
         
+        // PASSO 7: CÁLCULO E CORREÇÃO RIGOROSA DAS ZONAS ELEITORAIS (SINCRO COM CANDIDATOS ZERADOS/INATIVOS)
         if (app.data.base22.zonas) {
             for(let zId in app.data.base22.zonas) {
-                const votes22 = app.data.base22.zonas[zId], ufId = String(zId).substring(0,2), zVotes = {};
+                const votes22 = app.data.base22.zonas[zId];
+                const ibge = zId.split('_')[0];
+                const ufId = ibge.substring(0,2);
+                const zVotes = {};
+
                 activeIds.forEach(candId => {
                     let sum = 0; 
                     src2022Keys.forEach(srcKey => {
@@ -1597,9 +1602,51 @@ const app = {
                         let finalFactor = totalActiveWeight > 0 ? rawVal / totalActiveWeight : 0;
                         sum += (votes22[srcKey] || 0) * finalFactor;
                     });
+
                     if(app.state.t1_mults[ufId] && app.state.t1_mults[ufId][candId]) sum *= app.state.t1_mults[ufId][candId];
-                    zVotes[candId] = Math.round(sum);
+                    if(app.state.t1_mun_mults && app.state.t1_mun_mults[ibge] && app.state.t1_mun_mults[ibge][candId]) sum *= app.state.t1_mun_mults[ibge][candId];
+
+                    zVotes[candId] = sum;
                 });
+
+                // Aplica ajuste municipal na zona se houver
+                if (app.state.t1_mun_polls && app.state.t1_mun_polls[ibge]) {
+                    const munPolls = app.state.t1_mun_polls[ibge];
+                    const munSumPcts = activeIds.reduce((a, cid) => a + (munPolls[cid] !== undefined ? munPolls[cid] : (app.state.t1_polls[cid]||0)), 0) || 1;
+                    const totalZoneVotes = activeIds.reduce((a, cid) => a + zVotes[cid], 0) || 1;
+                    activeIds.forEach(candId => {
+                        const targetPct = (munPolls[candId] !== undefined ? munPolls[candId] : (app.state.t1_polls[candId]||0)) / munSumPcts;
+                        zVotes[candId] = totalZoneVotes * targetPct;
+                    });
+                }
+
+                // Aplica ajuste estadual na zona se houver
+                if (app.state.t1_state_polls && app.state.t1_state_polls[ufId]) {
+                    const statePolls = app.state.t1_state_polls[ufId];
+                    const stateSumPcts = activeIds.reduce((a, cid) => a + (statePolls[cid] !== undefined ? statePolls[cid] : (app.state.t1_polls[cid]||0)), 0) || 1;
+                    const totalStateVotes = activeIds.reduce((a, cid) => a + (res.estados[ufId][cid]||0), 0) || 1;
+
+                    activeIds.forEach(candId => {
+                        const targetPct = (statePolls[candId] !== undefined ? statePolls[candId] : (app.state.t1_polls[candId]||0)) / stateSumPcts;
+                        const targetVotes = totalStateVotes * targetPct;
+                        const currentVotes = res.estados[ufId][candId] || 1;
+                        const scale = targetVotes / currentVotes;
+                        zVotes[candId] *= scale;
+                    });
+                }
+
+                // ZERA COMPLETAMENTE O CANDIDATO SE SUA INTENÇÃO DE VOTO FOR 0 OU ELE ESTIVER INATIVO
+                for(let cid in zVotes) {
+                    if (targetPcts[cid] === 0 || app.state.t1_polls[cid] === 0 || app.state.active_candidates[cid] === false) {
+                        zVotes[cid] = 0;
+                    } else {
+                        const isCustomState = app.state.t1_state_polls && app.state.t1_state_polls[ufId];
+                        const isCustomMun = app.state.t1_mun_polls && app.state.t1_mun_polls[ibge];
+                        const corrFactor = (!isCustomState && !isCustomMun && corrections[cid] !== undefined) ? corrections[cid] : 1;
+                        zVotes[cid] = Math.round(zVotes[cid] * corrFactor);
+                    }
+                }
+
                 res.zonas[zId] = zVotes;
             }
         }
