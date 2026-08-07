@@ -1,5 +1,5 @@
 /* ==========================================================================
-   ELEIÇÕES VIEW 2026 - LÓGICA, DRILLDOWN DO MAPA E POP-UP COM RESULTADOS ATUAIS
+   ELEIÇÕES VIEW 2026 - REATOR DE SIMULAÇÃO COM MATEMÁTICA CONSISTENTE (BOTTOM-UP)
    ========================================================================== */
 
 // --- ESTADOS DO BRASIL ---
@@ -449,7 +449,7 @@ const app = {
         return String(p.CD_UF || (STATES.find(x => x.sigla === p.sigla)||{}).id || p.id || '');
     },
 
-    // PRESERVAÇÃO TOTAL DO NAVEGADOR DO MAPA (DRILLDOWN PARA MUNICÍPIOS)
+    // PRESERVAÇÃO TOTAL DO DRILLDOWN DO MAPA (ZOOM EM MUNICÍPIOS AO CLICAR EM ESTADOS)
     loadBrazilLayer: async () => {
         if(app.layers.brazil) {
             if(!app.map.hasLayer(app.layers.brazil)) app.layers.brazil.addTo(app.map);
@@ -687,7 +687,7 @@ const app = {
                         <div>
                             <div style="color:${winnerCand.color}; font-weight:800">${winnerCand.name}</div>
                             <div style="font-weight:900;">${pct.toFixed(2)}% dos votos válidos</div>
-                            <div style="font-size:0.65rem; color:var(--accent-blue); margin-top:2px;"><i class="fas fa-mouse-pointer"></i> Clique para expandir / editar</div>
+                            <div style="font-size:0.65rem; color:var(--accent-blue); margin-top:2px;"><i class="fas fa-mouse-pointer"></i> Clique para ver município/região</div>
                         </div>
                     </div>
                 </div>
@@ -935,8 +935,8 @@ const app = {
         if(window.innerWidth <= 768) app.mobileNav('results');
         app.updateSidebarRight();
     },
-    
-    // POP-UP / MODAL DE EDIÇÃO DIRETA COM EXIBIÇÃO DO RESULTADO ATUAL DA REGIÃO
+
+    // POP-UP / MODAL DE EDIÇÃO DIRETA INICIALIZADO COM O RESULTADO REAL ATUAL DA REGIÃO
     openLocalEditorModal: (id, name, scope) => {
         const isState = scope === 'estados' || id.length === 2;
         const activeCands = CONFIG.candidates.filter(c => app.state.active_candidates[c.id] !== false);
@@ -953,7 +953,7 @@ const app = {
         const sortedVotes = Object.entries(votes).sort((a,b)=>b[1]-a[1]);
         const localTotalValid = sortedVotes.reduce((a,b)=>a+b[1], 0);
 
-        // Pega valores locais salvos (ou padrão nacional)
+        // Pega valores locais salvos (OU INICIALIZA COM O RESULTADO REAL ATUAL DA REGIÃO, NÃO COM O NACIONAL)
         const pollsStore = isState ? app.state.t1_state_polls : app.state.t1_mun_polls;
         const absStore = isState ? app.state.t1_state_abstention : app.state.t1_mun_abstention;
         const nullsStore = isState ? app.state.t1_state_nulls : app.state.t1_mun_nulls;
@@ -1052,7 +1052,16 @@ const app = {
         `;
 
         activeCands.forEach(cand => {
-            const localVal = (pollsStore && pollsStore[id] && pollsStore[id][cand.id] !== undefined) ? pollsStore[id][cand.id] : (app.state.t1_polls[cand.id] || 0.00);
+            // Se já existir valor salvo, usa ele. Se não, usa a porcentagem REAL atual calculada na região (NÃO O NACIONAL)
+            let localVal = 0.00;
+            if (pollsStore && pollsStore[id] && pollsStore[id][cand.id] !== undefined) {
+                localVal = pollsStore[id][cand.id];
+            } else if (localTotalValid > 0 && votes[cand.id] !== undefined) {
+                localVal = (votes[cand.id] / localTotalValid) * 100;
+            } else {
+                localVal = app.state.t1_polls[cand.id] || 0.00;
+            }
+
             const photoUrl = LOCAL_PHOTOS[cand.id];
 
             html += `
@@ -1174,7 +1183,7 @@ const app = {
         app.runSimulation();
     },
 
-    // ATUALIZAÇÃO DO PAINEL DIREITO COM BOTÃO DE EDIÇÃO DIRETA DA REGIÃO
+    // ATUALIZAÇÃO DO PAINEL DIREITO COM BOTÃO DE EDIÇÃO E SOMA NACIONAL REAL
     updateSidebarRight: () => {
         const title = document.getElementById('regionName'), sub = document.getElementById('regionType'), list = document.getElementById('resultsContainer');
         title.innerText = app.state.selectedName;
@@ -1186,7 +1195,7 @@ const app = {
             const editBtn = document.createElement('button');
             editBtn.className = 'btn-primary';
             editBtn.style.marginBottom = '12px';
-            editBtn.innerHTML = `<i class="fas fa-edit"></i> Editar Porcentagens em ${app.state.selectedName}`;
+            editBtn.innerHTML = `<i class="fas fa-edit"></i> Personalizar Votos em ${app.state.selectedName}`;
             editBtn.onclick = () => app.openLocalEditorModal(app.state.selectedId, app.state.selectedName, app.state.selectedScope);
             list.appendChild(editBtn);
         }
@@ -1451,7 +1460,7 @@ const app = {
         }, 50);
     },
 
-    // CÁLCULO DE 1º TURNO COM % DIRETA POR ESTADO/MUNICÍPIO, MULTIPLICADORES E HERANÇA DE 2022
+    // CÁLCULO DE 1º TURNO: ENGINE ELEITORAL HIERÁRQUICO CONSISTENTE (BOTTOM-UP)
     calculateTurn1: () => {
         const base = app.data.base22.municipios;
         const activeIds = CONFIG.candidates.filter(c => app.state.active_candidates[c.id] !== false).map(c => c.id);
@@ -1459,9 +1468,9 @@ const app = {
         const targetPcts = {}; activeIds.forEach(id => { targetPcts[id] = (app.state.t1_polls[id]||0) / (rawSliderTotal || 1); });
 
         const res = { municipios: {}, estados: {}, nacional: {}, zonas: {} }; 
-        let tempNacional = {}, grandTotal = 0;
         const src2022Keys = SOURCES_2022.map(s => s.id);
         
+        // PASSO 1: CÁLCULO MUNICIPAL BASE (MATRIZ DE HERANÇA + MULTIPLICADORES)
         for(let ibge in base) {
             const votes22 = base[ibge], ufId = ibge.substring(0,2), mVotes = {};
             
@@ -1481,7 +1490,7 @@ const app = {
                 mVotes[candId] = sum;
             });
 
-            // AJUSTE DIRETO POR PORCENTAGEM MUNICIPAL (SE ATIVADO PARA O MUNICÍPIO)
+            // PASSO 2: APLICAÇÃO DE AJUSTE DIRETO POR PORCENTAGEM MUNICIPAL (SE BLOQUEADO/PERSONALIZADO)
             if (app.state.t1_mun_polls && app.state.t1_mun_polls[ibge]) {
                 const munPolls = app.state.t1_mun_polls[ibge];
                 const munSumPcts = activeIds.reduce((a, cid) => a + (munPolls[cid] !== undefined ? munPolls[cid] : (app.state.t1_polls[cid]||0)), 0) || 1;
@@ -1492,14 +1501,10 @@ const app = {
                 });
             }
 
-            for(let cid in mVotes) {
-                tempNacional[cid] = (tempNacional[cid]||0) + mVotes[cid];
-                grandTotal += mVotes[cid];
-            }
             res.municipios[ibge] = mVotes;
         }
 
-        // AGREGAR TOTAIS ESTADUAIS INICIAIS
+        // PASSO 3: AGREGAR TOTAIS ESTADUAIS INICIAIS
         for(let ibge in res.municipios) {
             const ufId = ibge.substring(0,2);
             if(!res.estados[ufId]) res.estados[ufId] = {};
@@ -1508,7 +1513,7 @@ const app = {
             }
         }
 
-        // AJUSTE DIRETO POR PORCENTAGEM ESTADUAL (SE ATIVADO PARA O ESTADO)
+        // PASSO 4: APLICAÇÃO DE AJUSTE DIRETO POR PORCENTAGEM ESTADUAL (SE BLOQUEADO/PERSONALIZADO)
         STATES.forEach(st => {
             const ufId = st.id;
             if (app.state.t1_state_polls && app.state.t1_state_polls[ufId]) {
@@ -1534,36 +1539,50 @@ const app = {
             }
         });
 
-        // RE-AGREGAR TOTAIS
-        res.estados = {}; tempNacional = {}; grandTotal = 0;
+        // PASSO 5: ESCALONAMENTO DE CORREÇÃO PROPORCIONAL DAS REGIÕES NÃO-BLOQUEADAS EM RELAÇÃO À META NACIONAL
+        let unadjustedNacional = {}, unadjustedTotal = 0;
         for(let ibge in res.municipios) {
             const ufId = ibge.substring(0,2);
-            if(!res.estados[ufId]) res.estados[ufId] = {};
-            for(let cid in res.municipios[ibge]) {
-                res.estados[ufId][cid] = (res.estados[ufId][cid]||0) + res.municipios[ibge][cid];
-                tempNacional[cid] = (tempNacional[cid]||0) + res.municipios[ibge][cid];
-                grandTotal += res.municipios[ibge][cid];
+            const isCustomState = app.state.t1_state_polls && app.state.t1_state_polls[ufId];
+            const isCustomMun = app.state.t1_mun_polls && app.state.t1_mun_polls[ibge];
+            
+            if (!isCustomState && !isCustomMun) {
+                for(let cid in res.municipios[ibge]) {
+                    unadjustedNacional[cid] = (unadjustedNacional[cid]||0) + res.municipios[ibge][cid];
+                    unadjustedTotal += res.municipios[ibge][cid];
+                }
             }
         }
 
-        // ESCALONAMENTO DE CORREÇÃO NACIONAL
-        const corrections = {}; activeIds.forEach(id => { const currPct = tempNacional[id] / (grandTotal||1); corrections[id] = (currPct > 0) ? targetPcts[id]/currPct : 1; });
-        res.nacional = {};
-        for(let ibge in res.municipios) {
-            const ufId = ibge.substring(0,2);
-            for(let cid in res.municipios[ibge]) {
-                let v = Math.round(res.municipios[ibge][cid] * corrections[cid]);
-                res.municipios[ibge][cid] = v;
-                res.nacional[cid] = (res.nacional[cid]||0) + v;
+        if (unadjustedTotal > 0) {
+            const corrections = {};
+            activeIds.forEach(id => {
+                const currPct = unadjustedNacional[id] / (unadjustedTotal||1);
+                corrections[id] = (currPct > 0) ? targetPcts[id]/currPct : 1;
+            });
+
+            for(let ibge in res.municipios) {
+                const ufId = ibge.substring(0,2);
+                const isCustomState = app.state.t1_state_polls && app.state.t1_state_polls[ufId];
+                const isCustomMun = app.state.t1_mun_polls && app.state.t1_mun_polls[ibge];
+
+                if (!isCustomState && !isCustomMun) {
+                    for(let cid in res.municipios[ibge]) {
+                        res.municipios[ibge][cid] *= corrections[cid];
+                    }
+                }
             }
         }
 
-        // TOTAIS FINAIS DOS ESTADOS
-        res.estados = {};
+        // PASSO 6: ARREDONDAMENTO FINAL E AGREGAÇÃO EXATA DO BRASIL (SOMA REAL DOS ESTADOS/MUNICÍPIOS)
+        res.estados = {}; res.nacional = {};
         for(let ibge in res.municipios) {
             const ufId = ibge.substring(0,2); if(!res.estados[ufId]) res.estados[ufId] = {};
             for(let cid in res.municipios[ibge]) {
-                res.estados[ufId][cid] = (res.estados[ufId][cid]||0) + res.municipios[ibge][cid];
+                let v = Math.round(res.municipios[ibge][cid]);
+                res.municipios[ibge][cid] = v;
+                res.estados[ufId][cid] = (res.estados[ufId][cid]||0) + v;
+                res.nacional[cid] = (res.nacional[cid]||0) + v;
             }
         }
         
@@ -1579,11 +1598,10 @@ const app = {
                         sum += (votes22[srcKey] || 0) * finalFactor;
                     });
                     if(app.state.t1_mults[ufId] && app.state.t1_mults[ufId][candId]) sum *= app.state.t1_mults[ufId][candId];
-                    zVotes[candId] = sum;
+                    zVotes[candId] = Math.round(sum);
                 });
                 res.zonas[zId] = zVotes;
             }
-            for(let zId in res.zonas) { for(let cid in res.zonas[zId]) { res.zonas[zId][cid] = Math.round(res.zonas[zId][cid] * corrections[cid]); } }
         }
         
         app.data.round1 = res;
