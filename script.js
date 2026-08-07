@@ -1,5 +1,5 @@
 /* ==========================================================================
-   ELEIÇÕES VIEW 2026 - LÓGICA, POP-UP DE EDIÇÃO LOCAL E REATOR ELEITORAL
+   ELEIÇÕES VIEW 2026 - LÓGICA, DRILLDOWN DO MAPA E POP-UP COM RESULTADOS ATUAIS
    ========================================================================== */
 
 // --- ESTADOS DO BRASIL ---
@@ -449,7 +449,7 @@ const app = {
         return String(p.CD_UF || (STATES.find(x => x.sigla === p.sigla)||{}).id || p.id || '');
     },
 
-    // EVENTOS DE CLIQUE PARA ABRIR O POP-UP DE EDIÇÃO DA REGIÃO
+    // PRESERVAÇÃO TOTAL DO NAVEGADOR DO MAPA (DRILLDOWN PARA MUNICÍPIOS)
     loadBrazilLayer: async () => {
         if(app.layers.brazil) {
             if(!app.map.hasLayer(app.layers.brazil)) app.layers.brazil.addTo(app.map);
@@ -461,12 +461,14 @@ const app = {
             style: (f) => app.getStyle(f, 'estados'),
             smoothFactor: 0,
             onEachFeature: (f, l) => {
-                l.on('click', (e) => {
-                    L.DomEvent.stopPropagation(e);
+                l.on('click', () => {
                     const ufId = app.getFeatureId(f, 'estados');
                     const ufName = f.properties.NM_UF || f.properties.name;
-                    app.selectRegion(ufId, ufName, 'estados');
-                    app.openLocalEditorModal(ufId, ufName, 'estados');
+                    if(app.state.view === 'states') {
+                        app.loadStateCities(ufId, ufName);
+                    } else {
+                        app.selectRegion(ufId, ufName, 'estados');
+                    }
                 });
                 app.bindTooltip(l, 'estados');
             }
@@ -490,9 +492,11 @@ const app = {
                 l.on('click', (e) => {
                     L.DomEvent.stopPropagation(e);
                     const cityId = app.getFeatureId(f, 'municipios');
-                    const cityName = f.properties.NM_MUN || f.properties.name;
+                    const cityName = f.properties.NM_MUN||f.properties.name;
+                    if (app.data.zonasGeoJson && app.data.zonasGeoJson.features.some(zf => String(zf.properties.CD_MUN_I) === cityId)) {
+                        app.loadCityZones(cityId, cityName); return;
+                    }
                     app.selectRegion(cityId, cityName, 'municipios');
-                    app.openLocalEditorModal(cityId, cityName, 'municipios');
                 });
                 app.bindTooltip(l, 'municipios');
             }
@@ -521,9 +525,11 @@ const app = {
                 l.on('click', (e) => {
                     L.DomEvent.stopPropagation(e);
                     const cityId = app.getFeatureId(f, 'municipios');
-                    const cityName = f.properties.NM_MUN || f.properties.name;
+                    const cityName = f.properties.NM_MUN||f.properties.name;
+                    if (app.data.zonasGeoJson && app.data.zonasGeoJson.features.some(zf => String(zf.properties.CD_MUN_I) === cityId)) {
+                        app.loadCityZones(cityId, cityName); return;
+                    }
                     app.selectRegion(cityId, cityName, 'municipios');
-                    app.openLocalEditorModal(cityId, cityName, 'municipios');
                 });
                 app.bindTooltip(l, 'municipios');
             }
@@ -549,7 +555,6 @@ const app = {
                     const zoneId = app.getFeatureId(f, 'zonas');
                     const zName = `Zona ${f.properties.ZE_NUM} - ${cityName}`;
                     app.selectRegion(zoneId, zName, 'zonas');
-                    app.openLocalEditorModal(zoneId, zName, 'zonas');
                 });
                 app.bindTooltip(l, 'zonas');
             }
@@ -682,7 +687,7 @@ const app = {
                         <div>
                             <div style="color:${winnerCand.color}; font-weight:800">${winnerCand.name}</div>
                             <div style="font-weight:900;">${pct.toFixed(2)}% dos votos válidos</div>
-                            <div style="font-size:0.65rem; color:var(--text-muted); margin-top:2px;">💡 Clique para ajustar votos desta região</div>
+                            <div style="font-size:0.65rem; color:var(--accent-blue); margin-top:2px;"><i class="fas fa-mouse-pointer"></i> Clique para expandir / editar</div>
                         </div>
                     </div>
                 </div>
@@ -931,12 +936,24 @@ const app = {
         app.updateSidebarRight();
     },
     
-    // POP-UP / MODAL DE EDIÇÃO DIRETA AO CLICAR EM UM MUNICÍPIO OU ESTADO
+    // POP-UP / MODAL DE EDIÇÃO DIRETA COM EXIBIÇÃO DO RESULTADO ATUAL DA REGIÃO
     openLocalEditorModal: (id, name, scope) => {
         const isState = scope === 'estados' || id.length === 2;
         const activeCands = CONFIG.candidates.filter(c => app.state.active_candidates[c.id] !== false);
         
-        // Pega valores atuais (ou o padrão nacional caso a região não tenha sido modificada ainda)
+        // Pega os resultados simulados atuais da região
+        const dataset = app.state.turn === 1 ? app.data.round1 : app.data.round2;
+        let votes = {};
+        if (dataset) {
+            if (scope === 'zonas') votes = dataset.zonas ? dataset.zonas[id] : {};
+            else if (isState) votes = dataset.estados[id] || {};
+            else votes = dataset.municipios[id] || {};
+        }
+
+        const sortedVotes = Object.entries(votes).sort((a,b)=>b[1]-a[1]);
+        const localTotalValid = sortedVotes.reduce((a,b)=>a+b[1], 0);
+
+        // Pega valores locais salvos (ou padrão nacional)
         const pollsStore = isState ? app.state.t1_state_polls : app.state.t1_mun_polls;
         const absStore = isState ? app.state.t1_state_abstention : app.state.t1_mun_abstention;
         const nullsStore = isState ? app.state.t1_state_nulls : app.state.t1_mun_nulls;
@@ -944,10 +961,55 @@ const app = {
         const currentAbs = (absStore && absStore[id] !== undefined) ? absStore[id] : app.state.abstention;
         const currentNulls = (nullsStore && nullsStore[id] !== undefined) ? nullsStore[id] : app.state.null_votes;
 
+        // PARTE 1: CARD DO RESULTADO ATUAL PROJETADO NA REGIÃO
         let html = `
+            <div class="card-subgroup" style="margin-bottom:12px; background:rgba(0,0,0,0.25);">
+                <div style="font-size:0.75rem; font-weight:800; color:var(--accent-blue); text-transform:uppercase; margin-bottom:8px;">
+                    <i class="fas fa-chart-pie"></i> Resultado Atual Projetado (${name})
+                </div>
+        `;
+
+        if (sortedVotes.length > 0 && localTotalValid > 0) {
+            const winnerCand = CONFIG.candidates.find(c => c.id === sortedVotes[0][0]);
+            const winnerPct = (sortedVotes[0][1] / localTotalValid) * 100;
+            const winnerPhoto = LOCAL_PHOTOS[winnerCand.id];
+
+            html += `
+                <div style="display:flex; align-items:center; gap:12px; padding-bottom:8px; border-bottom:1px solid var(--card-border); margin-bottom:8px;">
+                    <img src="${winnerPhoto}" style="width:40px; height:42px; border-radius:50%; object-fit:cover; border:2px solid ${winnerCand.color}" onerror="app.handleImgFallback(this, '${winnerCand.id}')">
+                    <div>
+                        <div style="font-size:0.65rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Líder na Região</div>
+                        <div style="font-size:0.95rem; font-weight:800; color:${winnerCand.color}">${winnerCand.name} (${winnerCand.party})</div>
+                        <div style="font-size:0.85rem; font-weight:900;">${winnerPct.toFixed(2)}% <small style="font-weight:600; color:var(--text-muted);">(${sortedVotes[0][1].toLocaleString('pt-BR')} votos)</small></div>
+                    </div>
+                </div>
+            `;
+
+            sortedVotes.slice(0, 4).forEach(([cid, v]) => {
+                const cand = CONFIG.candidates.find(c => c.id === cid); if(!cand) return;
+                const pct = (v / localTotalValid) * 100;
+                html += `
+                    <div style="margin-bottom:4px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.72rem; font-weight:700;">
+                            <span>${cand.name} <small style="color:${cand.color}">(${cand.party})</small></span>
+                            <span style="color:${cand.color}">${pct.toFixed(2)}%</span>
+                        </div>
+                        <div class="progress-bar" style="height:4px; margin-top:2px;">
+                            <div class="progress-fill" style="width:${pct}%; background:${cand.color}"></div>
+                        </div>
+                    </div>
+                `;
+            });
+        } else {
+            html += `<div style="font-size:0.78rem; color:var(--text-muted);">Sem votos registrados.</div>`;
+        }
+        html += `</div>`;
+
+        // PARTE 2: EDITORES LOCAIS DE PORCENTAGEM, ABSTENÇÃO E NULOS
+        html += `
             <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); padding:10px 14px; border-radius:var(--radius-md); border:1px solid var(--card-border); margin-bottom:12px;">
-                <span style="font-size:0.9rem; font-weight:800; color:var(--accent-blue)">
-                    <i class="${isState ? 'fas fa-map-marker-alt' : 'fas fa-city'}"></i> ${name.toUpperCase()} (${id})
+                <span style="font-size:0.85rem; font-weight:800; color:var(--accent-blue)">
+                    <i class="${isState ? 'fas fa-map-marker-alt' : 'fas fa-city'}"></i> Personalizar ${name.toUpperCase()}
                 </span>
                 <button class="btn-normalize" onclick="app.resetLocalRegion('${id}', '${scope}')" style="background:rgba(239,68,68,0.15); color:#ef4444; border-color:rgba(239,68,68,0.3)">
                     <i class="fas fa-undo"></i> Resetar para Padrão
@@ -978,7 +1040,7 @@ const app = {
             <!-- PORCENTAGEM DE CADA CANDIDATO NA REGIÃO -->
             <div class="poll-total-card" style="margin-bottom:10px;">
                 <div>
-                    <div class="poll-total-title">Soma Votos Válidos (${name})</div>
+                    <div class="poll-total-title">Soma Votos Válidos Locais</div>
                     <div id="localTotalSimVal_${id}" class="poll-total-val">100.00%</div>
                 </div>
                 <button class="btn-normalize" onclick="app.normalizeLocalPcts('${id}', '${scope}')">
@@ -1112,12 +1174,22 @@ const app = {
         app.runSimulation();
     },
 
-    // ATUALIZAÇÃO DO PAINEL DIREITO COM ESTATÍSTICAS COMPLETAS
+    // ATUALIZAÇÃO DO PAINEL DIREITO COM BOTÃO DE EDIÇÃO DIRETA DA REGIÃO
     updateSidebarRight: () => {
         const title = document.getElementById('regionName'), sub = document.getElementById('regionType'), list = document.getElementById('resultsContainer');
         title.innerText = app.state.selectedName;
         let subTxt = "Nacional"; if (app.state.selectedId) { if (app.state.selectedScope === 'zonas') subTxt = "Zona Eleitoral"; else if (app.state.selectedId.length === 2) subTxt = "Estado"; else subTxt = "Município"; }
         sub.innerText = subTxt; list.innerHTML = '';
+
+        // BOTÃO DE EDITAR A REGIÃO SELECIONADA
+        if (app.state.selectedId) {
+            const editBtn = document.createElement('button');
+            editBtn.className = 'btn-primary';
+            editBtn.style.marginBottom = '12px';
+            editBtn.innerHTML = `<i class="fas fa-edit"></i> Editar Porcentagens em ${app.state.selectedName}`;
+            editBtn.onclick = () => app.openLocalEditorModal(app.state.selectedId, app.state.selectedName, app.state.selectedScope);
+            list.appendChild(editBtn);
+        }
 
         const dataset = app.state.turn === 1 ? app.data.round1 : app.data.round2; if(!dataset) return;
         let votes = {};
