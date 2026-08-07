@@ -1,5 +1,5 @@
 /* ==========================================================================
-   ELEIÇÕES VIEW 2026 - LÓGICA E REATOR DE SIMULAÇÃO ELEITORAL
+   ELEIÇÕES VIEW 2026 - LÓGICA E REATOR DE SIMULAÇÃO ELEITORAL COM % POR ESTADO/MUNICÍPIO
    ========================================================================== */
 
 // --- ESTADOS DO BRASIL ---
@@ -211,6 +211,10 @@ const DEFAULT_SCENARIO = {
     "35": { "RENAN": 1.35 },
     "33": { "FLAVIO": 1.15 }
   },
+  "t1_state_mode": {},
+  "t1_state_polls": {},
+  "t1_mun_mode": {},
+  "t1_mun_polls": {},
   "t2_migr": { "RENAN": 0.65, "CAIADO": 0.85, "ZEMA": 0.88, "CURY": 0.50, "AÉCIO": 0.60, "JOAQUIM": 0.55, "ALDO": 0.60, "DACIOLO": 0.78, "OUTROS": 0.50 },
   "t2_mults": { "31": { "FLAVIO": 1.05, "LULA": 0.96 }, "52": { "FLAVIO": 1.12, "LULA": 0.88 }, "35": { "FLAVIO": 1.04, "LULA": 0.97 } },
   "active_candidates": { "LULA": true, "FLAVIO": true, "RENAN": true, "CAIADO": true, "ZEMA": true, "CURY": true, "OUTROS": true, "AÉCIO": false, "JOAQUIM": false, "ALDO": false, "DACIOLO": false },
@@ -235,6 +239,10 @@ const app = {
         t1_matrix: {}, 
         t1_matrix_state: {}, 
         t1_mults: {}, 
+        t1_state_mode: {},
+        t1_state_polls: {},
+        t1_mun_mode: {},
+        t1_mun_polls: {},
         t1_mun_mults: {},
         t2_finalists: [], 
         t2_polls: {}, 
@@ -349,7 +357,7 @@ const app = {
         }
     },
     loadScenario: (config) => {
-        ['t1_polls','t1_matrix','t1_matrix_state','t1_mults','t1_mun_mults','t2_migr','t2_mults','active_candidates'].forEach(k => {
+        ['t1_polls','t1_matrix','t1_matrix_state','t1_mults','t1_state_mode','t1_state_polls','t1_mun_mode','t1_mun_polls','t1_mun_mults','t2_migr','t2_mults','active_candidates'].forEach(k => {
             if(config[k]) app.state[k] = JSON.parse(JSON.stringify(config[k]));
         });
         if(config.abstention !== undefined) app.state.abstention = config.abstention;
@@ -382,6 +390,10 @@ const app = {
             t1_matrix: app.state.t1_matrix, 
             t1_matrix_state: app.state.t1_matrix_state, 
             t1_mults: app.state.t1_mults, 
+            t1_state_mode: app.state.t1_state_mode,
+            t1_state_polls: app.state.t1_state_polls,
+            t1_mun_mode: app.state.t1_mun_mode,
+            t1_mun_polls: app.state.t1_mun_polls,
             t1_mun_mults: app.state.t1_mun_mults,
             t2_migr: app.state.t2_migr, 
             t2_mults: app.state.t2_mults, 
@@ -1005,6 +1017,10 @@ const app = {
             t1_matrix: app.state.t1_matrix, 
             t1_matrix_state: app.state.t1_matrix_state, 
             t1_mults: app.state.t1_mults, 
+            t1_state_mode: app.state.t1_state_mode,
+            t1_state_polls: app.state.t1_state_polls,
+            t1_mun_mode: app.state.t1_mun_mode,
+            t1_mun_polls: app.state.t1_mun_polls,
             t1_mun_mults: app.state.t1_mun_mults,
             t2_migr: app.state.t2_migr, 
             t2_mults: app.state.t2_mults, 
@@ -1028,7 +1044,7 @@ const app = {
         app.openModal("<i class='fas fa-share-alt'></i> Compartilhar Cenário", html);
     },
 
-    // MODAL DE AJUSTE MUNICIPAL DE PORCENTAGEM E HERANÇA
+    // MODAL DE AJUSTE MUNICIPAL (PORCENTAGEM DIRETA OU MULTIPLICADOR)
     openMunicipalAdjustModal: (turn) => {
         let html = `
             <div style="margin-bottom:12px">
@@ -1061,32 +1077,133 @@ const app = {
         }).join('');
     },
 
+    setMunAdjustMode: (turn, ibgeCode, cityName, mode) => {
+        if (!app.state.t1_mun_mode) app.state.t1_mun_mode = {};
+        app.state.t1_mun_mode[ibgeCode] = mode;
+        app.renderMunicipalAdjustContent(turn, ibgeCode, cityName);
+        app.runSimulation();
+    },
+
     renderMunicipalAdjustContent: (turn, ibgeCode, cityName) => {
         const c = document.getElementById('munAdjustContent');
-        if (!app.state.t1_mun_mults) app.state.t1_mun_mults = {};
-        if (!app.state.t1_mun_mults[ibgeCode]) app.state.t1_mun_mults[ibgeCode] = {};
+        if (!app.state.t1_mun_mode) app.state.t1_mun_mode = {};
+        const mode = app.state.t1_mun_mode[ibgeCode] || 'pct'; // 'pct' ou 'mult'
 
-        let html = `<div style="font-size:0.85rem; font-weight:800; color:var(--accent-blue); margin-bottom:8px;">Multiplicadores para ${cityName} (${ibgeCode}):</div>`;
+        let html = `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); padding:10px; border-radius:var(--radius-md); border:1px solid var(--card-border); margin-bottom:8px;">
+                <span style="font-size:0.82rem; font-weight:800; color:var(--accent-blue);">${cityName.toUpperCase()} (${ibgeCode}):</span>
+                <div style="display:flex; gap:6px;">
+                    <button class="btn-io" style="${mode==='pct'?'background:var(--accent-blue); color:#fff;':''}" onclick="app.setMunAdjustMode(${turn}, '${ibgeCode}', '${cityName}', 'pct')">% Porcentagem</button>
+                    <button class="btn-io" style="${mode==='mult'?'background:var(--accent-blue); color:#fff;':''}" onclick="app.setMunAdjustMode(${turn}, '${ibgeCode}', '${cityName}', 'mult')">x Multiplicador</button>
+                </div>
+            </div>
+        `;
 
-        (turn===1 ? CONFIG.candidates : app.state.t2_finalists.map(id => CONFIG.candidates.find(c=>c.id===id))).forEach(cand => {
-            if(!cand || (turn===1 && app.state.active_candidates[cand.id] === false)) return;
-            const val = app.state.t1_mun_mults[ibgeCode][cand.id] !== undefined ? app.state.t1_mun_mults[ibgeCode][cand.id] : 1.0;
-            const photoUrl = LOCAL_PHOTOS[cand.id];
+        const cands = turn===1 ? CONFIG.candidates.filter(c => app.state.active_candidates[c.id] !== false) : app.state.t2_finalists.map(id => CONFIG.candidates.find(c=>c.id===id));
+
+        if (mode === 'pct') {
+            if (!app.state.t1_mun_polls) app.state.t1_mun_polls = {};
+            if (!app.state.t1_mun_polls[ibgeCode]) app.state.t1_mun_polls[ibgeCode] = {};
+
+            const currentTotal = cands.reduce((sum, cand) => sum + (app.state.t1_mun_polls[ibgeCode][cand.id] !== undefined ? app.state.t1_mun_polls[ibgeCode][cand.id] : (turn===1 ? (app.state.t1_polls[cand.id]||0) : 50)), 0);
 
             html += `
-                <div class="slider-box">
-                    <div class="slider-header">
-                        <div class="cand-info-group">
-                            <img src="${photoUrl}" class="cand-avatar" style="--cand-color:${cand.color}" onerror="app.handleImgFallback(this, '${cand.id}')">
-                            <span style="font-weight:700;">${cand.name}</span>
-                        </div>
-                        <span id="mod_mun_${cand.id}" style="font-weight:900; color:var(--accent-blue)">x${val.toFixed(2)}</span>
+                <div class="poll-total-card" style="margin-bottom:8px;">
+                    <div>
+                        <div class="poll-total-title">Total Intenção (${cityName})</div>
+                        <div id="munSimVal_${ibgeCode}" class="poll-total-val" style="color:${Math.abs(currentTotal-100)<0.05?'var(--accent-green)':'#facc15'}">${currentTotal.toFixed(2)}%</div>
                     </div>
-                    <input type="range" min="0" max="300" value="${val*100}" oninput="app.updateMunMult('${ibgeCode}', '${cand.id}', this.value); document.getElementById('mod_mun_${cand.id}').innerText='x'+(this.value/100).toFixed(2);">
+                    <button class="btn-normalize" onclick="app.normalizeMunPcts(${turn}, '${ibgeCode}', '${cityName}')"><i class="fas fa-balance-scale"></i> Normalizar 100%</button>
                 </div>
             `;
-        });
+
+            cands.forEach(cand => {
+                const val = app.state.t1_mun_polls[ibgeCode][cand.id] !== undefined ? app.state.t1_mun_polls[ibgeCode][cand.id] : (turn===1 ? (app.state.t1_polls[cand.id]||0) : 50);
+                const photoUrl = LOCAL_PHOTOS[cand.id];
+
+                html += `
+                    <div class="slider-box">
+                        <div class="slider-header">
+                            <div class="cand-info-group">
+                                <img src="${photoUrl}" class="cand-avatar" style="--cand-color:${cand.color}" onerror="app.handleImgFallback(this, '${cand.id}')">
+                                <span style="font-weight:700;">${cand.name} (${cand.party})</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:2px;">
+                                <input type="text" id="input_mun_${turn}_${ibgeCode}_${cand.id}" class="pct-input-field" value="${val.toFixed(2)}" oninput="app.handleMunPctInput(${turn}, '${ibgeCode}', '${cand.id}', this.value)">
+                                <span style="font-size:0.75rem; color:var(--text-muted); font-weight:800">%</span>
+                            </div>
+                        </div>
+                        <input type="range" min="0" max="100" step="0.01" value="${val}" oninput="app.updateMunPct(${turn}, '${ibgeCode}', '${cand.id}', this.value)" onchange="app.runSimulation()">
+                    </div>
+                `;
+            });
+        } else {
+            if (!app.state.t1_mun_mults) app.state.t1_mun_mults = {};
+            if (!app.state.t1_mun_mults[ibgeCode]) app.state.t1_mun_mults[ibgeCode] = {};
+
+            cands.forEach(cand => {
+                const val = app.state.t1_mun_mults[ibgeCode][cand.id] !== undefined ? app.state.t1_mun_mults[ibgeCode][cand.id] : 1.0;
+                const photoUrl = LOCAL_PHOTOS[cand.id];
+
+                html += `
+                    <div class="slider-box">
+                        <div class="slider-header">
+                            <div class="cand-info-group">
+                                <img src="${photoUrl}" class="cand-avatar" style="--cand-color:${cand.color}" onerror="app.handleImgFallback(this, '${cand.id}')">
+                                <span style="font-weight:700;">${cand.name}</span>
+                            </div>
+                            <span id="mod_mun_${cand.id}" style="font-weight:900; color:var(--accent-blue)">x${val.toFixed(2)}</span>
+                        </div>
+                        <input type="range" min="0" max="300" value="${val*100}" oninput="app.updateMunMult('${ibgeCode}', '${cand.id}', this.value); document.getElementById('mod_mun_${cand.id}').innerText='x'+(this.value/100).toFixed(2);" onchange="app.runSimulation()">
+                    </div>
+                `;
+            });
+        }
         c.innerHTML = html;
+    },
+
+    updateMunPct: (turn, ibgeCode, cid, val) => {
+        let num = parseFloat(parseFloat(val).toFixed(2)); if (isNaN(num)) num = 0.00;
+        if (!app.state.t1_mun_polls) app.state.t1_mun_polls = {};
+        if (!app.state.t1_mun_polls[ibgeCode]) app.state.t1_mun_polls[ibgeCode] = {};
+        app.state.t1_mun_polls[ibgeCode][cid] = num;
+
+        const input = document.getElementById(`input_mun_${turn}_${ibgeCode}_${cid}`);
+        if (input) input.value = num.toFixed(2);
+        
+        app.updateMunTotalLabel(turn, ibgeCode);
+    },
+    handleMunPctInput: (turn, ibgeCode, cid, val) => {
+        let num = parseFloat(val.replace(',', '.'));
+        if (!isNaN(num)) {
+            num = Math.max(0, Math.min(100, num));
+            if (!app.state.t1_mun_polls) app.state.t1_mun_polls = {};
+            if (!app.state.t1_mun_polls[ibgeCode]) app.state.t1_mun_polls[ibgeCode] = {};
+            app.state.t1_mun_polls[ibgeCode][cid] = num;
+            app.updateMunTotalLabel(turn, ibgeCode);
+        }
+    },
+    updateMunTotalLabel: (turn, ibgeCode) => {
+        const cands = turn===1 ? CONFIG.candidates.filter(c => app.state.active_candidates[c.id] !== false) : app.state.t2_finalists.map(id => CONFIG.candidates.find(c=>c.id===id));
+        const tot = cands.reduce((sum, cand) => sum + (app.state.t1_mun_polls[ibgeCode]?.[cand.id] !== undefined ? app.state.t1_mun_polls[ibgeCode][cand.id] : (turn===1 ? (app.state.t1_polls[cand.id]||0) : 50)), 0);
+        const el = document.getElementById(`munSimVal_${ibgeCode}`);
+        if (el) {
+            el.innerText = tot.toFixed(2) + "%";
+            el.style.color = Math.abs(tot - 100) < 0.05 ? 'var(--accent-green)' : '#facc15';
+        }
+    },
+    normalizeMunPcts: (turn, ibgeCode, cityName) => {
+        const cands = turn===1 ? CONFIG.candidates.filter(c => app.state.active_candidates[c.id] !== false) : app.state.t2_finalists.map(id => CONFIG.candidates.find(c=>c.id===id));
+        if (!app.state.t1_mun_polls) app.state.t1_mun_polls = {};
+        if (!app.state.t1_mun_polls[ibgeCode]) app.state.t1_mun_polls[ibgeCode] = {};
+
+        const tot = cands.reduce((sum, cand) => sum + (app.state.t1_mun_polls[ibgeCode][cand.id] !== undefined ? app.state.t1_mun_polls[ibgeCode][cand.id] : (turn===1 ? (app.state.t1_polls[cand.id]||0) : 50)), 0) || 1;
+        cands.forEach(cand => {
+            const current = app.state.t1_mun_polls[ibgeCode][cand.id] !== undefined ? app.state.t1_mun_polls[ibgeCode][cand.id] : (turn===1 ? (app.state.t1_polls[cand.id]||0) : 50);
+            app.state.t1_mun_polls[ibgeCode][cand.id] = parseFloat(((current / tot) * 100).toFixed(2));
+        });
+        app.renderMunicipalAdjustContent(turn, ibgeCode, cityName);
+        app.runSimulation();
     },
 
     updateMunMult: (ibgeCode, cid, val) => {
@@ -1095,93 +1212,149 @@ const app = {
         app.state.t1_mun_mults[ibgeCode][cid] = parseInt(val)/100;
     },
 
-    // MATRIZ COM TODOS OS 11 CANDIDATOS DE 2022 COMO OPÇÃO DE ORIGEM
-    openMatrixModal: () => {
-        let html = `
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <div style="flex:1">
-                    <label style="font-size:0.75rem; font-weight:800; color:var(--text-muted)">ELEITORADO DE 2022 (FONTE):</label>
-                    <select id="modalSrcSelect" onchange="app.renderModalMatrix()" style="width:100%">
-                        ${SOURCES_2022.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
-                    </select>
-                </div>
-                <div style="flex:1">
-                    <label style="font-size:0.75rem; font-weight:800; color:var(--text-muted)">ESTADO:</label>
-                    <select id="modalUfSelect" onchange="app.renderModalMatrix()" style="width:100%">
-                        <option value="">Nacional (Padrão)</option>
-                        ${STATES.map(s => `<option value="${s.id}">${s.sigla}</option>`).join('')}
-                    </select>
-                </div>
-            </div>
-            <div id="modalMatrixContent" style="display:flex; flex-direction:column; gap:8px;"></div>
-        `;
-        app.openModal("<i class='fas fa-network-wired'></i> Matriz de Herança de Votos (2022)", html); app.renderModalMatrix();
-    },
-    renderModalMatrix: () => {
-        const src = document.getElementById('modalSrcSelect') ? document.getElementById('modalSrcSelect').value : 'LULA';
-        const ufId = document.getElementById('modalUfSelect') ? document.getElementById('modalUfSelect').value : '';
-        const c = document.getElementById('modalMatrixContent'); c.innerHTML = '';
-
-        CONFIG.candidates.forEach(dest => {
-            let val = ufId ? (app.state.t1_matrix_state[ufId] && app.state.t1_matrix_state[ufId][src] ? app.state.t1_matrix_state[ufId][src][dest.id] : app.state.t1_matrix[src]?.[dest.id]) : (app.state.t1_matrix[src]?.[dest.id]);
-            val = Math.round((val||0) * 100);
-            const photoUrl = LOCAL_PHOTOS[dest.id];
-
-            const div = document.createElement('div'); div.className = 'slider-box';
-            div.innerHTML = `
-                <div class="slider-header">
-                    <div class="cand-info-group">
-                        <img src="${photoUrl}" class="cand-avatar" style="--cand-color:${dest.color}" onerror="app.handleImgFallback(this, '${dest.id}')">
-                        <span style="font-weight:700;">${dest.name}</span>
-                    </div>
-                    <span id="mod_mtx_${dest.id}" style="font-weight:900; color:var(--accent-blue)">${val}%</span>
-                </div>
-                <input type="range" min="0" max="100" value="${val}" oninput="app.updateMatrixValue('${src}', '${ufId}', '${dest.id}', this.value); document.getElementById('mod_mtx_${dest.id}').innerText=this.value+'%';">
-            `;
-            c.appendChild(div);
-        });
-    },
-    updateMatrixValue: (src, ufId, destId, val) => {
-        const ratio = parseInt(val)/100;
-        if(ufId) {
-            if(!app.state.t1_matrix_state[ufId]) app.state.t1_matrix_state[ufId] = {};
-            if(!app.state.t1_matrix_state[ufId][src]) app.state.t1_matrix_state[ufId][src] = {...(app.state.t1_matrix[src]||{})};
-            app.state.t1_matrix_state[ufId][src][destId] = ratio;
-        } else {
-            if(!app.state.t1_matrix[src]) app.state.t1_matrix[src] = {};
-            app.state.t1_matrix[src][destId] = ratio;
-        }
-    },
-
+    // MODAL DE AJUSTE ESTADUAL (PORCENTAGEM DIRETA OU MULTIPLICADOR)
     openStateModal: (turn) => {
         let html = `
-            <div style="margin-bottom:15px"><label style="font-size:0.75rem; font-weight:800; color:var(--text-muted)">ESTADO SELECIONADO:</label><select id="modalStateSelect" onchange="app.renderModalStateMults(${turn}, this.value)" style="width:100%"><option value="">Selecione...</option>${STATES.map(s => `<option value="${s.id}">${s.nome} (${s.sigla})</option>`).join('')}</select></div>
+            <div style="margin-bottom:15px">
+                <label style="font-size:0.75rem; font-weight:800; color:var(--text-muted)">SELECIONE O ESTADO:</label>
+                <select id="modalStateSelect" onchange="app.renderModalStateContent(${turn}, this.value)" style="width:100%; margin-top:4px;">
+                    <option value="">-- Selecione o Estado --</option>
+                    ${STATES.map(s => `<option value="${s.id}">${s.nome} (${s.sigla})</option>`).join('')}
+                </select>
+            </div>
             <div id="modalStateContent" style="display:flex; flex-direction:column; gap:8px;"></div>
         `;
-        app.openModal(turn === 1 ? "<i class='fas fa-map-marker-alt'></i> Multiplicadores (1º Turno)" : "<i class='fas fa-map-marker-alt'></i> Multiplicadores (2º Turno)", html);
+        app.openModal(turn === 1 ? "<i class='fas fa-map-marker-alt'></i> Ajuste de Estado (1º Turno)" : "<i class='fas fa-map-marker-alt'></i> Ajuste de Estado (2º Turno)", html);
     },
-    renderModalStateMults: (turn, ufId) => {
-        const c = document.getElementById('modalStateContent'); c.innerHTML = ''; if(!ufId) return;
-        const store = turn===1 ? app.state.t1_mults : app.state.t2_mults; if(!store[ufId]) store[ufId] = {};
-        (turn===1 ? CONFIG.candidates : app.state.t2_finalists.map(id => CONFIG.candidates.find(c=>c.id===id))).forEach(cand => {
-            if(!cand || (turn===1 && app.state.active_candidates[cand.id] === false)) return;
-            const val = store[ufId][cand.id] !== undefined ? store[ufId][cand.id] : 1.0;
-            const photoUrl = LOCAL_PHOTOS[cand.id];
 
-            const div = document.createElement('div'); div.className = 'slider-box';
-            div.innerHTML = `
-                <div class="slider-header">
-                    <div class="cand-info-group">
-                        <img src="${photoUrl}" class="cand-avatar" style="--cand-color:${cand.color}" onerror="app.handleImgFallback(this, '${cand.id}')">
-                        <span style="font-weight:700;">${cand.name}</span>
-                    </div>
-                    <span id="mod_mul_${cand.id}" style="font-weight:900; color:var(--accent-blue)">x${val.toFixed(2)}</span>
-                </div>
-                <input type="range" min="0" max="300" value="${val*100}" oninput="app.updateMult(${turn}, '${ufId}', '${cand.id}', this.value); document.getElementById('mod_mul_${cand.id}').innerText='x'+(this.value/100).toFixed(2);">
-            `;
-            c.appendChild(div);
-        });
+    setStateAdjustMode: (turn, ufId, mode) => {
+        if (!app.state.t1_state_mode) app.state.t1_state_mode = {};
+        app.state.t1_state_mode[ufId] = mode;
+        app.renderModalStateContent(turn, ufId);
+        app.runSimulation();
     },
+
+    renderModalStateContent: (turn, ufId) => {
+        const c = document.getElementById('modalStateContent'); c.innerHTML = ''; if(!ufId) return;
+        const ufObj = STATES.find(s=>s.id === ufId);
+        if (!app.state.t1_state_mode) app.state.t1_state_mode = {};
+        const mode = app.state.t1_state_mode[ufId] || 'pct'; // 'pct' ou 'mult'
+
+        let html = `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); padding:10px; border-radius:var(--radius-md); border:1px solid var(--card-border); margin-bottom:8px;">
+                <span style="font-size:0.82rem; font-weight:800; color:var(--accent-blue);">${ufObj.nome.toUpperCase()} (${ufObj.sigla}):</span>
+                <div style="display:flex; gap:6px;">
+                    <button class="btn-io" style="${mode==='pct'?'background:var(--accent-blue); color:#fff;':''}" onclick="app.setStateAdjustMode(${turn}, '${ufId}', 'pct')">% Porcentagem</button>
+                    <button class="btn-io" style="${mode==='mult'?'background:var(--accent-blue); color:#fff;':''}" onclick="app.setStateAdjustMode(${turn}, '${ufId}', 'mult')">x Multiplicador</button>
+                </div>
+            </div>
+        `;
+
+        const cands = turn===1 ? CONFIG.candidates.filter(c => app.state.active_candidates[c.id] !== false) : app.state.t2_finalists.map(id => CONFIG.candidates.find(c=>c.id===id));
+
+        if (mode === 'pct') {
+            if (!app.state.t1_state_polls) app.state.t1_state_polls = {};
+            if (!app.state.t1_state_polls[ufId]) app.state.t1_state_polls[ufId] = {};
+
+            const currentTotal = cands.reduce((sum, cand) => sum + (app.state.t1_state_polls[ufId][cand.id] !== undefined ? app.state.t1_state_polls[ufId][cand.id] : (turn===1 ? (app.state.t1_polls[cand.id]||0) : 50)), 0);
+
+            html += `
+                <div class="poll-total-card" style="margin-bottom:8px;">
+                    <div>
+                        <div class="poll-total-title">Total Intenção (${ufObj.sigla})</div>
+                        <div id="stateSimVal_${ufId}" class="poll-total-val" style="color:${Math.abs(currentTotal-100)<0.05?'var(--accent-green)':'#facc15'}">${currentTotal.toFixed(2)}%</div>
+                    </div>
+                    <button class="btn-normalize" onclick="app.normalizeStatePcts(${turn}, '${ufId}')"><i class="fas fa-balance-scale"></i> Normalizar 100%</button>
+                </div>
+            `;
+
+            cands.forEach(cand => {
+                const val = app.state.t1_state_polls[ufId][cand.id] !== undefined ? app.state.t1_state_polls[ufId][cand.id] : (turn===1 ? (app.state.t1_polls[cand.id]||0) : 50);
+                const photoUrl = LOCAL_PHOTOS[cand.id];
+
+                html += `
+                    <div class="slider-box">
+                        <div class="slider-header">
+                            <div class="cand-info-group">
+                                <img src="${photoUrl}" class="cand-avatar" style="--cand-color:${cand.color}" onerror="app.handleImgFallback(this, '${cand.id}')">
+                                <span style="font-weight:700;">${cand.name} (${cand.party})</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:2px;">
+                                <input type="text" id="input_state_${turn}_${ufId}_${cand.id}" class="pct-input-field" value="${val.toFixed(2)}" oninput="app.handleStatePctInput(${turn}, '${ufId}', '${cand.id}', this.value)">
+                                <span style="font-size:0.75rem; color:var(--text-muted); font-weight:800">%</span>
+                            </div>
+                        </div>
+                        <input type="range" min="0" max="100" step="0.01" value="${val}" oninput="app.updateStatePct(${turn}, '${ufId}', '${cand.id}', this.value)" onchange="app.runSimulation()">
+                    </div>
+                `;
+            });
+        } else {
+            const store = turn===1 ? app.state.t1_mults : app.state.t2_mults; if(!store[ufId]) store[ufId] = {};
+            cands.forEach(cand => {
+                const val = store[ufId][cand.id] !== undefined ? store[ufId][cand.id] : 1.0;
+                const photoUrl = LOCAL_PHOTOS[cand.id];
+
+                html += `
+                    <div class="slider-box">
+                        <div class="slider-header">
+                            <div class="cand-info-group">
+                                <img src="${photoUrl}" class="cand-avatar" style="--cand-color:${cand.color}" onerror="app.handleImgFallback(this, '${cand.id}')">
+                                <span style="font-weight:700;">${cand.name}</span>
+                            </div>
+                            <span id="mod_mul_${cand.id}" style="font-weight:900; color:var(--accent-blue)">x${val.toFixed(2)}</span>
+                        </div>
+                        <input type="range" min="0" max="300" value="${val*100}" oninput="app.updateMult(${turn}, '${ufId}', '${cand.id}', this.value); document.getElementById('mod_mul_${cand.id}').innerText='x'+(this.value/100).toFixed(2);" onchange="app.runSimulation()">
+                    </div>
+                `;
+            });
+        }
+        c.innerHTML = html;
+    },
+
+    updateStatePct: (turn, ufId, cid, val) => {
+        let num = parseFloat(parseFloat(val).toFixed(2)); if (isNaN(num)) num = 0.00;
+        if (!app.state.t1_state_polls) app.state.t1_state_polls = {};
+        if (!app.state.t1_state_polls[ufId]) app.state.t1_state_polls[ufId] = {};
+        app.state.t1_state_polls[ufId][cid] = num;
+
+        const input = document.getElementById(`input_state_${turn}_${ufId}_${cid}`);
+        if (input) input.value = num.toFixed(2);
+        
+        app.updateStateTotalLabel(turn, ufId);
+    },
+    handleStatePctInput: (turn, ufId, cid, val) => {
+        let num = parseFloat(val.replace(',', '.'));
+        if (!isNaN(num)) {
+            num = Math.max(0, Math.min(100, num));
+            if (!app.state.t1_state_polls) app.state.t1_state_polls = {};
+            if (!app.state.t1_state_polls[ufId]) app.state.t1_state_polls[ufId] = {};
+            app.state.t1_state_polls[ufId][cid] = num;
+            app.updateStateTotalLabel(turn, ufId);
+        }
+    },
+    updateStateTotalLabel: (turn, ufId) => {
+        const cands = turn===1 ? CONFIG.candidates.filter(c => app.state.active_candidates[c.id] !== false) : app.state.t2_finalists.map(id => CONFIG.candidates.find(c=>c.id===id));
+        const tot = cands.reduce((sum, cand) => sum + (app.state.t1_state_polls[ufId]?.[cand.id] !== undefined ? app.state.t1_state_polls[ufId][cand.id] : (turn===1 ? (app.state.t1_polls[cand.id]||0) : 50)), 0);
+        const el = document.getElementById(`stateSimVal_${ufId}`);
+        if (el) {
+            el.innerText = tot.toFixed(2) + "%";
+            el.style.color = Math.abs(tot - 100) < 0.05 ? 'var(--accent-green)' : '#facc15';
+        }
+    },
+    normalizeStatePcts: (turn, ufId) => {
+        const cands = turn===1 ? CONFIG.candidates.filter(c => app.state.active_candidates[c.id] !== false) : app.state.t2_finalists.map(id => CONFIG.candidates.find(c=>c.id===id));
+        if (!app.state.t1_state_polls) app.state.t1_state_polls = {};
+        if (!app.state.t1_state_polls[ufId]) app.state.t1_state_polls[ufId] = {};
+
+        const tot = cands.reduce((sum, cand) => sum + (app.state.t1_state_polls[ufId][cand.id] !== undefined ? app.state.t1_state_polls[ufId][cand.id] : (turn===1 ? (app.state.t1_polls[cand.id]||0) : 50)), 0) || 1;
+        cands.forEach(cand => {
+            const current = app.state.t1_state_polls[ufId][cand.id] !== undefined ? app.state.t1_state_polls[ufId][cand.id] : (turn===1 ? (app.state.t1_polls[cand.id]||0) : 50);
+            app.state.t1_state_polls[ufId][cand.id] = parseFloat(((current / tot) * 100).toFixed(2));
+        });
+        app.renderModalStateContent(turn, ufId);
+        app.runSimulation();
+    },
+
     updateMult: (turn, ufId, cid, val) => {
         const store = turn===1 ? app.state.t1_mults : app.state.t2_mults; if(!store[ufId]) store[ufId] = {};
         store[ufId][cid] = parseInt(val)/100;
@@ -1217,7 +1390,7 @@ const app = {
                     <span style="color:${cand1.color}">${cand1.name}</span>
                     <span style="color:${cand2.color}">${cand2.name}</span>
                 </div>
-                <input type="range" min="0" max="100" value="${ratio*100}" oninput="app.state.t2_migr['${cand.id}'] = this.value/100;">
+                <input type="range" min="0" max="100" value="${ratio*100}" oninput="app.state.t2_migr['${cand.id}'] = this.value/100;" onchange="app.runSimulation()">
             `;
             c.appendChild(div);
         });
@@ -1238,18 +1411,20 @@ const app = {
         }, 50);
     },
 
-    // CÁLCULO DE 1º TURNO PROCESSANDO TODOS OS 11 CANDIDATOS DE 2022 E MULTIPLICADORES MUNICIPAIS
+    // CÁLCULO DE 1º TURNO COM % DIRETA POR ESTADO/MUNICÍPIO, MULTIPLICADORES E HERANÇA DE 2022
     calculateTurn1: () => {
         const base = app.data.base22.municipios;
         const activeIds = CONFIG.candidates.filter(c => app.state.active_candidates[c.id] !== false).map(c => c.id);
         const rawSliderTotal = activeIds.reduce((sum, id) => sum + (app.state.t1_polls[id]||0), 0);
         const targetPcts = {}; activeIds.forEach(id => { targetPcts[id] = (app.state.t1_polls[id]||0) / (rawSliderTotal || 1); });
 
-        const res = { municipios: {}, estados: {}, nacional: {}, zonas: {} }; let tempNacional = {}, grandTotal = 0;
+        const res = { municipios: {}, estados: {}, nacional: {}, zonas: {} }; 
+        let tempNacional = {}, grandTotal = 0;
         const src2022Keys = SOURCES_2022.map(s => s.id);
         
         for(let ibge in base) {
             const votes22 = base[ibge], ufId = ibge.substring(0,2), mVotes = {};
+            
             activeIds.forEach(candId => {
                 let sum = 0; 
                 src2022Keys.forEach(srcKey => {
@@ -1263,19 +1438,92 @@ const app = {
                 if(app.state.t1_mults[ufId] && app.state.t1_mults[ufId][candId]) sum *= app.state.t1_mults[ufId][candId];
                 if(app.state.t1_mun_mults && app.state.t1_mun_mults[ibge] && app.state.t1_mun_mults[ibge][candId]) sum *= app.state.t1_mun_mults[ibge][candId];
                 
-                mVotes[candId] = sum; tempNacional[candId] = (tempNacional[candId]||0) + sum; grandTotal += sum;
+                mVotes[candId] = sum;
             });
+
+            // AJUSTE DIRETO POR PORCENTAGEM MUNICIPAL (SE ATIVADO PARA O MUNICÍPIO)
+            if (app.state.t1_mun_mode && app.state.t1_mun_mode[ibge] === 'pct' && app.state.t1_mun_polls && app.state.t1_mun_polls[ibge]) {
+                const munPolls = app.state.t1_mun_polls[ibge];
+                const munSumPcts = activeIds.reduce((a, cid) => a + (munPolls[cid] !== undefined ? munPolls[cid] : (app.state.t1_polls[cid]||0)), 0) || 1;
+                const totalMunVotes = activeIds.reduce((a, cid) => a + mVotes[cid], 0) || 1;
+                activeIds.forEach(candId => {
+                    const targetPct = (munPolls[candId] !== undefined ? munPolls[candId] : (app.state.t1_polls[candId]||0)) / munSumPcts;
+                    mVotes[candId] = totalMunVotes * targetPct;
+                });
+            }
+
+            for(let cid in mVotes) {
+                tempNacional[cid] = (tempNacional[cid]||0) + mVotes[cid];
+                grandTotal += mVotes[cid];
+            }
             res.municipios[ibge] = mVotes;
         }
 
-        const corrections = {}; activeIds.forEach(id => { const currPct = tempNacional[id] / (grandTotal||1); corrections[id] = (currPct > 0) ? targetPcts[id]/currPct : 1; });
+        // AGREGAR TOTAIS ESTADUAIS INICIAIS
         for(let ibge in res.municipios) {
-            const ufId = ibge.substring(0,2); if(!res.estados[ufId]) res.estados[ufId] = {};
+            const ufId = ibge.substring(0,2);
+            if(!res.estados[ufId]) res.estados[ufId] = {};
+            for(let cid in res.municipios[ibge]) {
+                res.estados[ufId][cid] = (res.estados[ufId][cid]||0) + res.municipios[ibge][cid];
+            }
+        }
+
+        // AJUSTE DIRETO POR PORCENTAGEM ESTADUAL (SE ATIVADO PARA O ESTADO)
+        STATES.forEach(st => {
+            const ufId = st.id;
+            if (app.state.t1_state_mode && app.state.t1_state_mode[ufId] === 'pct' && app.state.t1_state_polls && app.state.t1_state_polls[ufId]) {
+                const statePolls = app.state.t1_state_polls[ufId];
+                const stateSumPcts = activeIds.reduce((a, cid) => a + (statePolls[cid] !== undefined ? statePolls[cid] : (app.state.t1_polls[cid]||0)), 0) || 1;
+                const totalStateVotes = activeIds.reduce((a, cid) => a + (res.estados[ufId][cid]||0), 0) || 1;
+
+                const stateScale = {};
+                activeIds.forEach(candId => {
+                    const targetPct = (statePolls[candId] !== undefined ? statePolls[candId] : (app.state.t1_polls[candId]||0)) / stateSumPcts;
+                    const targetVotes = totalStateVotes * targetPct;
+                    const currentVotes = res.estados[ufId][candId] || 1;
+                    stateScale[candId] = targetVotes / currentVotes;
+                });
+
+                for(let ibge in res.municipios) {
+                    if (ibge.startsWith(ufId)) {
+                        for(let cid in res.municipios[ibge]) {
+                            res.municipios[ibge][cid] *= stateScale[cid];
+                        }
+                    }
+                }
+            }
+        });
+
+        // RE-AGREGAR TOTAIS
+        res.estados = {}; tempNacional = {}; grandTotal = 0;
+        for(let ibge in res.municipios) {
+            const ufId = ibge.substring(0,2);
+            if(!res.estados[ufId]) res.estados[ufId] = {};
+            for(let cid in res.municipios[ibge]) {
+                res.estados[ufId][cid] = (res.estados[ufId][cid]||0) + res.municipios[ibge][cid];
+                tempNacional[cid] = (tempNacional[cid]||0) + res.municipios[ibge][cid];
+                grandTotal += res.municipios[ibge][cid];
+            }
+        }
+
+        // ESCALONAMENTO DE CORREÇÃO NACIONAL
+        const corrections = {}; activeIds.forEach(id => { const currPct = tempNacional[id] / (grandTotal||1); corrections[id] = (currPct > 0) ? targetPcts[id]/currPct : 1; });
+        res.nacional = {};
+        for(let ibge in res.municipios) {
+            const ufId = ibge.substring(0,2);
             for(let cid in res.municipios[ibge]) {
                 let v = Math.round(res.municipios[ibge][cid] * corrections[cid]);
                 res.municipios[ibge][cid] = v;
-                res.estados[ufId][cid] = (res.estados[ufId][cid]||0) + v;
                 res.nacional[cid] = (res.nacional[cid]||0) + v;
+            }
+        }
+
+        // TOTAIS FINAIS DOS ESTADOS
+        res.estados = {};
+        for(let ibge in res.municipios) {
+            const ufId = ibge.substring(0,2); if(!res.estados[ufId]) res.estados[ufId] = {};
+            for(let cid in res.municipios[ibge]) {
+                res.estados[ufId][cid] = (res.estados[ufId][cid]||0) + res.municipios[ibge][cid];
             }
         }
         
