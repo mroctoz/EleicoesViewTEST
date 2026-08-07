@@ -1,5 +1,5 @@
 /* ==========================================================================
-   ELEIÇÕES VIEW 2026 - LÓGICA ELEITORAL E SINCRO DE ZONAS ELEITORAIS
+   ELEIÇÕES VIEW 2026 - REATOR DE SIMULAÇÃO ELEITORAL REFORMULADO (BOTTOM-UP)
    ========================================================================== */
 
 // --- ESTADOS DO BRASIL ---
@@ -961,6 +961,18 @@ const app = {
         const currentAbs = (absStore && absStore[id] !== undefined) ? absStore[id] : app.state.abstention;
         const currentNulls = (nullsStore && nullsStore[id] !== undefined) ? nullsStore[id] : app.state.null_votes;
 
+        // INICIALIZA DICIONÁRIO COMPLETO PARA A REGIÃO CASO AINDA NÃO EXISTA
+        if (!pollsStore[id]) {
+            pollsStore[id] = {};
+            activeCands.forEach(cand => {
+                if (localTotalValid > 0 && votes[cand.id] !== undefined) {
+                    pollsStore[id][cand.id] = parseFloat(((votes[cand.id] / localTotalValid) * 100).toFixed(2));
+                } else {
+                    pollsStore[id][cand.id] = app.state.t1_polls[cand.id] || 0.00;
+                }
+            });
+        }
+
         // PARTE 1: CARD DO RESULTADO ATUAL PROJETADO NA REGIÃO
         let html = `
             <div class="card-subgroup" style="margin-bottom:12px; background:rgba(0,0,0,0.25);">
@@ -1052,16 +1064,7 @@ const app = {
         `;
 
         activeCands.forEach(cand => {
-            // Se já existir valor salvo, usa ele. Se não, usa a porcentagem REAL atual calculada na região (NÃO O NACIONAL)
-            let localVal = 0.00;
-            if (pollsStore && pollsStore[id] && pollsStore[id][cand.id] !== undefined) {
-                localVal = pollsStore[id][cand.id];
-            } else if (localTotalValid > 0 && votes[cand.id] !== undefined) {
-                localVal = (votes[cand.id] / localTotalValid) * 100;
-            } else {
-                localVal = app.state.t1_polls[cand.id] || 0.00;
-            }
-
+            const localVal = pollsStore[id][cand.id] !== undefined ? pollsStore[id][cand.id] : 0.00;
             const photoUrl = LOCAL_PHOTOS[cand.id];
 
             html += `
@@ -1594,6 +1597,9 @@ const app = {
                 const ufId = ibge.substring(0,2);
                 const zVotes = {};
 
+                // Calcula a proporção relativa de cada candidato na zona dentro do seu município
+                const totalMunVotes = activeIds.reduce((sum, cid) => sum + (res.municipios[ibge] ? (res.municipios[ibge][cid] || 0) : 0), 0) || 1;
+
                 activeIds.forEach(candId => {
                     let sum = 0; 
                     src2022Keys.forEach(srcKey => {
@@ -1609,43 +1615,18 @@ const app = {
                     zVotes[candId] = sum;
                 });
 
-                // Aplica ajuste municipal na zona se houver
-                if (app.state.t1_mun_polls && app.state.t1_mun_polls[ibge]) {
-                    const munPolls = app.state.t1_mun_polls[ibge];
-                    const munSumPcts = activeIds.reduce((a, cid) => a + (munPolls[cid] !== undefined ? munPolls[cid] : (app.state.t1_polls[cid]||0)), 0) || 1;
-                    const totalZoneVotes = activeIds.reduce((a, cid) => a + zVotes[cid], 0) || 1;
-                    activeIds.forEach(candId => {
-                        const targetPct = (munPolls[candId] !== undefined ? munPolls[candId] : (app.state.t1_polls[candId]||0)) / munSumPcts;
-                        zVotes[candId] = totalZoneVotes * targetPct;
-                    });
-                }
+                const totalZoneRaw = activeIds.reduce((sum, cid) => sum + zVotes[cid], 0) || 1;
 
-                // Aplica ajuste estadual na zona se houver
-                if (app.state.t1_state_polls && app.state.t1_state_polls[ufId]) {
-                    const statePolls = app.state.t1_state_polls[ufId];
-                    const stateSumPcts = activeIds.reduce((a, cid) => a + (statePolls[cid] !== undefined ? statePolls[cid] : (app.state.t1_polls[cid]||0)), 0) || 1;
-                    const totalStateVotes = activeIds.reduce((a, cid) => a + (res.estados[ufId][cid]||0), 0) || 1;
-
-                    activeIds.forEach(candId => {
-                        const targetPct = (statePolls[candId] !== undefined ? statePolls[candId] : (app.state.t1_polls[candId]||0)) / stateSumPcts;
-                        const targetVotes = totalStateVotes * targetPct;
-                        const currentVotes = res.estados[ufId][candId] || 1;
-                        const scale = targetVotes / currentVotes;
-                        zVotes[candId] *= scale;
-                    });
-                }
-
-                // ZERA COMPLETAMENTE O CANDIDATO SE SUA INTENÇÃO DE VOTO FOR 0 OU ELE ESTIVER INATIVO
-                for(let cid in zVotes) {
-                    if (targetPcts[cid] === 0 || app.state.t1_polls[cid] === 0 || app.state.active_candidates[cid] === false) {
-                        zVotes[cid] = 0;
+                // Escala a zona para que a soma das zonas seja estritamente coerente com o município e zere se o candidato for 0%
+                activeIds.forEach(candId => {
+                    const munCandVotes = res.municipios[ibge] ? (res.municipios[ibge][candId] || 0) : 0;
+                    if (munCandVotes === 0 || targetPcts[candId] === 0 || app.state.t1_polls[candId] === 0 || app.state.active_candidates[candId] === false) {
+                        zVotes[candId] = 0;
                     } else {
-                        const isCustomState = app.state.t1_state_polls && app.state.t1_state_polls[ufId];
-                        const isCustomMun = app.state.t1_mun_polls && app.state.t1_mun_polls[ibge];
-                        const corrFactor = (!isCustomState && !isCustomMun && corrections[cid] !== undefined) ? corrections[cid] : 1;
-                        zVotes[cid] = Math.round(zVotes[cid] * corrFactor);
+                        const zoneShare = zVotes[candId] / totalZoneRaw;
+                        zVotes[candId] = Math.round(munCandVotes * zoneShare);
                     }
-                }
+                });
 
                 res.zonas[zId] = zVotes;
             }
