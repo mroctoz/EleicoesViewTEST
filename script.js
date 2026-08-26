@@ -270,6 +270,8 @@ const app = {
         app.renderLegend();
         app.renderUI();
         await app.loadData();
+       
+        app.showNewVersionPopup();
     },
 
     // FALLBACK DE IMAGENS LOCAL -> REMOTA -> VETOR DE INICIAIS
