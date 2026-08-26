@@ -1282,7 +1282,7 @@ const app = {
                 <div style="width:60px; height:60px; border-radius:50%; background:rgba(59,130,246,0.15); display:flex; align-items:center; justify-content:center; border:2px solid var(--accent-blue);">
                     <i class="fas fa-rocket" style="font-size:1.8rem; color:var(--accent-blue);"></i>
                 </div>
-                <h3 style="font-size:1.1rem; font-weight:800; color:var(--text-color);">Nova Versão do Simulador Disponível!</h3>
+                <h3 style="font-size:1.1rem; font-weight:800; color:var(--text-color);">Este simulador foi descontinuado... Acesse a nova versão!</h3>
                 <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.4;">
                     Conheça a nova versão atualizada do simulador com suporte a simulações para os governos estaduais, novas ferramentas e base de dados aprimorada.
                 </p>
