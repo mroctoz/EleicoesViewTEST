@@ -1275,6 +1275,27 @@ const app = {
         });
     },
 
+   // POP-UP DE AVISO DA NOVA VERSÃO DO SIMULADOR
+    showNewVersionPopup: () => {
+        const html = `
+            <div style="display:flex; flex-direction:column; gap:14px; text-align:center; align-items:center; padding:10px 4px;">
+                <div style="width:60px; height:60px; border-radius:50%; background:rgba(59,130,246,0.15); display:flex; align-items:center; justify-content:center; border:2px solid var(--accent-blue);">
+                    <i class="fas fa-rocket" style="font-size:1.8rem; color:var(--accent-blue);"></i>
+                </div>
+                <h3 style="font-size:1.1rem; font-weight:800; color:var(--text-color);">Nova Versão do Simulador Disponível!</h3>
+                <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.4;">
+                    Conheça a nova versão atualizada do simulador com suporte a simulações para os governos estaduais, novas ferramentas e base de dados aprimorada.
+                </p>
+                <a href="https://brelectionsim.vercel.app" target="_blank" class="btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:12px; margin-top:6px; color:#ffffff;">
+                    <i class="fas fa-external-link-alt"></i> Acessar brelectionsim.vercel.app
+                </a>
+            </div>
+        `;
+        setTimeout(() => {
+            app.openModal("<i class='fas fa-bullhorn'></i> Atualização do Simulador", html);
+        }, 500);
+    },
+
     openModal: (title, html) => {
         document.getElementById('modalTitle').innerHTML = title;
         document.getElementById('modalBody').innerHTML = html;
